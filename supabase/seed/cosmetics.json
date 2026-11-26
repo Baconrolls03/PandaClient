@@ -1,0 +1,1493 @@
+[
+ {
+  "id": "panda-classic",
+  "name": "Panda Classic",
+  "category": "cape",
+  "rarity": "common",
+  "model": {
+   "pattern": "emblem",
+   "colors": [
+    "#6EE08F",
+    "#3DBE6A",
+    "#141B24"
+   ]
+  },
+  "sort": 0
+ },
+ {
+  "id": "midnight",
+  "name": "Midnight",
+  "category": "cape",
+  "rarity": "common",
+  "model": {
+   "pattern": "gradient",
+   "colors": [
+    "#2A3546",
+    "#0B0F15"
+   ]
+  },
+  "sort": 1
+ },
+ {
+  "id": "sunset",
+  "name": "Sunset",
+  "category": "cape",
+  "rarity": "rare",
+  "model": {
+   "pattern": "gradient",
+   "colors": [
+    "#FFB36B",
+    "#F0603A",
+    "#8E2A5C"
+   ]
+  },
+  "sort": 2
+ },
+ {
+  "id": "ocean",
+  "name": "Ocean Tide",
+  "category": "cape",
+  "rarity": "rare",
+  "model": {
+   "pattern": "waves",
+   "colors": [
+    "#4F8CFF",
+    "#2B3FBF",
+    "#9ED0FF"
+   ]
+  },
+  "sort": 3
+ },
+ {
+  "id": "forest",
+  "name": "Forest Stripe",
+  "category": "cape",
+  "rarity": "common",
+  "model": {
+   "pattern": "stripes",
+   "colors": [
+    "#3FAE6A",
+    "#1E6B45"
+   ]
+  },
+  "sort": 4
+ },
+ {
+  "id": "candy",
+  "name": "Candy Check",
+  "category": "cape",
+  "rarity": "rare",
+  "model": {
+   "pattern": "checker",
+   "colors": [
+    "#FF9AD5",
+    "#FFFFFF"
+   ]
+  },
+  "sort": 5
+ },
+ {
+  "id": "royal",
+  "name": "Royal",
+  "category": "cape",
+  "rarity": "epic",
+  "model": {
+   "pattern": "trim",
+   "colors": [
+    "#6A3FD8",
+    "#F5C542"
+   ]
+  },
+  "sort": 6
+ },
+ {
+  "id": "lava",
+  "name": "Lava Flow",
+  "category": "cape",
+  "rarity": "epic",
+  "model": {
+   "pattern": "gradient",
+   "colors": [
+    "#FFE07A",
+    "#F0603A",
+    "#4A0E0E"
+   ]
+  },
+  "sort": 7
+ },
+ {
+  "id": "galaxy",
+  "name": "Galaxy",
+  "category": "cape",
+  "rarity": "legendary",
+  "model": {
+   "pattern": "stars",
+   "colors": [
+    "#1B1340",
+    "#05040F",
+    "#FFFFFF"
+   ]
+  },
+  "sort": 8
+ },
+ {
+  "id": "mono",
+  "name": "Mono Split",
+  "category": "cape",
+  "rarity": "common",
+  "model": {
+   "pattern": "split",
+   "colors": [
+    "#F3F5F8",
+    "#141B24"
+   ]
+  },
+  "sort": 9
+ },
+ {
+  "id": "mint-fade",
+  "name": "Mint Fade",
+  "category": "cape",
+  "rarity": "rare",
+  "model": {
+   "pattern": "gradient",
+   "colors": [
+    "#C6F7D5",
+    "#6EE08F",
+    "#1E6B45"
+   ]
+  },
+  "sort": 10
+ },
+ {
+  "id": "cherry",
+  "name": "Cherry Blossom",
+  "category": "cape",
+  "rarity": "epic",
+  "model": {
+   "pattern": "dots",
+   "colors": [
+    "#FFD1E3",
+    "#FF6FB5",
+    "#FFFFFF"
+   ]
+  },
+  "sort": 11
+ },
+ {
+  "id": "beanie",
+  "name": "Mint Beanie",
+  "category": "hat",
+  "rarity": "common",
+  "model": {
+   "space": "head",
+   "boxes": [
+    {
+     "from": [
+      -4.5,
+      5.5,
+      -4.5
+     ],
+     "to": [
+      4.5,
+      9.2,
+      4.5
+     ],
+     "color": "#6EE08F"
+    },
+    {
+     "from": [
+      -4.6,
+      5.4,
+      -4.6
+     ],
+     "to": [
+      4.6,
+      6.6,
+      4.6
+     ],
+     "color": "#3DBE6A"
+    },
+    {
+     "from": [
+      -1.2,
+      9.2,
+      -1.2
+     ],
+     "to": [
+      1.2,
+      11.2,
+      1.2
+     ],
+     "color": "#F3F5F8"
+    }
+   ]
+  },
+  "sort": 12
+ },
+ {
+  "id": "top-hat",
+  "name": "Top Hat",
+  "category": "hat",
+  "rarity": "rare",
+  "model": {
+   "space": "head",
+   "boxes": [
+    {
+     "from": [
+      -6,
+      8,
+      -6
+     ],
+     "to": [
+      6,
+      8.6,
+      6
+     ],
+     "color": "#141B24"
+    },
+    {
+     "from": [
+      -3.6,
+      8.6,
+      -3.6
+     ],
+     "to": [
+      3.6,
+      14,
+      3.6
+     ],
+     "color": "#1C2430"
+    },
+    {
+     "from": [
+      -3.7,
+      8.6,
+      -3.7
+     ],
+     "to": [
+      3.7,
+      9.8,
+      3.7
+     ],
+     "color": "#6EE08F"
+    }
+   ]
+  },
+  "sort": 13
+ },
+ {
+  "id": "cap",
+  "name": "Backwards Cap",
+  "category": "hat",
+  "rarity": "common",
+  "model": {
+   "space": "head",
+   "boxes": [
+    {
+     "from": [
+      -4.4,
+      6.6,
+      -4.4
+     ],
+     "to": [
+      4.4,
+      9.3,
+      4.4
+     ],
+     "color": "#4F8CFF"
+    },
+    {
+     "from": [
+      -3,
+      6.6,
+      4.4
+     ],
+     "to": [
+      3,
+      7.2,
+      8
+     ],
+     "color": "#2B3FBF"
+    },
+    {
+     "from": [
+      -0.6,
+      9.3,
+      -0.6
+     ],
+     "to": [
+      0.6,
+      9.8,
+      0.6
+     ],
+     "color": "#2B3FBF"
+    }
+   ]
+  },
+  "sort": 14
+ },
+ {
+  "id": "crown",
+  "name": "Golden Crown",
+  "category": "hat",
+  "rarity": "legendary",
+  "model": {
+   "space": "head",
+   "boxes": [
+    {
+     "from": [
+      -4.4,
+      8,
+      -4.4
+     ],
+     "to": [
+      4.4,
+      9.8,
+      -3.7
+     ],
+     "color": "#F5C542"
+    },
+    {
+     "from": [
+      -4.4,
+      8,
+      3.7
+     ],
+     "to": [
+      4.4,
+      9.8,
+      4.4
+     ],
+     "color": "#F5C542"
+    },
+    {
+     "from": [
+      -4.4,
+      8,
+      -3.7
+     ],
+     "to": [
+      -3.7,
+      9.8,
+      3.7
+     ],
+     "color": "#F5C542"
+    },
+    {
+     "from": [
+      3.7,
+      8,
+      -3.7
+     ],
+     "to": [
+      4.4,
+      9.8,
+      3.7
+     ],
+     "color": "#F5C542"
+    },
+    {
+     "from": [
+      -4.4,
+      9.8,
+      -4.4
+     ],
+     "to": [
+      -3.2,
+      11.6,
+      -3.2
+     ],
+     "color": "#F5C542"
+    },
+    {
+     "from": [
+      -0.6,
+      9.8,
+      -4.4
+     ],
+     "to": [
+      0.6,
+      11.6,
+      -3.2
+     ],
+     "color": "#F5C542"
+    },
+    {
+     "from": [
+      3.2,
+      9.8,
+      -4.4
+     ],
+     "to": [
+      4.4,
+      11.6,
+      -3.2
+     ],
+     "color": "#F5C542"
+    },
+    {
+     "from": [
+      -4.4,
+      9.8,
+      3.2
+     ],
+     "to": [
+      -3.2,
+      11.6,
+      4.4
+     ],
+     "color": "#F5C542"
+    },
+    {
+     "from": [
+      -0.6,
+      9.8,
+      3.2
+     ],
+     "to": [
+      0.6,
+      11.6,
+      4.4
+     ],
+     "color": "#F5C542"
+    },
+    {
+     "from": [
+      3.2,
+      9.8,
+      3.2
+     ],
+     "to": [
+      4.4,
+      11.6,
+      4.4
+     ],
+     "color": "#F5C542"
+    },
+    {
+     "from": [
+      -0.8,
+      8.5,
+      -4.6
+     ],
+     "to": [
+      0.8,
+      9.3,
+      -4.4
+     ],
+     "color": "#F26D6D"
+    }
+   ]
+  },
+  "sort": 15
+ },
+ {
+  "id": "party-hat",
+  "name": "Party Hat",
+  "category": "hat",
+  "rarity": "rare",
+  "model": {
+   "space": "head",
+   "boxes": [
+    {
+     "from": [
+      -3,
+      8,
+      -3
+     ],
+     "to": [
+      3,
+      10,
+      3
+     ],
+     "color": "#FF6FB5"
+    },
+    {
+     "from": [
+      -2.2,
+      10,
+      -2.2
+     ],
+     "to": [
+      2.2,
+      12,
+      2.2
+     ],
+     "color": "#F5C542"
+    },
+    {
+     "from": [
+      -1.4,
+      12,
+      -1.4
+     ],
+     "to": [
+      1.4,
+      14,
+      1.4
+     ],
+     "color": "#FF6FB5"
+    },
+    {
+     "from": [
+      -0.7,
+      14,
+      -0.7
+     ],
+     "to": [
+      0.7,
+      15.6,
+      0.7
+     ],
+     "color": "#F5C542"
+    }
+   ]
+  },
+  "sort": 16
+ },
+ {
+  "id": "wizard-hat",
+  "name": "Wizard Hat",
+  "category": "hat",
+  "rarity": "epic",
+  "model": {
+   "space": "head",
+   "boxes": [
+    {
+     "from": [
+      -6,
+      8,
+      -6
+     ],
+     "to": [
+      6,
+      8.6,
+      6
+     ],
+     "color": "#3B2A7A"
+    },
+    {
+     "from": [
+      -3.8,
+      8.6,
+      -3.8
+     ],
+     "to": [
+      3.8,
+      11,
+      3.8
+     ],
+     "color": "#4B36A0"
+    },
+    {
+     "from": [
+      -2.6,
+      11,
+      -2.2
+     ],
+     "to": [
+      2.6,
+      13.4,
+      2.8
+     ],
+     "color": "#4B36A0"
+    },
+    {
+     "from": [
+      -1.4,
+      13.4,
+      -0.6
+     ],
+     "to": [
+      1.4,
+      15.6,
+      2.6
+     ],
+     "color": "#4B36A0"
+    },
+    {
+     "from": [
+      -0.6,
+      15.6,
+      1
+     ],
+     "to": [
+      0.6,
+      17,
+      2.4
+     ],
+     "color": "#4B36A0"
+    },
+    {
+     "from": [
+      -1,
+      9.2,
+      -3.9
+     ],
+     "to": [
+      1,
+      10.6,
+      -3.8
+     ],
+     "color": "#F5C542"
+    }
+   ]
+  },
+  "sort": 17
+ },
+ {
+  "id": "shades",
+  "name": "Shades",
+  "category": "glasses",
+  "rarity": "common",
+  "model": {
+   "space": "head",
+   "boxes": [
+    {
+     "from": [
+      -3.7,
+      2.7,
+      -4.65
+     ],
+     "to": [
+      -0.6,
+      4.7,
+      -4.3
+     ],
+     "color": "#141B24"
+    },
+    {
+     "from": [
+      0.6,
+      2.7,
+      -4.65
+     ],
+     "to": [
+      3.7,
+      4.7,
+      -4.3
+     ],
+     "color": "#141B24"
+    },
+    {
+     "from": [
+      -0.6,
+      3.9,
+      -4.65
+     ],
+     "to": [
+      0.6,
+      4.4,
+      -4.3
+     ],
+     "color": "#141B24"
+    },
+    {
+     "from": [
+      -4.45,
+      3.9,
+      -4.3
+     ],
+     "to": [
+      -4.15,
+      4.4,
+      0.5
+     ],
+     "color": "#141B24"
+    },
+    {
+     "from": [
+      4.15,
+      3.9,
+      -4.3
+     ],
+     "to": [
+      4.45,
+      4.4,
+      0.5
+     ],
+     "color": "#141B24"
+    }
+   ]
+  },
+  "sort": 18
+ },
+ {
+  "id": "3d-glasses",
+  "name": "3D Glasses",
+  "category": "glasses",
+  "rarity": "rare",
+  "model": {
+   "space": "head",
+   "boxes": [
+    {
+     "from": [
+      -3.7,
+      2.7,
+      -4.65
+     ],
+     "to": [
+      -0.6,
+      4.7,
+      -4.3
+     ],
+     "color": "#F26D6D"
+    },
+    {
+     "from": [
+      0.6,
+      2.7,
+      -4.65
+     ],
+     "to": [
+      3.7,
+      4.7,
+      -4.3
+     ],
+     "color": "#4F8CFF"
+    },
+    {
+     "from": [
+      -0.6,
+      3.9,
+      -4.65
+     ],
+     "to": [
+      0.6,
+      4.4,
+      -4.3
+     ],
+     "color": "#F3F5F8"
+    },
+    {
+     "from": [
+      -4.45,
+      3.9,
+      -4.3
+     ],
+     "to": [
+      -4.15,
+      4.4,
+      0.5
+     ],
+     "color": "#F3F5F8"
+    },
+    {
+     "from": [
+      4.15,
+      3.9,
+      -4.3
+     ],
+     "to": [
+      4.45,
+      4.4,
+      0.5
+     ],
+     "color": "#F3F5F8"
+    }
+   ]
+  },
+  "sort": 19
+ },
+ {
+  "id": "mint-specs",
+  "name": "Mint Specs",
+  "category": "glasses",
+  "rarity": "common",
+  "model": {
+   "space": "head",
+   "boxes": [
+    {
+     "from": [
+      -3.7,
+      2.7,
+      -4.65
+     ],
+     "to": [
+      -0.6,
+      4.7,
+      -4.3
+     ],
+     "color": "#C6F7D5"
+    },
+    {
+     "from": [
+      0.6,
+      2.7,
+      -4.65
+     ],
+     "to": [
+      3.7,
+      4.7,
+      -4.3
+     ],
+     "color": "#C6F7D5"
+    },
+    {
+     "from": [
+      -0.6,
+      3.9,
+      -4.65
+     ],
+     "to": [
+      0.6,
+      4.4,
+      -4.3
+     ],
+     "color": "#3DBE6A"
+    },
+    {
+     "from": [
+      -4.45,
+      3.9,
+      -4.3
+     ],
+     "to": [
+      -4.15,
+      4.4,
+      0.5
+     ],
+     "color": "#3DBE6A"
+    },
+    {
+     "from": [
+      4.15,
+      3.9,
+      -4.3
+     ],
+     "to": [
+      4.45,
+      4.4,
+      0.5
+     ],
+     "color": "#3DBE6A"
+    }
+   ]
+  },
+  "sort": 20
+ },
+ {
+  "id": "ninja",
+  "name": "Ninja Mask",
+  "category": "mask",
+  "rarity": "common",
+  "model": {
+   "space": "head",
+   "boxes": [
+    {
+     "from": [
+      -4.4,
+      -0.1,
+      -4.4
+     ],
+     "to": [
+      4.4,
+      3.3,
+      4.4
+     ],
+     "color": "#141B24"
+    }
+   ]
+  },
+  "sort": 21
+ },
+ {
+  "id": "medic",
+  "name": "Face Mask",
+  "category": "mask",
+  "rarity": "common",
+  "model": {
+   "space": "head",
+   "boxes": [
+    {
+     "from": [
+      -3.6,
+      0.6,
+      -4.5
+     ],
+     "to": [
+      3.6,
+      3.4,
+      -4.2
+     ],
+     "color": "#E8F1F8"
+    },
+    {
+     "from": [
+      -4.4,
+      2.6,
+      -4.2
+     ],
+     "to": [
+      -4.2,
+      3,
+      0
+     ],
+     "color": "#E8F1F8"
+    },
+    {
+     "from": [
+      4.2,
+      2.6,
+      -4.2
+     ],
+     "to": [
+      4.4,
+      3,
+      0
+     ],
+     "color": "#E8F1F8"
+    }
+   ]
+  },
+  "sort": 22
+ },
+ {
+  "id": "red-bandana",
+  "name": "Red Bandana",
+  "category": "bandana",
+  "rarity": "common",
+  "model": {
+   "space": "head",
+   "boxes": [
+    {
+     "from": [
+      -4.45,
+      5.6,
+      -4.45
+     ],
+     "to": [
+      4.45,
+      7.2,
+      4.45
+     ],
+     "color": "#D93F55"
+    },
+    {
+     "from": [
+      -1,
+      5.2,
+      4.45
+     ],
+     "to": [
+      1,
+      6.8,
+      5.8
+     ],
+     "color": "#B8304A"
+    },
+    {
+     "from": [
+      -1.6,
+      3.2,
+      4.6
+     ],
+     "to": [
+      -0.4,
+      5.2,
+      5.4
+     ],
+     "color": "#D93F55"
+    },
+    {
+     "from": [
+      0.4,
+      3.6,
+      4.6
+     ],
+     "to": [
+      1.6,
+      5.2,
+      5.4
+     ],
+     "color": "#D93F55"
+    }
+   ]
+  },
+  "sort": 23
+ },
+ {
+  "id": "mint-bandana",
+  "name": "Mint Bandana",
+  "category": "bandana",
+  "rarity": "common",
+  "model": {
+   "space": "head",
+   "boxes": [
+    {
+     "from": [
+      -4.45,
+      5.6,
+      -4.45
+     ],
+     "to": [
+      4.45,
+      7.2,
+      4.45
+     ],
+     "color": "#6EE08F"
+    },
+    {
+     "from": [
+      -1,
+      5.2,
+      4.45
+     ],
+     "to": [
+      1,
+      6.8,
+      5.8
+     ],
+     "color": "#3DBE6A"
+    },
+    {
+     "from": [
+      -1.6,
+      3.2,
+      4.6
+     ],
+     "to": [
+      -0.4,
+      5.2,
+      5.4
+     ],
+     "color": "#6EE08F"
+    },
+    {
+     "from": [
+      0.4,
+      3.6,
+      4.6
+     ],
+     "to": [
+      1.6,
+      5.2,
+      5.4
+     ],
+     "color": "#6EE08F"
+    }
+   ]
+  },
+  "sort": 24
+ },
+ {
+  "id": "leaf-wings",
+  "name": "Leaf Wings",
+  "category": "wings",
+  "rarity": "epic",
+  "model": {
+   "space": "body",
+   "boxes": [
+    {
+     "from": [
+      -1.5,
+      6,
+      2.2
+     ],
+     "to": [
+      -11,
+      11.5,
+      2.9
+     ],
+     "color": "#3FAE6A",
+     "pivot": [
+      -1.5,
+      8,
+      2.5
+     ],
+     "flap": 18
+    },
+    {
+     "from": [
+      11,
+      6,
+      2.2
+     ],
+     "to": [
+      1.5,
+      11.5,
+      2.9
+     ],
+     "color": "#3FAE6A",
+     "pivot": [
+      1.5,
+      8,
+      2.5
+     ],
+     "flap": -18
+    },
+    {
+     "from": [
+      -2.5,
+      3,
+      2.2
+     ],
+     "to": [
+      -9,
+      6,
+      2.9
+     ],
+     "color": "#2E8C55",
+     "pivot": [
+      -1.5,
+      8,
+      2.5
+     ],
+     "flap": 18
+    },
+    {
+     "from": [
+      9,
+      3,
+      2.2
+     ],
+     "to": [
+      2.5,
+      6,
+      2.9
+     ],
+     "color": "#2E8C55",
+     "pivot": [
+      1.5,
+      8,
+      2.5
+     ],
+     "flap": -18
+    },
+    {
+     "from": [
+      -3.5,
+      0.5,
+      2.2
+     ],
+     "to": [
+      -7,
+      3,
+      2.9
+     ],
+     "color": "#1E6B45",
+     "pivot": [
+      -1.5,
+      8,
+      2.5
+     ],
+     "flap": 18
+    },
+    {
+     "from": [
+      7,
+      0.5,
+      2.2
+     ],
+     "to": [
+      3.5,
+      3,
+      2.9
+     ],
+     "color": "#1E6B45",
+     "pivot": [
+      1.5,
+      8,
+      2.5
+     ],
+     "flap": -18
+    }
+   ]
+  },
+  "sort": 25
+ },
+ {
+  "id": "bat-wings",
+  "name": "Night Wings",
+  "category": "wings",
+  "rarity": "legendary",
+  "model": {
+   "space": "body",
+   "boxes": [
+    {
+     "from": [
+      -1.5,
+      7,
+      2.2
+     ],
+     "to": [
+      -12,
+      11,
+      2.8
+     ],
+     "color": "#2A2235",
+     "pivot": [
+      -1.5,
+      8,
+      2.5
+     ],
+     "flap": 24
+    },
+    {
+     "from": [
+      12,
+      7,
+      2.2
+     ],
+     "to": [
+      1.5,
+      11,
+      2.8
+     ],
+     "color": "#2A2235",
+     "pivot": [
+      1.5,
+      8,
+      2.5
+     ],
+     "flap": -24
+    },
+    {
+     "from": [
+      -3,
+      3,
+      2.2
+     ],
+     "to": [
+      -12,
+      7,
+      2.8
+     ],
+     "color": "#3A2F4A",
+     "pivot": [
+      -1.5,
+      8,
+      2.5
+     ],
+     "flap": 24
+    },
+    {
+     "from": [
+      12,
+      3,
+      2.2
+     ],
+     "to": [
+      3,
+      7,
+      2.8
+     ],
+     "color": "#3A2F4A",
+     "pivot": [
+      1.5,
+      8,
+      2.5
+     ],
+     "flap": -24
+    },
+    {
+     "from": [
+      -11,
+      1,
+      2.2
+     ],
+     "to": [
+      -12,
+      11,
+      2.8
+     ],
+     "color": "#141B24",
+     "pivot": [
+      -1.5,
+      8,
+      2.5
+     ],
+     "flap": 24
+    },
+    {
+     "from": [
+      12,
+      1,
+      2.2
+     ],
+     "to": [
+      11,
+      11,
+      2.8
+     ],
+     "color": "#141B24",
+     "pivot": [
+      1.5,
+      8,
+      2.5
+     ],
+     "flap": -24
+    }
+   ]
+  },
+  "sort": 26
+ },
+ {
+  "id": "explorer-pack",
+  "name": "Explorer Pack",
+  "category": "backpack",
+  "rarity": "rare",
+  "model": {
+   "space": "body",
+   "boxes": [
+    {
+     "from": [
+      -3.5,
+      2,
+      2
+     ],
+     "to": [
+      3.5,
+      10,
+      5
+     ],
+     "color": "#8A5A3B"
+    },
+    {
+     "from": [
+      -3.6,
+      7.6,
+      2
+     ],
+     "to": [
+      3.6,
+      10.4,
+      5.3
+     ],
+     "color": "#6E4630"
+    },
+    {
+     "from": [
+      -2,
+      3,
+      5
+     ],
+     "to": [
+      2,
+      6,
+      5.8
+     ],
+     "color": "#6E4630"
+    },
+    {
+     "from": [
+      -3.7,
+      9,
+      1.9
+     ],
+     "to": [
+      -2.9,
+      9.6,
+      5.4
+     ],
+     "color": "#C9A46A"
+    },
+    {
+     "from": [
+      2.9,
+      9,
+      1.9
+     ],
+     "to": [
+      3.7,
+      9.6,
+      5.4
+     ],
+     "color": "#C9A46A"
+    }
+   ]
+  },
+  "sort": 27
+ },
+ {
+  "id": "panda-pack",
+  "name": "Panda Pack",
+  "category": "backpack",
+  "rarity": "epic",
+  "model": {
+   "space": "body",
+   "boxes": [
+    {
+     "from": [
+      -3.5,
+      2,
+      2
+     ],
+     "to": [
+      3.5,
+      9.5,
+      5.2
+     ],
+     "color": "#F3F5F8"
+    },
+    {
+     "from": [
+      -3.8,
+      8.5,
+      2.6
+     ],
+     "to": [
+      -1.8,
+      10.5,
+      4.6
+     ],
+     "color": "#141B24"
+    },
+    {
+     "from": [
+      1.8,
+      8.5,
+      2.6
+     ],
+     "to": [
+      3.8,
+      10.5,
+      4.6
+     ],
+     "color": "#141B24"
+    },
+    {
+     "from": [
+      -2.6,
+      5,
+      5.2
+     ],
+     "to": [
+      -0.8,
+      7.2,
+      5.5
+     ],
+     "color": "#141B24"
+    },
+    {
+     "from": [
+      0.8,
+      5,
+      5.2
+     ],
+     "to": [
+      2.6,
+      7.2,
+      5.5
+     ],
+     "color": "#141B24"
+    },
+    {
+     "from": [
+      -0.6,
+      4,
+      5.2
+     ],
+     "to": [
+      0.6,
+      4.8,
+      5.5
+     ],
+     "color": "#141B24"
+    }
+   ]
+  },
+  "sort": 28
+ }
+]
