@@ -97,3 +97,14 @@
 8|net.minecraft.client.gui.screens.options.OptionsScreen|-|OptionsScreen\(|class
 8|net.minecraft.world.food.FoodData|-|getSaturationLevel|getFoodLevel|class
 8|net.minecraft.world.entity.LivingEntity|-|getMaxHealth|getAbsorptionAmount|class
+9|net.minecraft.client.resources.sounds.SimpleSoundInstance|-|forUI|class
+9|net.minecraft.sounds.SoundEvents|-| EXPERIENCE_ORB_PICKUP;| NOTE_BLOCK_PLING;| NOTE_BLOCK_HAT;| ARROW_HIT_PLAYER;| PLAYER_ATTACK_CRIT;| NOTE_BLOCK_BELL;|class
+9|net.minecraft.client.sounds.SoundManager|-|play\(|class
+9|net.minecraft.client.particle.ParticleEngine|-|createTrackingEmitter|class
+9|net.minecraft.core.particles.ParticleTypes|-| CRIT;| ENCHANTED_HIT;|class
+9|net.minecraft.client.gui.components.PlayerTabOverlay|p|getNameForDisplay|class
+9|net.minecraft.client.KeyboardHandler|-|Clipboard|class
+9|net.minecraft.world.entity.LivingEntity|-|isUsingItem|getUseItem\(|getTicksUsingItem|getUseItemRemainingTicks|class
+9|net.minecraft.world.item.BowItem|-|getPowerForTime|class
+9|net.minecraft.client.multiplayer.ClientPacketListener|-|sendChat|sendCommand|class
+9|net.minecraft.client.Minecraft|-|particleEngine;|getSoundManager|keyboardHandler;|class
