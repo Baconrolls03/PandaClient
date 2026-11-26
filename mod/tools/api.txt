@@ -87,3 +87,13 @@
 7|net.fabricmc.fabric.api.client.rendering.v1.LivingEntityFeatureRendererRegistrationCallback|-|.
 7|net.fabricmc.fabric.api.client.rendering.v1.LivingEntityFeatureRendererRegistrationCallback$RegistrationHelper|-|.
 7|net.minecraft.client.renderer.entity.EntityRendererProvider$Context|-|getModelSet|bakeLayer|class
+8|net.minecraft.client.renderer.entity.EntityRenderDispatcher|-|HitBox|hitbox|class
+8|net.minecraft.client.gui.components.debug.DebugScreenEntries|-|HITBOX|class
+8|net.minecraft.client.gui.components.debug.DebugScreenEntryList|-|.
+8|net.minecraft.client.Minecraft|-|debugEntries|getDebugOverlay|class
+8|net.minecraft.client.gui.components.DebugScreenOverlay|-|.
+8|net.minecraft.client.gui.screens.worldselection.SelectWorldScreen|-|SelectWorldScreen\(|class
+8|net.minecraft.client.gui.screens.multiplayer.JoinMultiplayerScreen|-|JoinMultiplayerScreen\(|class
+8|net.minecraft.client.gui.screens.options.OptionsScreen|-|OptionsScreen\(|class
+8|net.minecraft.world.food.FoodData|-|getSaturationLevel|getFoodLevel|class
+8|net.minecraft.world.entity.LivingEntity|-|getMaxHealth|getAbsorptionAmount|class
