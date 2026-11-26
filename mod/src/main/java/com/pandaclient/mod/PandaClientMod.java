@@ -51,6 +51,7 @@ public final class PandaClientMod implements ClientModInitializer {
     }
 
     private static void tick(Minecraft mc) {
+        com.pandaclient.mod.util.CiCheck.tick(mc);
         Config.tick();
         Combat.tick();
         while (Keys.MENU.consumeClick()) if (mc.screen == null) mc.setScreen(new MenuScreen(null));
