@@ -2,16 +2,21 @@ import { Sparkles } from 'lucide-react'
 
 const entries = [
   {
+    version: '0.2.0',
+    date: 'Nov 2026',
+    title: 'Library & Discover',
+    items: [
+      'Instances for Vanilla, Fabric, Quilt, Forge and NeoForge',
+      'Browse and install mods, modpacks, resource packs, shaders and data packs from Modrinth',
+      'Content, Worlds, Screenshots, Files and Logs for every instance',
+      'Update checks, .mrpack import & export'
+    ]
+  },
+  {
     version: '0.1.0',
     date: 'Nov 2026',
     title: 'Hello, PandaClient',
-    items: ['New launcher shell with a custom title bar', 'Pick any Minecraft release, or snapshots', 'Settings for RAM, Java and game folder']
-  },
-  {
-    version: 'Next',
-    date: 'Soon',
-    title: 'Coming up',
-    items: ['Microsoft sign-in', 'One-click Fabric + Sodium, Lithium, Iris', 'Download progress and game launch']
+    items: ['Custom title bar and dark theme', 'Pick any Minecraft release, or snapshots', 'Settings for RAM, Java and game folder']
   }
 ]
 
@@ -24,10 +29,7 @@ export function NewsCard() {
       </header>
       <div className="flex flex-col gap-3">
         {entries.map((e) => (
-          <article
-            key={e.version}
-            className="rounded-xl border border-transparent bg-bg/60 p-4 transition-all duration-150 hover:-translate-y-px hover:border-border hover:bg-raised"
-          >
+          <article key={e.version} className="rounded-xl border border-transparent bg-bg/60 p-4 transition-all duration-150 hover:-translate-y-px hover:border-border hover:bg-raised">
             <div className="mb-1.5 flex items-center gap-2">
               <span className="rounded-md bg-blue/15 px-1.5 py-0.5 text-[11px] font-semibold text-blue">{e.version}</span>
               <span className="text-xs text-muted">{e.date}</span>

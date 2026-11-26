@@ -1,17 +1,14 @@
 import { useEffect, useState } from 'react'
 import { Check, FolderOpen, Loader2, Search } from 'lucide-react'
-import type { JavaInstall, Settings as SettingsT, SystemInfo } from '@shared/types'
+import type { JavaInstall, SystemInfo } from '@shared/types'
 import { api } from '@/lib/api'
-import { Button, Card, PathField, Toggle } from '@/components/ui'
-
-interface Props {
-  settings: SettingsT
-  update: (patch: Partial<SettingsT>) => void
-}
+import { Button, Card, TextField, Toggle } from '@/components/ui'
+import { useStore } from '@/lib/store'
 
 const gb = (mb: number) => `${(mb / 1024).toFixed(1).replace(/\.0$/, '')} GB`
 
-export function Settings({ settings, update }: Props) {
+export function Settings() {
+  const { settings, update } = useStore()
   const [info, setInfo] = useState<SystemInfo | null>(null)
   const [javas, setJavas] = useState<JavaInstall[] | null>(null)
   const [detecting, setDetecting] = useState(false)
@@ -42,7 +39,7 @@ export function Settings({ settings, update }: Props) {
         <p className="mt-1 text-sm text-muted">Changes save automatically.</p>
       </div>
 
-      <Card title="Memory" description="How much RAM Minecraft can use. 4 GB is plenty for most Fabric setups.">
+      <Card title="Default memory" description="How much RAM Minecraft can use. Instances can override this. 4 GB is plenty for most Fabric setups.">
         <div className="flex items-center gap-5">
           <input
             type="range"
@@ -65,7 +62,7 @@ export function Settings({ settings, update }: Props) {
 
       <Card title="Java" description="Leave empty and PandaClient picks the right Java for each version automatically.">
         <div className="flex gap-2">
-          <PathField value={settings.javaPath} placeholder="Automatic" onChange={(v) => update({ javaPath: v })} />
+          <TextField value={settings.javaPath} placeholder="Automatic" mono className="flex-1" onChange={(v) => update({ javaPath: v })} />
           <Button onClick={detect} disabled={detecting}>
             {detecting ? <Loader2 size={16} className="animate-spin" /> : <Search size={16} />}
             Detect
@@ -73,7 +70,7 @@ export function Settings({ settings, update }: Props) {
           <Button
             variant="ghost"
             onClick={async () => {
-              const p = await api.settings.pickFile(settings.javaPath || undefined)
+              const p = await api.settings.pickFile('java', settings.javaPath || undefined)
               if (p) update({ javaPath: p })
             }}
           >
@@ -103,9 +100,9 @@ export function Settings({ settings, update }: Props) {
         )}
       </Card>
 
-      <Card title="Game directory" description="Where versions, libraries, mods and worlds are stored.">
+      <Card title="Game directory" description="Where instances, versions and libraries are stored. Changing it shows the instances in the new folder.">
         <div className="flex gap-2">
-          <PathField value={settings.gameDir} onChange={(v) => update({ gameDir: v })} />
+          <TextField value={settings.gameDir} mono className="flex-1" onChange={(v) => update({ gameDir: v })} />
           <Button
             onClick={async () => {
               const p = await api.settings.pickDirectory(settings.gameDir)
@@ -118,6 +115,22 @@ export function Settings({ settings, update }: Props) {
             <FolderOpen size={16} />
             Open
           </Button>
+        </div>
+      </Card>
+
+      <Card title="Downloads" description="How many files to download at once when installing modpacks and mods.">
+        <div className="flex items-center gap-5">
+          <input
+            type="range"
+            className="panda-range flex-1"
+            min={1}
+            max={16}
+            step={1}
+            value={settings.maxDownloads}
+            style={{ ['--fill' as string]: `${((settings.maxDownloads - 1) / 15) * 100}%` }}
+            onChange={(e) => update({ maxDownloads: Number(e.target.value) })}
+          />
+          <div className="w-20 rounded-xl bg-raised py-2 text-center text-sm font-semibold tabular-nums">{settings.maxDownloads}</div>
         </div>
       </Card>
 

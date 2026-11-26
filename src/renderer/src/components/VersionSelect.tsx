@@ -10,6 +10,9 @@ interface Props {
   onShowSnapshots: (v: boolean) => void
   offline?: boolean
   loading?: boolean
+  /** Show Fabric / Vanilla badges (only meaningful when picking for Fabric). */
+  showBadges?: boolean
+  className?: string
 }
 
 function groupKey(v: VersionInfo): string {
@@ -29,7 +32,7 @@ function Badge({ fabric }: { fabric: boolean }) {
   )
 }
 
-export function VersionSelect({ versions, value, onChange, showSnapshots, onShowSnapshots, offline, loading }: Props) {
+export function VersionSelect({ versions, value, onChange, showSnapshots, onShowSnapshots, offline, loading, showBadges = true, className = 'w-64' }: Props) {
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState('')
   const root = useRef<HTMLDivElement>(null)
@@ -66,7 +69,7 @@ export function VersionSelect({ versions, value, onChange, showSnapshots, onShow
       <button
         onClick={() => setOpen((o) => !o)}
         disabled={loading}
-        className={`flex h-16 w-64 items-center gap-3 rounded-2xl border bg-surface px-4 text-left shadow-soft transition-all duration-150 hover:-translate-y-px hover:bg-raised ${
+        className={`flex h-14 ${className} items-center gap-3 rounded-2xl border bg-surface px-4 text-left shadow-soft transition-all duration-150 hover:-translate-y-px hover:bg-raised ${
           open ? 'border-blue/60' : 'border-border'
         }`}
       >
@@ -74,14 +77,14 @@ export function VersionSelect({ versions, value, onChange, showSnapshots, onShow
           <div className="text-[11px] font-medium uppercase tracking-wider text-muted">Version</div>
           <div className="flex items-center gap-2">
             <span className="truncate text-base font-semibold">{loading ? 'Loading…' : current?.id ?? 'Select'}</span>
-            {current && <Badge fabric={current.fabric} />}
+            {current && showBadges && <Badge fabric={current.fabric} />}
           </div>
         </div>
         <ChevronDown size={18} className={`shrink-0 text-muted transition-transform duration-200 ${open ? 'rotate-180' : ''}`} />
       </button>
 
       {open && (
-        <div className="absolute left-0 top-[calc(100%+8px)] z-30 w-80 animate-pop overflow-hidden rounded-2xl border border-border bg-surface shadow-lift">
+        <div className="absolute left-0 top-[calc(100%+8px)] z-30 w-full min-w-72 animate-pop overflow-hidden rounded-2xl border border-border bg-surface shadow-lift">
           <div className="border-b border-border p-3">
             <div className="flex items-center gap-2 rounded-xl bg-bg px-3 py-2">
               <Search size={15} className="text-muted" />
@@ -125,7 +128,7 @@ export function VersionSelect({ versions, value, onChange, showSnapshots, onShow
                     }`}
                   >
                     <span className="flex-1 text-left font-medium">{v.id}</span>
-                    <Badge fabric={v.fabric} />
+                    {showBadges && <Badge fabric={v.fabric} />}
                     <Check size={15} className={v.id === value ? 'text-mint' : 'invisible'} />
                   </button>
                 ))}

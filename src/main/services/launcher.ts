@@ -1,24 +1,24 @@
 import type { LaunchProgress } from '@shared/types'
+import { getInstance, updateInstance } from './instances'
 
 type Emit = (p: LaunchProgress) => void
 const wait = (ms: number) => new Promise((r) => setTimeout(r, ms))
 
 /**
  * UI preview only. It walks the progress bar through the real stages without downloading anything.
- * Step 4/5 replaces this with Fabric + Modrinth installs and an MCLC launch.
+ * The launch step replaces this with Java resolution, loader install and an MCLC launch.
  */
-export async function launch(version: string, emit: Emit): Promise<void> {
-  emit({ stage: 'preparing', progress: null, message: `Preparing Minecraft ${version}…` })
-  await wait(700)
+export async function launch(instanceId: string, emit: Emit): Promise<void> {
+  const inst = await getInstance(instanceId)
+  const base = { instanceId }
+  emit({ ...base, stage: 'preparing', progress: null, message: `Preparing ${inst.name}…` })
+  await wait(600)
   for (let i = 0; i <= 20; i++) {
-    emit({ stage: 'downloading', progress: i / 20, message: 'Downloading game files from Mojang (preview)' })
-    await wait(90)
+    emit({ ...base, stage: 'downloading', progress: i / 20, message: `Downloading Minecraft ${inst.mcVersion} (preview)` })
+    await wait(80)
   }
-  for (let i = 0; i <= 10; i++) {
-    emit({ stage: 'installing-mods', progress: i / 10, message: 'Installing Fabric, Sodium, Lithium, Iris (preview)' })
-    await wait(90)
-  }
-  emit({ stage: 'launching', progress: null, message: 'Starting game…' })
-  await wait(800)
-  emit({ stage: 'idle', progress: null, message: 'Preview finished. Real launching comes in a later step.' })
+  emit({ ...base, stage: 'launching', progress: null, message: 'Starting game…' })
+  await wait(700)
+  await updateInstance(instanceId, { lastPlayed: new Date().toISOString() })
+  emit({ ...base, stage: 'idle', progress: null, message: 'Preview finished. Real launching comes in a later step.' })
 }

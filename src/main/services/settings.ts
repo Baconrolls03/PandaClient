@@ -26,8 +26,9 @@ function defaults(): Settings {
     javaPath: '',
     gameDir: defaultGameDir(),
     closeOnLaunch: false,
-    selectedVersion: '',
-    showSnapshots: false
+    selectedInstance: '',
+    showSnapshots: false,
+    maxDownloads: 8
   }
 }
 
@@ -47,6 +48,7 @@ export function getSettings(): Settings {
 
 export function updateSettings(patch: Partial<Settings>): Settings {
   const next = { ...getSettings(), ...patch }
+  next.maxDownloads = Math.max(1, Math.min(32, Math.round(next.maxDownloads)))
   mkdirSync(app.getPath('userData'), { recursive: true })
   writeFileSync(file(), JSON.stringify(next, null, 2))
   cache = next

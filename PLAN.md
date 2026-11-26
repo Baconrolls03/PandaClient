@@ -34,38 +34,32 @@ Security: `contextIsolation: true`, `nodeIntegration: false`, `sandbox: true`, a
 
 ```
 .
-├── assets/
-│   ├── logo.svg            # vector panda (created)
-│   └── logo.png            # ← your PNG goes here
-├── build/                  # electron-builder icons (icon.ico / icon.png) — later
+├── assets/                 logo.svg (+ your logo.png)
 ├── src/
-│   ├── shared/
-│   │   └── types.ts        # types shared by main ⇄ preload ⇄ renderer (IPC contract)
-│   ├── main/               # Electron main process (Node)
-│   │   ├── index.ts        # frameless BrowserWindow, app lifecycle
-│   │   ├── ipc.ts          # registers every ipcMain.handle
+│   ├── shared/types.ts     IPC contract: Settings, Instance, ContentItem, Modrinth types, PandaApi
+│   ├── main/               Electron main process (Node)
+│   │   ├── index.ts        frameless window, panda:// protocol, lifecycle
+│   │   ├── ipc.ts          every ipcMain.handle
 │   │   └── services/
-│   │       ├── settings.ts # JSON settings in userData
-│   │       ├── versions.ts # Mojang manifest + Fabric Meta → VersionInfo[]
-│   │       ├── java.ts     # Java auto-detect (JAVA_HOME, PATH, common dirs)
-│   │       ├── auth.ts     # msmc login, token refresh, safeStorage   (step 2)
-│   │       ├── fabric.ts   # write Fabric profile JSON into versions/  (step 4)
-│   │       ├── modrinth.ts # resolve + download curated mods           (step 4)
-│   │       └── launcher.ts # MCLC launch + progress events             (step 5)
-│   ├── preload/
-│   │   └── index.ts        # contextBridge → window.panda
-│   └── renderer/           # React UI
-│       ├── index.html
-│       └── src/
-│           ├── main.tsx
-│           ├── App.tsx
-│           ├── styles.css  # Tailwind + colour tokens
-│           ├── lib/api.ts  # typed access to window.panda (+ browser mock for UI dev)
-│           ├── components/ # TitleBar, Sidebar, PlayButton, VersionSelect, NewsCard, …
-│           └── pages/      # Home, Settings (Mods, Browse later)
-├── electron.vite.config.ts
-├── electron-builder.yml    # (step 6)
-└── package.json
+│   │       ├── http.ts         fetch/download with sha1 check, concurrency pool, User-Agent
+│   │       ├── tasks.ts        download/progress tracker → Downloads panel
+│   │       ├── modrinth.ts     search, projects, versions, hashes → versions, update lookup, tags
+│   │       ├── loaders.ts      Fabric / Quilt / Forge / NeoForge version lists
+│   │       ├── instances.ts    create, list, update, icon, duplicate, delete (to Recycle Bin)
+│   │       ├── content.ts      scan + identify files, install with dependencies, toggle, update
+│   │       ├── mrpack.ts       modpack install, .mrpack import & export
+│   │       ├── instanceFiles.ts worlds (level.dat), servers.dat, screenshots, files, logs
+│   │       ├── nbt.ts          tiny NBT reader/writer
+│   │       ├── paths.ts        safeJoin (blocks ../ escapes), panda:// URLs
+│   │       ├── settings.ts / versions.ts / java.ts
+│   │       ├── auth.ts         msmc login                  (next)
+│   │       └── launcher.ts     MCLC launch, preview for now (next)
+│   ├── preload/index.ts    contextBridge → window.panda
+│   └── renderer/src/
+│       ├── lib/            api (+ browser mock), store (routing, toasts, tasks), format, markdown
+│       ├── components/     TitleBar, Sidebar, PlayBar, TasksPanel, cards, ui primitives
+│       ├── modals/         CreateInstance, Install, DeleteInstance
+│       └── pages/          Home, Library, Discover, Project, Settings, instance/* (6 tabs)
 ```
 
 ### Game directory layout (on the user's PC)
@@ -75,34 +69,34 @@ Security: `contextIsolation: true`, `nodeIntegration: false`, `sandbox: true`, a
 ├── assets/ libraries/ versions/   # shared Mojang downloads (MCLC)
 ├── runtime/                       # Mojang Java runtimes (Java 8/17/21/25 as each version needs)
 └── instances/
-    └── 1.21.10/                   # one folder per MC version
+    └── my-instance/               # one folder per instance
         ├── mods/                  # Fabric API, Sodium, Lithium, Iris (+ user mods later)
         ├── saves/ resourcepacks/ shaderpacks/ options.txt
-        └── panda.json             # which mods we installed + their Modrinth version ids
+        ├── instance.json          # name, version, loader, overrides
+        └── .panda/content.json    # file hashes → Modrinth project/version cache
 ```
 
 ## Build steps
 
-1. **UI shell + theme** ✅ *(this step)*: frameless window, custom title bar, sidebar, Home
-   (Play, version selector, news card, progress bar), Settings page with persisted settings,
-   Java auto-detect, live version list.
-2. **Microsoft login (msmc)**: login popup, store refresh token with Electron `safeStorage`,
-   show skin head (`https://mc-heads.net/avatar/<uuid>`) and username, logout.
-3. **Java runtime**: use the detected Java if its major version is high enough, otherwise download
-   Mojang's own runtime (`piston-meta` java manifest) into `runtime/`. Version → Java mapping
-   comes from each version JSON's `javaVersion.majorVersion`.
-4. **Fabric + curated mods**: fetch the Fabric profile for the chosen version; for each curated
-   project (`fabric-api`, `sodium`, `lithium`, `iris`) query
-   `GET /v2/project/{slug}/version?loaders=["fabric"]&game_versions=["<v>"]`, take the newest
-   release, verify the sha1, write it to `instances/<v>/mods`. Versions where a curated mod doesn't exist
-   yet still launch, with a "Sodium not available for this version" note.
-5. **Launch (MCLC)**: stream `download-status`/`progress` to the progress bar, handle
-   "close launcher on launch", and show the game log on crash.
+1. ✅ **UI shell + theme**: frameless window, title bar, settings, Java detect, live version list.
+2. ✅ **Modrinth-style library**:
+   - Instances for Vanilla, Fabric, Quilt, Forge and NeoForge, any version.
+   - Discover with filters for all five project types, project pages, installs that resolve dependencies.
+   - Modpack install, import and export.
+   - Update checks.
+   - Content, Worlds (with servers), Screenshots, Files, Logs and Settings for each instance.
+   - Feather-style play bar and downloads panel.
+3. **Microsoft login (msmc)**: login popup, refresh token in Electron `safeStorage`, skin head and username.
+4. **Java runtime**: use detected Java when its major version fits, otherwise download Mojang's runtime.
+5. **Launch (MCLC)**:
+   - Vanilla through MCLC.
+   - Fabric and Quilt by writing the Meta profile JSON into `versions/`.
+   - Forge and NeoForge by running their installers.
+   - Stream progress to the play bar, and honour "close launcher on launch".
 6. **Packaging**: electron-builder NSIS installer, app icon from `assets/logo.png`.
 
 ### Later (not now)
 - PandaClient Fabric mod: HUD with FPS, keystrokes, CPS, armour status
-- Mod browser (Modrinth search, dependency resolution, enable/disable toggles)
 - Auto-updater (electron-updater + GitHub Releases)
 
 ## Default version

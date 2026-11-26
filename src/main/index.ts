@@ -2,6 +2,9 @@ import { app, BrowserWindow, shell } from 'electron'
 import { existsSync } from 'node:fs'
 import { join } from 'node:path'
 import { registerIpc } from './ipc'
+import { handleProtocol, registerSchemes } from './services/protocol'
+
+registerSchemes()
 
 function createWindow(): void {
   const icon = join(app.getAppPath(), 'assets', 'logo.png')
@@ -54,6 +57,7 @@ if (!app.requestSingleInstanceLock()) {
   })
   app.whenReady().then(() => {
     app.setAppUserModelId('com.pandaclient.launcher')
+    handleProtocol()
     createWindow()
     app.on('activate', () => {
       if (BrowserWindow.getAllWindows().length === 0) createWindow()
