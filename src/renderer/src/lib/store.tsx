@@ -9,7 +9,7 @@ export type Route =
   | { name: 'instance'; id: string; tab?: InstanceTab }
   | { name: 'discover'; type: ProjectType; instanceId?: string }
   | { name: 'project'; id: string; instanceId?: string }
-  | { name: 'settings' }
+  | { name: 'wardrobe' }
 
 export type InstanceTab = 'content' | 'worlds' | 'screenshots' | 'files' | 'logs' | 'settings'
 
@@ -43,6 +43,7 @@ interface Store {
   activeAccount: Account | null
   setAccounts: (a: Account[]) => void
   signIn: () => Promise<Account | undefined>
+  online: number | null
   modal: ModalState
   openModal: (m: ModalState) => void
   closeModal: () => void
@@ -74,6 +75,7 @@ export function StoreProvider({ settings: initial, children }: { settings: Setti
   const [modal, setModal] = useState<ModalState>(null)
   const [running, setRunning] = useState<Set<string>>(new Set())
   const [accounts, setAccounts] = useState<Account[]>([])
+  const [online, setOnline] = useState<number | null>(null)
   const toastId = useRef(0)
 
   const update = useCallback((patch: Partial<Settings>) => {
@@ -87,6 +89,7 @@ export function StoreProvider({ settings: initial, children }: { settings: Setti
     refreshInstances()
     api.tasks.list().then(setTasks)
     api.auth.list().then(setAccounts).catch(() => {})
+    api.online.count().then(setOnline).catch(() => {})
     api.game.running().then((ids) => setRunning(new Set(ids))).catch(() => {})
     const onProgress = (p: LaunchProgress) => {
       setProgress(p)
@@ -98,7 +101,7 @@ export function StoreProvider({ settings: initial, children }: { settings: Setti
         return next
       })
     }
-    const offs = [api.instances.onChanged(refreshInstances), api.tasks.onChanged(setTasks), api.game.onProgress(onProgress)]
+    const offs = [api.instances.onChanged(refreshInstances), api.tasks.onChanged(setTasks), api.game.onProgress(onProgress), api.online.onChanged(setOnline)]
     return () => offs.forEach((off) => off())
   }, [refreshInstances])
 
@@ -188,6 +191,7 @@ export function StoreProvider({ settings: initial, children }: { settings: Setti
     activeAccount,
     setAccounts,
     signIn,
+    online,
     modal,
     openModal: setModal,
     closeModal: () => setModal(null)

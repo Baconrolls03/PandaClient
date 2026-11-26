@@ -12,6 +12,7 @@ interface Stored {
   username: string
   refresh: string // encrypted, base64
   mc?: { token: string; exp: number } // encrypted access token cache
+  panda?: string // encrypted PandaClient session token
 }
 interface Store {
   active: string | null
@@ -145,4 +146,24 @@ function xuidOf(token: string): string {
   } catch {
     return ''
   }
+}
+
+/* ───────────── PandaClient session (for cosmetics) ───────────── */
+
+export function pandaToken(uuid: string): string | null {
+  const acc = load().accounts.find((a) => a.uuid === uuid)
+  try {
+    return acc?.panda ? unseal(acc.panda) : null
+  } catch {
+    return null
+  }
+}
+
+export async function setPandaToken(uuid: string, token: string | null): Promise<void> {
+  const store = load()
+  const acc = store.accounts.find((a) => a.uuid === uuid)
+  if (!acc) return
+  if (token) acc.panda = seal(token)
+  else delete acc.panda
+  await save(store)
 }

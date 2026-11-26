@@ -1,8 +1,11 @@
 // In-browser stand-in for the Electron bridge (`npm run dev:web`). Sample data only.
 import { live, webModrinth } from './webModrinth'
+import seedCosmetics from '../../../../supabase/seed/cosmetics.json'
 import type {
   Account,
   ContentItem,
+  Cosmetic,
+  Loadout,
   Instance,
   LaunchProgress,
   MrProject,
@@ -15,6 +18,7 @@ import type {
   VersionInfo
 } from '@shared/types'
 
+const PANDA_API = 'https://yljkeadmxsmwiclrbvgp.supabase.co/functions/v1/api'
 const wait = (ms: number) => new Promise((r) => setTimeout(r, ms))
 
 function icon(letter: string, hue: number): string {
@@ -247,6 +251,7 @@ export function createMock(): PandaApi {
   }
 
   let accounts: Account[] = []
+  let loadout: Loadout = { cape: 'panda-classic', hat: 'beanie' }
   const progressListeners = new Set<(p: LaunchProgress) => void>()
   const emit = (p: LaunchProgress) => progressListeners.forEach((l) => l(p))
   const find = (id: string) => instances.find((i) => i.id === id)!
@@ -442,6 +447,38 @@ export function createMock(): PandaApi {
         changed()
         return inst
       }
+    },
+    wardrobe: {
+      // Live catalogue when the PandaClient server is reachable, else the copy in the repo.
+      catalog: () => live(async () => {
+        const res = await fetch(`${PANDA_API}/cosmetics`)
+        if (!res.ok) throw new Error()
+        return (await res.json()) as Cosmetic[]
+      }, async () => seedCosmetics as unknown as Cosmetic[]),
+      loadout: async () => loadout,
+      saveLoadout: async (l) => (loadout = { ...l }),
+      profile: async () => {
+        const acc = accounts.find((a) => a.active)
+        if (!acc) throw new Error('Sign in first')
+        return { id: acc.uuid, name: acc.username, skin: null, capes: [] }
+      },
+      uploadSkin: async () => {
+        throw new Error('Skin uploads only work in the desktop app.')
+      },
+      resetSkin: async () => ({ id: '', name: '', skin: null, capes: [] }),
+      setCape: async () => ({ id: '', name: '', skin: null, capes: [] }),
+      readImage: async () => {
+        throw new Error('Only in the desktop app')
+      }
+    },
+    online: {
+      // Real count only; null (hidden) when the server can't be reached.
+      count: () => live(async () => {
+        const res = await fetch(`${PANDA_API}/online`)
+        if (!res.ok) throw new Error()
+        return ((await res.json()) as { online: number }).online
+      }, async () => null),
+      onChanged: () => () => {}
     },
     tasks: {
       list: async () => tasks,

@@ -4,15 +4,31 @@
     "module": "ESNext",
     "moduleResolution": "bundler",
     "jsx": "react-jsx",
-    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "lib": [
+      "ES2022",
+      "DOM",
+      "DOM.Iterable"
+    ],
     "strict": true,
     "skipLibCheck": true,
     "types": [],
     "paths": {
-      "@/*": ["./src/renderer/src/*"],
-      "@shared/*": ["./src/shared/*"],
-      "@assets/*": ["./assets/*"]
-    }
+      "@/*": [
+        "./src/renderer/src/*"
+      ],
+      "@shared/*": [
+        "./src/shared/*"
+      ],
+      "@assets/*": [
+        "./assets/*"
+      ]
+    },
+    "resolveJsonModule": true
   },
-  "include": ["src/renderer/src/**/*", "src/shared/**/*", "src/preload/index.d.ts"]
+  "include": [
+    "src/renderer/src/**/*",
+    "src/shared/**/*",
+    "src/preload/index.d.ts",
+    "supabase/seed/*.json"
+  ]
 }

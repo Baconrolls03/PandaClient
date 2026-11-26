@@ -372,6 +372,61 @@ export interface MrGameVersion {
   major: boolean
 }
 
+/* ───────────── Cosmetics & wardrobe ───────────── */
+
+export type CosmeticCategory = 'cape' | 'hat' | 'mask' | 'bandana' | 'glasses' | 'wings' | 'backpack'
+export const COSMETIC_CATEGORIES: { id: CosmeticCategory; name: string }[] = [
+  { id: 'cape', name: 'Capes' },
+  { id: 'hat', name: 'Hats' },
+  { id: 'glasses', name: 'Glasses' },
+  { id: 'mask', name: 'Masks' },
+  { id: 'bandana', name: 'Bandanas' },
+  { id: 'wings', name: 'Wings' },
+  { id: 'backpack', name: 'Backpacks' }
+]
+
+export interface CosmeticBox {
+  from: [number, number, number]
+  to: [number, number, number]
+  color: string
+  /** Wing beat: rotate this box around `pivot` by up to `flap` degrees. */
+  pivot?: [number, number, number]
+  flap?: number
+}
+
+export interface Cosmetic {
+  id: string
+  name: string
+  category: CosmeticCategory
+  rarity: 'common' | 'rare' | 'epic' | 'legendary'
+  /** Capes: a pattern + colours. Everything else: boxes in head/body space (skin pixels; face looks toward -z). */
+  model: { pattern?: string; colors?: string[]; space?: 'head' | 'body'; boxes?: CosmeticBox[] }
+}
+
+export type Loadout = Partial<Record<CosmeticCategory, string>>
+
+export interface MojangSkin {
+  id: string
+  state: 'ACTIVE' | 'INACTIVE'
+  variant: 'CLASSIC' | 'SLIM'
+  /** data: URL (fetched by the main process so the preview works offline). */
+  image: string | null
+}
+
+export interface MojangCape {
+  id: string
+  alias: string
+  state: 'ACTIVE' | 'INACTIVE'
+  image: string | null
+}
+
+export interface MojangProfile {
+  id: string
+  name: string
+  skin: MojangSkin | null
+  capes: MojangCape[]
+}
+
 /* ───────────── API exposed on window.panda ───────────── */
 
 export interface PandaApi {
@@ -383,7 +438,7 @@ export interface PandaApi {
     get(): Promise<Settings>
     set(patch: Partial<Settings>): Promise<Settings>
     pickDirectory(current?: string): Promise<string | null>
-    pickFile(kind: 'java' | 'image' | 'mrpack' | 'content', current?: string): Promise<string | null>
+    pickFile(kind: 'java' | 'image' | 'skin' | 'mrpack' | 'content', current?: string): Promise<string | null>
   }
   system: {
     info(): Promise<SystemInfo>
@@ -449,6 +504,23 @@ export interface PandaApi {
     categories(): Promise<MrCategory[]>
     gameVersions(): Promise<MrGameVersion[]>
     installModpack(projectId: string, versionId?: string): Promise<Instance>
+  }
+  wardrobe: {
+    catalog(): Promise<Cosmetic[]>
+    loadout(): Promise<Loadout>
+    saveLoadout(loadout: Loadout): Promise<Loadout>
+    /** Your Minecraft profile: skin and the Mojang capes you own. */
+    profile(): Promise<MojangProfile>
+    uploadSkin(file: string, variant: 'classic' | 'slim'): Promise<MojangProfile>
+    resetSkin(): Promise<MojangProfile>
+    setCape(capeId: string | null): Promise<MojangProfile>
+    /** Read a local PNG for previewing (skins). */
+    readImage(file: string): Promise<string>
+  }
+  online: {
+    /** Real number of PandaClient players online, or null when offline. */
+    count(): Promise<number | null>
+    onChanged(cb: (count: number | null) => void): () => void
   }
   tasks: {
     list(): Promise<Task[]>

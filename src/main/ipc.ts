@@ -16,6 +16,8 @@ import * as tasks from './services/tasks'
 import * as accounts from './services/accounts'
 import { launchGame, runningInstances, stopGame } from './services/game/launch'
 import { safeJoin } from './services/paths'
+import * as panda from './services/pandaApi'
+import * as mojangProfile from './services/mojangProfile'
 
 const SETTINGS_KEYS: (keyof Settings)[] = [
   'ramMb', 'javaPath', 'jvmArgs', 'window', 'hooks', 'gameDir', 'maxDownloads', 'onLaunch', 'refocusOnExit', 'selectedInstance',
@@ -25,6 +27,7 @@ const SETTINGS_KEYS: (keyof Settings)[] = [
 const FILE_FILTERS: Record<string, Electron.FileFilter[]> = {
   java: process.platform === 'win32' ? [{ name: 'Java', extensions: ['exe'] }] : [],
   image: [{ name: 'Images', extensions: ['png', 'jpg', 'jpeg', 'webp', 'gif'] }],
+  skin: [{ name: 'Minecraft skin', extensions: ['png'] }],
   mrpack: [{ name: 'Modrinth modpack', extensions: ['mrpack'] }],
   content: [{ name: 'Mods & packs', extensions: ['jar', 'zip'] }]
 }
@@ -43,6 +46,8 @@ export function registerIpc(win: BrowserWindow): void {
   const send = (channel: string, payload?: unknown) => !win.isDestroyed() && win.webContents.send(channel, payload)
   instances.onInstancesChanged(() => send('instances:changed'))
   tasks.onTasksChanged((list) => send('tasks:changed', list))
+  panda.onOnlineChanged((n) => send('online:changed', n))
+  panda.startHeartbeat()
 
   ipcMain.on('window:minimize', () => win.minimize())
   ipcMain.on('window:close', () => win.close())
@@ -140,6 +145,17 @@ export function registerIpc(win: BrowserWindow): void {
   ipcMain.handle('modrinth:gameVersions', () => mr.gameVersions())
   ipcMain.handle('modrinth:installModpack', (_e, id: string, versionId?: string) => mrpack.installModpack(id, versionId))
 
+  // Wardrobe: PandaClient cosmetics (our server) + real skins/capes (Mojang)
+  ipcMain.handle('wardrobe:catalog', () => panda.catalog())
+  ipcMain.handle('wardrobe:loadout', () => panda.loadout())
+  ipcMain.handle('wardrobe:saveLoadout', (_e, l) => panda.saveLoadout(l))
+  ipcMain.handle('wardrobe:profile', () => mojangProfile.profile())
+  ipcMain.handle('wardrobe:uploadSkin', (_e, file: string, variant: 'classic' | 'slim') => mojangProfile.uploadSkin(file, variant))
+  ipcMain.handle('wardrobe:resetSkin', () => mojangProfile.resetSkin())
+  ipcMain.handle('wardrobe:setCape', (_e, id: string | null) => mojangProfile.setCape(id))
+  ipcMain.handle('wardrobe:readImage', (_e, file: string) => mojangProfile.readImage(file))
+  ipcMain.handle('online:count', () => panda.onlineCount())
+
   // Tasks
   ipcMain.handle('tasks:list', () => tasks.listTasks())
   ipcMain.handle('tasks:dismiss', (_e, id: string) => tasks.dismissTask(id))
@@ -148,7 +164,11 @@ export function registerIpc(win: BrowserWindow): void {
   ipcMain.handle('auth:list', () => accounts.listAccounts())
   ipcMain.handle('auth:login', () => accounts.login())
   ipcMain.handle('auth:logout', (_e, uuid: string) => accounts.logout(uuid))
-  ipcMain.handle('auth:setActive', (_e, uuid: string) => accounts.setActive(uuid))
+  ipcMain.handle('auth:setActive', async (_e, uuid: string) => {
+    const list = await accounts.setActive(uuid)
+    void panda.refreshOnline()
+    return list
+  })
 
   // Launch
   ipcMain.handle('game:launch', async (_e, id: string, quickPlay?: QuickPlay) => {

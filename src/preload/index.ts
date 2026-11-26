@@ -83,6 +83,20 @@ const api: PandaApi = {
     gameVersions: () => invoke('modrinth:gameVersions'),
     installModpack: (id, versionId) => invoke('modrinth:installModpack', id, versionId)
   },
+  wardrobe: {
+    catalog: () => invoke('wardrobe:catalog'),
+    loadout: () => invoke('wardrobe:loadout'),
+    saveLoadout: (l) => invoke('wardrobe:saveLoadout', l),
+    profile: () => invoke('wardrobe:profile'),
+    uploadSkin: (file, variant) => invoke('wardrobe:uploadSkin', file, variant),
+    resetSkin: () => invoke('wardrobe:resetSkin'),
+    setCape: (id) => invoke('wardrobe:setCape', id),
+    readImage: (file) => invoke('wardrobe:readImage', file)
+  },
+  online: {
+    count: () => invoke('online:count'),
+    onChanged: (cb) => subscribe<number | null>('online:changed', cb)
+  },
   tasks: {
     list: () => invoke('tasks:list'),
     dismiss: (id) => invoke('tasks:dismiss', id),

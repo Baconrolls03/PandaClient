@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react'
-import { ArrowRight, Compass, Download, Plus, Zap } from 'lucide-react'
+import { ArrowRight, Compass, Download, Plus, Shirt, Zap } from 'lucide-react'
 import type { MrSearchHit, SearchQuery } from '@shared/types'
 import { api } from '@/lib/api'
 import { useStore } from '@/lib/store'
-import { compact, timeAgo } from '@/lib/format'
+import { compact, playtime, timeAgo } from '@/lib/format'
 import { Logo } from '@/components/Logo'
 import { PlayButton } from '@/components/PlayButton'
 import { NewsCard } from '@/components/NewsCard'
@@ -44,11 +44,10 @@ function SeeAll({ onClick }: { onClick: () => void }) {
 }
 
 export function Home() {
-  const { selected, instances, launch, progress, navigate, openModal, attempt, update, toast } = useStore()
+  const { selected, instances, navigate, openModal, attempt, update, toast, settings, online } = useStore()
   const [packs, setPacks] = useState<MrSearchHit[] | null>(null)
   const [mods, setMods] = useState<MrSearchHit[] | null>(null)
   const [quickBusy, setQuickBusy] = useState(false)
-  const busy = progress.instanceId === selected?.id && progress.stage !== 'idle' && progress.stage !== 'error'
 
   useEffect(() => {
     api.modrinth.search(query('modpack', 'downloads', 5)).then((r) => setPacks(r.hits)).catch(() => setPacks([]))
@@ -82,7 +81,10 @@ export function Home() {
         <div className="relative">
           {selected ? (
             <>
-              <p className="mb-4 text-sm font-medium text-mint">{selected.lastPlayed ? 'Continue playing' : 'Ready to play'}</p>
+              <p className="mb-4 flex items-center gap-3 text-sm font-medium text-mint">
+                {selected.lastPlayed ? 'Continue playing' : 'Ready to play'}
+                {online != null && <span className="rounded-full bg-mint/10 px-2.5 py-0.5 text-xs text-mint">{online.toLocaleString()} online now</span>}
+              </p>
               <div className="flex items-center gap-5">
                 <InstanceIcon url={selected.iconUrl} preset={selected.iconPreset} size={84} className="rounded-2xl shadow-lift" />
                 <div className="min-w-0">
@@ -92,6 +94,12 @@ export function Home() {
                     <span>Minecraft {selected.mcVersion}</span>
                     <span>·</span>
                     <span>{selected.lastPlayed ? `Played ${timeAgo(selected.lastPlayed)}` : 'Never played'}</span>
+                    {settings.showPlayTime && selected.playtimeSec > 0 && (
+                      <>
+                        <span>·</span>
+                        <span>{playtime(selected.playtimeSec)} played</span>
+                      </>
+                    )}
                   </div>
                 </div>
               </div>
@@ -102,6 +110,9 @@ export function Home() {
                 </Button>
                 <Button size="lg" variant="ghost" onClick={() => navigate({ name: 'discover', type: 'mod', instanceId: selected.id })}>
                   <Plus size={18} /> Add mods
+                </Button>
+                <Button size="lg" variant="ghost" onClick={() => navigate({ name: 'wardrobe' })}>
+                  <Shirt size={18} /> Wardrobe
                 </Button>
               </div>
             </>
@@ -138,6 +149,7 @@ export function Home() {
         </Section>
       )}
 
+      {settings.homeSections.popularModpacks && (
       <Section title="Popular modpacks" action={<SeeAll onClick={() => navigate({ name: 'discover', type: 'modpack' })} />}>
         <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-5">
           {(packs ?? Array.from({ length: 5 }, () => null)).map((h, i) =>
@@ -146,8 +158,11 @@ export function Home() {
           {packs?.length === 0 && <p className="col-span-full text-sm text-muted">Couldn't reach Modrinth.</p>}
         </div>
       </Section>
+      )}
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.3fr_1fr] [&>*]:min-w-0">
+      {(settings.homeSections.trendingMods || settings.homeSections.news) && (
+      <div className={`grid grid-cols-1 gap-6 [&>*]:min-w-0 ${settings.homeSections.trendingMods && settings.homeSections.news ? 'lg:grid-cols-[1.3fr_1fr]' : ''}`}>
+        {settings.homeSections.trendingMods && (
         <Section title="Trending mods" action={<SeeAll onClick={() => navigate({ name: 'discover', type: 'mod' })} />}>
           <div className="rounded-2xl border border-border bg-surface p-2 shadow-soft">
             {(mods ?? []).map((h) => (
@@ -169,10 +184,14 @@ export function Home() {
             {mods == null && <div className="h-72 animate-pulse rounded-xl bg-raised/50" />}
           </div>
         </Section>
-        <div className="pt-9">
-          <NewsCard />
-        </div>
+        )}
+        {settings.homeSections.news && (
+          <div className={settings.homeSections.trendingMods ? 'pt-9' : ''}>
+            <NewsCard />
+          </div>
+        )}
       </div>
+      )}
       <p className="pb-2 text-center text-[11px] text-muted/70">
         Fabric content from Modrinth · Minecraft files always downloaded from Mojang
       </p>

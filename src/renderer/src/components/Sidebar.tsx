@@ -1,4 +1,4 @@
-import { Compass, Home, Library, Plus, Settings as SettingsIcon, type LucideIcon } from 'lucide-react'
+import { Compass, Home, Library, Plus, Settings as SettingsIcon, Shirt, type LucideIcon } from 'lucide-react'
 import { useStore, type Route } from '@/lib/store'
 import { AccountCard } from './AccountCard'
 import { InstanceIcon } from './ui'
@@ -8,12 +8,12 @@ const items: { route: Route; match: Route['name'][]; label: string; icon: Lucide
   { route: { name: 'home' }, match: ['home'], label: 'Home', icon: Home },
   { route: { name: 'library' }, match: ['library', 'instance'], label: 'Library', icon: Library },
   { route: { name: 'discover', type: 'mod' }, match: ['discover', 'project'], label: 'Discover', icon: Compass },
-  { route: { name: 'settings' }, match: ['settings'], label: 'Settings', icon: SettingsIcon }
+  { route: { name: 'wardrobe' }, match: ['wardrobe'], label: 'Wardrobe', icon: Shirt }
 ]
 
 export function Sidebar() {
-  const { route, navigate, instances, openModal } = useStore()
-  const recent = instances.slice(0, 5)
+  const { route, navigate, instances, openModal, settings, online } = useStore()
+  const recent = settings.sidebarRecents ? instances.slice(0, 5) : []
 
   return (
     <aside className="flex w-60 shrink-0 flex-col gap-6 border-r border-border/60 bg-bg p-4">
@@ -33,9 +33,27 @@ export function Sidebar() {
             </button>
           )
         })}
+        <button
+          onClick={() => openModal({ kind: 'settings' })}
+          className="group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-muted transition-all duration-150 hover:bg-surface hover:text-text"
+        >
+          <SettingsIcon size={18} className="text-muted group-hover:text-text" />
+          Settings
+        </button>
       </nav>
+      {online != null && (
+        <div className="-mt-3 flex items-center gap-2 px-3 text-xs text-muted" title="PandaClient players with the launcher or game open right now">
+          <span className="relative flex size-2">
+            <span className="absolute inline-flex size-full animate-ping rounded-full bg-mint opacity-60" />
+            <span className="relative inline-flex size-2 rounded-full bg-mint" />
+          </span>
+          <span>
+            <span className="font-semibold text-text">{online.toLocaleString()}</span> {online === 1 ? 'player' : 'players'} online
+          </span>
+        </div>
+      )}
 
-      <div className="min-h-0 flex-1 overflow-y-auto">
+      <div className={`min-h-0 flex-1 overflow-y-auto ${settings.sidebarRecents ? '' : 'invisible'}`}>
         <div className="mb-2 flex items-center justify-between px-3">
           <span className="text-[11px] font-semibold uppercase tracking-wider text-muted">Recent</span>
           <button

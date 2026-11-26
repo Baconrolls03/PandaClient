@@ -10,13 +10,16 @@ import { Home } from '@/pages/Home'
 import { Library } from '@/pages/Library'
 import { Discover } from '@/pages/Discover'
 import { Project } from '@/pages/Project'
-import { Settings } from '@/pages/Settings'
+import { Wardrobe } from '@/pages/Wardrobe'
 import { Instance } from '@/pages/instance/Instance'
 import { CreateInstanceModal } from '@/modals/CreateInstanceModal'
 import { InstallModal } from '@/modals/InstallModal'
+import { SettingsModal } from '@/modals/SettingsModal'
+import { useAppearance } from '@/lib/appearance'
 
 function Shell() {
-  const { route, modal } = useStore()
+  const { route, modal, settings } = useStore()
+  useAppearance(settings)
   const key = JSON.stringify(route)
   return (
     <div className="flex h-full flex-col">
@@ -30,13 +33,14 @@ function Shell() {
             {route.name === 'instance' && <Instance id={route.id} tab={route.tab} />}
             {route.name === 'discover' && <Discover type={route.type} instanceId={route.instanceId} />}
             {route.name === 'project' && <Project id={route.id} instanceId={route.instanceId} />}
-            {route.name === 'settings' && <Settings />}
+            {route.name === 'wardrobe' && <Wardrobe />}
           </main>
           <PlayBar />
         </div>
       </div>
       {modal?.kind === 'create-instance' && <CreateInstanceModal />}
       {modal?.kind === 'install' && <InstallModal projectId={modal.projectId} title={modal.title} projectType={modal.projectType} />}
+      {modal?.kind === 'settings' && <SettingsModal section={modal.section} />}
       <Toasts />
     </div>
   )
