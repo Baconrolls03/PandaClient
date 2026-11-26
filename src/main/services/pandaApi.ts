@@ -2,7 +2,7 @@
 import { net } from 'electron'
 import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
-import type { Cosmetic, Friend, IncomingShare, Instance, Loadout, SharePlayer } from '@shared/types'
+import type { Cosmetic, Friend, IncomingShare, Instance, Invite, Loadout, SharePlayer } from '@shared/types'
 import { getSettings } from './settings'
 import { runningInstances } from './game/launch'
 import { getInstance } from './instances'
@@ -89,7 +89,7 @@ async function beat(): Promise<void> {
       .then((r) => r.online)
       .catch(() => null)
   }
-  if (next !== null) void pollShares()
+  if (next !== null) void pollShares().then(pollInvites)
   if (next !== online) {
     online = next
     listeners.forEach((l) => l(online))
@@ -174,3 +174,33 @@ export const friends = () => authed<Friend[]>('/friends')
 export const addFriend = (username: string) => authed<{ status: string; username: string }>('/friends/add', { method: 'POST', body: JSON.stringify({ username }) })
 export const acceptFriend = (uuid: string) => authed('/friends/accept', { method: 'POST', body: JSON.stringify({ uuid }) })
 export const removeFriend = (uuid: string) => authed('/friends/remove', { method: 'POST', body: JSON.stringify({ uuid }) })
+
+/* ───────────── Party invites ───────────── */
+
+let invites: Invite[] = []
+const inviteListeners = new Set<(i: Invite[]) => void>()
+export const pendingInvites = () => invites
+export const onInvitesChanged = (fn: (i: Invite[]) => void) => (inviteListeners.add(fn), () => inviteListeners.delete(fn))
+async function pollInvites(): Promise<void> {
+  try {
+    const next = await authed<Invite[]>('/invites')
+    const changed = next.map((i) => i.id).join() !== invites.map((i) => i.id).join()
+    invites = next
+    if (changed) inviteListeners.forEach((l) => l(invites))
+  } catch {
+    /* offline */
+  }
+}
+/** Invite a friend to the server you're on right now. */
+export async function inviteFriend(uuid: string): Promise<string> {
+  const server = currentServer()
+  if (!server || server === 'Singleplayer') throw new Error('Join a server first, then invite friends to it')
+  await authed('/invites', { method: 'POST', body: JSON.stringify({ to: uuid, server }) })
+  return server
+}
+export async function dismissInvite(id: string): Promise<void> {
+  await authed('/invites/dismiss', { method: 'POST', body: JSON.stringify({ id }) })
+  invites = invites.filter((i) => i.id !== id)
+  inviteListeners.forEach((l) => l(invites))
+}
+export const myServer = () => currentServer()

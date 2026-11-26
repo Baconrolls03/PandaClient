@@ -516,7 +516,12 @@ export function createMock(): PandaApi {
       ],
       add: async (u) => ({ status: 'outgoing', username: u }),
       accept: async () => {},
-      remove: async () => {}
+      remove: async () => {},
+      invite: async () => 'mc.hypixel.net',
+      myServer: async () => null,
+      invites: async () => [],
+      onInvites: () => () => {},
+      dismissInvite: async () => {}
     },
     servers: {
       ping: async () => ({ online: 31250, max: 200000, motd: 'A Minecraft server', icon: null, version: '1.8-1.21', pingMs: 42 })

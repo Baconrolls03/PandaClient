@@ -601,6 +601,13 @@ export interface PandaApi {
     add(username: string): Promise<{ status: string; username: string }>
     accept(uuid: string): Promise<void>
     remove(uuid: string): Promise<void>
+    /** Invite a friend to the server you're playing on; resolves to that server. */
+    invite(uuid: string): Promise<string>
+    /** The server you're on right now (from the PandaClient mod), if any. */
+    myServer(): Promise<string | null>
+    invites(): Promise<Invite[]>
+    onInvites(cb: (i: Invite[]) => void): () => void
+    dismissInvite(id: string): Promise<void>
   }
   servers: {
     ping(address: string): Promise<ServerStatus>
@@ -672,4 +679,11 @@ export interface ServerStatus {
   icon: string | null
   version: string
   pingMs: number
+}
+
+export interface Invite {
+  id: string
+  from: string
+  server: string
+  createdAt: string
 }

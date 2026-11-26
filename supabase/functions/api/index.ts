@@ -156,6 +156,29 @@ Deno.serve(async (req) => {
       return json({ ok: true })
     }
 
+    // ── Party invites ──────────────────────────────────────────────────────
+    if (req.method === 'POST' && path === '/invites') {
+      const { to, server } = await req.json()
+      if (typeof to !== 'string' || !UUID.test(to) || typeof server !== 'string' || !/^[\w.-]{1,100}(:\d{1,5})?$/.test(server)) return fail(400, 'Bad request')
+      const { data: f } = await db.from('friends').select('status').or(`and(a.eq.${me.uuid},b.eq.${to}),and(a.eq.${to},b.eq.${me.uuid})`).eq('status', 'accepted').maybeSingle()
+      if (!f) return fail(403, 'You can only invite friends')
+      await db.from('invites').insert({ from_uuid: me.uuid, to_uuid: to, server })
+      return json({ ok: true })
+    }
+
+    if (req.method === 'GET' && path === '/invites') {
+      const since = new Date(Date.now() - 10 * 60_000).toISOString()
+      const { data } = await db.from('invites').select('id, server, created_at, players!invites_from_uuid_fkey(username)').eq('to_uuid', me.uuid).eq('dismissed', false).gte('created_at', since).order('created_at', { ascending: false }).limit(5)
+      return json((data ?? []).map((r) => ({ id: r.id, server: r.server, createdAt: r.created_at, from: (r.players as { username: string } | null)?.username ?? 'A friend' })))
+    }
+
+    if (req.method === 'POST' && path === '/invites/dismiss') {
+      const { id } = await req.json()
+      if (typeof id !== 'string' || !UUID.test(id)) return fail(400, 'Bad request')
+      await db.from('invites').update({ dismissed: true }).eq('id', id).eq('to_uuid', me.uuid)
+      return json({ ok: true })
+    }
+
     // ── Sharing mod instances ──────────────────────────────────────────────
     // Find PandaClient players by name (to pick who to share with).
     if (req.method === 'GET' && path === '/players') {

@@ -129,3 +129,10 @@
 10|com.mojang.blaze3d.vertex.VertexConsumer|-|addVertex|setColor|setUv|setOverlay|setLight|setNormal|class
 10|net.fabricmc.fabric.api.client.rendering.v1.LivingEntityFeatureRendererRegistrationCallback|-|.
 10|net.fabricmc.fabric.api.client.rendering.v1.LivingEntityFeatureRendererRegistrationCallback$RegistrationHelper|-|.
+11|net.minecraft.client.renderer.state.SkyRenderState|-|.
+11|net.minecraft.client.renderer.SkyRenderer|p|extract|render|Sky|class
+11|net.minecraft.client.renderer.entity.state.HitboxRenderState|-|.
+11|net.minecraft.client.renderer.debug.EntityHitboxDebugRenderer|p|.
+11|com.mojang.math.Axis|-|YP|rotationDegrees|class
+11|com.mojang.blaze3d.vertex.PoseStack|-|pushPose|popPose|mulPose|translate|scale\(|last\(|class
+11|net.minecraft.client.renderer.entity.EntityRenderer|-|getNameTag|class

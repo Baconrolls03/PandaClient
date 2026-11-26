@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Check, LogIn, UserPlus, Users, X } from 'lucide-react'
+import { Check, LogIn, Send, UserPlus, Users, X } from 'lucide-react'
 import type { Friend } from '@shared/types'
 import { api } from '@/lib/api'
 import { useStore } from '@/lib/store'
@@ -12,8 +12,10 @@ export function Friends() {
   const [name, setName] = useState('')
   const [adding, setAdding] = useState(false)
   const [error, setError] = useState('')
+  const [myServer, setMyServer] = useState<string | null>(null)
 
   const refresh = useCallback(() => {
+    api.friends.myServer().then(setMyServer).catch(() => {})
     api.friends
       .list()
       .then((l) => (setList(l), setError('')))
@@ -100,6 +102,11 @@ export function Friends() {
                 <p className="font-medium">{f.username}</p>
                 <p className="truncate text-xs text-muted">{f.online ? (f.server ? `Playing on ${f.server}` : 'Online') : 'Offline'}</p>
               </div>
+              {f.online && myServer && myServer !== 'Singleplayer' && f.server !== myServer && (
+                <Button size="sm" variant="secondary" onClick={() => attempt(() => api.friends.invite(f.uuid), `Invited ${f.username} to ${myServer}`)}>
+                  <Send size={13} /> Invite
+                </Button>
+              )}
               {f.server && f.server !== 'Singleplayer' && (
                 <Button size="sm" variant="primary" onClick={() => join(f)}>
                   <LogIn size={14} /> Join
