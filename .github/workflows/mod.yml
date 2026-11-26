@@ -13,7 +13,7 @@ jobs:
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: 21
+          java-version: 25
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: current
@@ -33,7 +33,7 @@ jobs:
         run: |
           echo "----- versions"
           gradle --version | grep -E "^Gradle" || true
-          curl -s https://maven.fabricmc.net/net/fabricmc/fabric-loom/maven-metadata.xml | grep -oE '<(latest|release)>[^<]+' || true
+          curl -s https://maven.fabricmc.net/net/fabricmc/fabric-loom/maven-metadata.xml | grep -oE '<version>1\.1[0-9][^<]*' | grep -v SNAPSHOT | tr '\n' ' ' || true; echo
           curl -s https://meta.fabricmc.net/v2/versions/loader/1.21.11 | grep -oE '"version":"[^"]+"' | head -2 || true
           curl -s "https://api.modrinth.com/v2/project/fabric-api/version?game_versions=%5B%221.21.11%22%5D" | grep -oE '"version_number":"[^"]+"' | head -2 || true
           echo "----- errors"

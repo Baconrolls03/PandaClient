@@ -6,7 +6,7 @@ buildscript {
     }
     dependencies {
         // Latest Loom 1.x (dynamic so the build keeps working as Loom ships fixes).
-        classpath 'net.fabricmc:fabric-loom:1.+'
+        classpath 'net.fabricmc:fabric-loom:[1.11,1.15)'
     }
 }
 apply plugin: 'fabric-loom'
@@ -31,6 +31,7 @@ processResources {
 }
 
 java {
-    toolchain.languageVersion = JavaLanguageVersion.of(21)
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
 }
 tasks.withType(JavaCompile).configureEach { it.options.release = 21 }
