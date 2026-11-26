@@ -9,7 +9,13 @@ for c in net/fabricmc/fabric/api/client/rendering/v1/hud/HudElementRegistry.clas
          net/fabricmc/fabric/api/client/keybinding/v1/KeyBindingHelper.class \
          net/fabricmc/fabric/api/client/event/lifecycle/v1/ClientTickEvents.class; do CP="$CP:$(find_jar $c)"; done
 for f in $(echo "$jars" | grep -E '/(joml|lwjgl-glfw|datafixerupper|brigadier|authlib|guava)-[0-9]' ); do CP="$CP:$f"; done
+MCJAR="${CP%%:*}"
 grep -v '^#' mod/tools/api.txt | grep "^$GROUP|" | while IFS='|' read -r g cls priv filter; do
+  if [ "${cls#FIND:}" != "$cls" ]; then
+    echo "== classes matching ${cls#FIND:}"
+    unzip -l "$MCJAR" | grep -oE "net/minecraft/[A-Za-z0-9_/$]*\.class" | grep -iE "${cls#FIND:}" | grep -v '\$' | head -25
+    continue
+  fi
   echo "== $cls"
   flag=-public; [ "$priv" = p ] && flag=-p
   javap -cp "$CP" $flag "$cls" 2>&1 | grep -E "$filter" | sed -E 's/^  //; s/(public|final|java\.lang\.|net\.minecraft\.|com\.mojang\.) ?//g' | head -90
