@@ -4,7 +4,7 @@ import { join } from 'node:path'
 import { app } from 'electron'
 import type { Instance } from '@shared/types'
 import { installProject, listContent } from './content'
-import { sha1File } from './http'
+import { download, sha1File } from './http'
 
 /** Minecraft versions the bundled PandaClient mod is built for. */
 export const PANDA_MOD_VERSIONS = ['1.21.11']
@@ -35,17 +35,21 @@ export async function ensurePandaMod(inst: Instance, enabled: boolean, log: (msg
     if (existsSync(target)) await rm(target, { force: true })
     return
   }
-  const src = bundledJar()
-  if (!src) return
   await mkdir(mods, { recursive: true })
+  let src = bundledJar()
+  if (!src) {
+    // Not found next to the app (unusual install): fetch the copy published with this launcher version.
+    src = join(app.getPath('userData'), 'pandaclient-mod.jar')
+    log('Downloading the PandaClient mod')
+    await download(`https://github.com/Baconrolls03/PandaClient/releases/download/v${app.getVersion()}/pandaclient-mod.jar`, src)
+  }
   // Remove copies the user may have added under another name, and a disabled copy.
   for (const f of await readdir(mods)) {
     if (f !== JAR && /^pandaclient.*\.jar(\.disabled)?$/i.test(f)) await rm(join(mods, f), { force: true })
   }
-  if (!existsSync(target) || (await sha1File(target)) !== (await sha1File(src))) {
-    log('Adding the PandaClient mod')
-    await copyFile(src, target)
-  }
+  log('Adding the PandaClient mod')
+  if (!existsSync(target) || (await sha1File(target)) !== (await sha1File(src))) await copyFile(src, target)
+  if (!existsSync(target)) throw new Error(`Could not add the PandaClient mod to ${mods}`)
   const items = await listContent(inst.id)
   const hasFabricApi = items.some(
     (i) => i.type === 'mod' && i.enabled && (i.project?.id === FABRIC_API_ID || i.project?.slug === 'fabric-api' || /^fabric-api/i.test(i.file))

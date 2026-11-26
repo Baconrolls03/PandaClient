@@ -47,6 +47,7 @@ jobs:
           gradle -p mod build --no-daemon -q
           mkdir -p build/mods
           cp "$(ls mod/build/libs/pandaclient-*.jar | grep -v sources | head -1)" build/mods/pandaclient.jar
+          cp build/mods/pandaclient.jar build/pandaclient-mod.jar
           ls -la build/mods
       - run: npx electron-vite build && npx electron-builder --win --publish never
       # Pushes to main publish a GitHub Release (once per version); the app's updater reads latest.yml from it.
@@ -65,6 +66,7 @@ jobs:
             "release/PandaClient-Setup-$version.exe" \
             "release/PandaClient-Setup-$version.exe.blockmap" \
             release/latest.yml \
+          build/pandaclient-mod.jar \
             --target "$GITHUB_SHA" \
             --title "PandaClient $version" \
             --notes "Download **PandaClient-Setup-$version.exe** below and run it. Already have PandaClient? It updates itself."
