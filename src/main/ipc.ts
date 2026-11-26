@@ -20,6 +20,7 @@ import * as panda from './services/pandaApi'
 import * as mojangProfile from './services/mojangProfile'
 import * as importer from './services/importer'
 import * as updater from './services/updater'
+import { ensurePandaMod } from './services/pandaMod'
 
 const SETTINGS_KEYS: (keyof Settings)[] = [
   'ramMb', 'javaPath', 'jvmArgs', 'window', 'hooks', 'gameDir', 'maxDownloads', 'onLaunch', 'refocusOnExit', 'selectedInstance',
@@ -103,7 +104,12 @@ export function registerIpc(win: BrowserWindow): void {
 
   // Instances
   ipcMain.handle('instances:list', () => instances.listInstances())
-  ipcMain.handle('instances:create', (_e, input: CreateInstanceInput) => createInstance(input))
+  ipcMain.handle('instances:create', async (_e, input: CreateInstanceInput) => {
+    const inst = await createInstance(input)
+    // The PandaClient mod is part of every supported instance from the start.
+    void ensurePandaMod(inst, true, () => {}).catch(() => {})
+    return inst
+  })
   ipcMain.handle('instances:update', (_e, id: string, patch) => instances.updateInstance(id, patch))
   ipcMain.handle('instances:setIcon', (_e, id: string, file: string | null) => instances.setInstanceIcon(id, file))
   ipcMain.handle('instances:duplicate', (_e, id: string) => instances.duplicateInstance(id))

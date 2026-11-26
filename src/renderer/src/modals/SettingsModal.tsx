@@ -204,12 +204,6 @@ function Behavior({ s, update }: { s: Settings; update: (p: Partial<Settings>) =
       <Row title="Bring PandaClient back when Minecraft closes">
         <Toggle label="Refocus" checked={s.refocusOnExit} onChange={(v) => update({ refocusOnExit: v })} />
       </Row>
-      <Row
-        title="PandaClient mod"
-        text="On Minecraft 1.21.11, add the PandaClient mod when you press Play: Right Shift menu, movable HUD (FPS, CPS, keystrokes, armour…), zoom, toggle sprint and more."
-      >
-        <Toggle label="PandaClient mod" checked={s.pandaMod} onChange={(v) => update({ pandaMod: v })} />
-      </Row>
       <Heading>Home and library</Heading>
       <Row title="Compact library" text="Show instances as a list instead of cards.">
         <Toggle label="Compact library" checked={s.compactLibrary} onChange={(v) => update({ compactLibrary: v })} />

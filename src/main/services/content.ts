@@ -72,6 +72,7 @@ async function scanFiles(inst: Instance): Promise<ScannedFile[]> {
     if (!existsSync(dir)) continue
     for (const e of await readdir(dir, { withFileTypes: true })) {
       if (!e.isFile() || !EXT[type].test(e.name)) continue
+      if (type === 'mod' && /^pandaclient\.jar(\.disabled)?$/i.test(e.name)) continue // built into PandaClient
       const abs = join(dir, e.name)
       const s = await stat(abs)
       out.push({ type, file: e.name, rel: `${CONTENT_FOLDERS[type]}/${e.name}`, abs, size: s.size, mtime: s.mtimeMs })

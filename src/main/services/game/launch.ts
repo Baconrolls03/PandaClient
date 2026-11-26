@@ -145,7 +145,7 @@ export async function launchGame(id: string, emit: Emit, quickPlay?: QuickPlay):
     emit({ ...base, stage: 'preparing', progress: null, message: `Preparing ${inst.name}…` })
     const auth = await launchAuth()
     const installed = await install(inst.mcVersion, inst.loaderVersion, proxy)
-    await ensurePandaMod(inst, s.pandaMod !== false, (m) => progress(m, null, 'preparing'))
+    await ensurePandaMod(inst, true, (m) => progress(m, null, 'preparing'))
 
     const javaPath = inst.javaPath || s.javaPath
     const java = javaPath || (await ensureRuntime(installed.version.javaVersion?.component ?? 'jre-legacy', proxy))
