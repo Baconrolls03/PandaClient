@@ -33,24 +33,26 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      # Pushes to main publish a GitHub Release (once per version); the app's updater picks it up.
-      - name: Decide whether to publish a release
-        id: release
+      - run: npx electron-vite build && npx electron-builder --win --publish never
+      # Pushes to main publish a GitHub Release (once per version); the app's updater reads latest.yml from it.
+      - name: Publish release
+        if: github.ref == 'refs/heads/main'
         shell: bash
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           version=$(node -p "require('./package.json').version")
-          if [ "${{ github.ref }}" = "refs/heads/main" ] && ! gh release view "v$version" > /dev/null 2>&1; then
-            echo "publish=always" >> "$GITHUB_OUTPUT"
-            echo "Publishing PandaClient v$version"
-          else
-            echo "publish=never" >> "$GITHUB_OUTPUT"
-            echo "Not publishing (branch build, or v$version already released)"
+          if gh release view "v$version" > /dev/null 2>&1; then
+            echo "v$version is already released; bump the version in package.json to publish a new one."
+            exit 0
           fi
-      - run: npx electron-vite build && npx electron-builder --win --publish ${{ steps.release.outputs.publish }}
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          gh release create "v$version" \
+            "release/PandaClient-Setup-$version.exe" \
+            "release/PandaClient-Setup-$version.exe.blockmap" \
+            release/latest.yml \
+            --target "$GITHUB_SHA" \
+            --title "PandaClient $version" \
+            --notes "Download **PandaClient-Setup-$version.exe** below and run it. Already have PandaClient? It updates itself."
       - uses: actions/upload-artifact@v4
         with:
           name: PandaClient-Windows-Installer
