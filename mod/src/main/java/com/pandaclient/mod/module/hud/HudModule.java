@@ -12,7 +12,7 @@ import com.pandaclient.mod.module.Setting;
  */
 public abstract class HudModule extends Module {
     public double fx, fy;
-    public final Setting.Num scale = add(new Setting.Num("scale", "Scale", 1.0, 0.5, 3.0, 0.05));
+    public final Setting.Num scale = add(new Setting.Num("scale", "Scale", 1.0, 0.3, 3.0, 0.05));
 
     /** True while the HUD editor is open (elements show sample data). */
     public static boolean editing;

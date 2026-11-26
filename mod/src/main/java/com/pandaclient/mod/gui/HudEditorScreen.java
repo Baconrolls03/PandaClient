@@ -20,8 +20,18 @@ import java.util.List;
 public final class HudEditorScreen extends Screen {
     private static final int SNAP = 5;
     private final Screen parent;
-    private HudModule dragging;
+    private HudModule dragging, resizing;
     private double grabX, grabY;
+    private double resizeStartW;
+    private double resizeStartScale;
+    private int resizeX, resizeY;
+    private static final int HANDLE = 5;
+
+    /** The little square at an element's bottom-right corner: drag it to resize. */
+    private boolean onHandle(HudModule m, double mx, double my) {
+        int x2 = m.x(width) + Math.max(8, m.scaledW()), y2 = m.y(height) + Math.max(8, m.scaledH());
+        return mx >= x2 - HANDLE && mx <= x2 + 3 && my >= y2 - HANDLE && my <= y2 + 3;
+    }
     private Integer guideX, guideY;
 
     public HudEditorScreen(Screen parent) {
@@ -72,13 +82,18 @@ public final class HudEditorScreen extends Screen {
         if (guideX != null) d.rect(guideX, 0, guideX + 1, height, Draw.alpha(accent, 200));
         if (guideY != null) d.rect(0, guideY, width, guideY + 1, Draw.alpha(accent, 200));
 
-        HudModule hover = dragging != null ? dragging : at(mx, my);
+        HudModule hover = resizing != null ? resizing : dragging != null ? dragging : at(mx, my);
         for (HudModule m : shown()) {
             int x = m.x(width), y = m.y(height), w = Math.max(8, m.scaledW()), h = Math.max(8, m.scaledH());
             boolean hl = m == hover;
             d.rect(x - 2, y - 2, x + w + 2, y + h + 2, hl ? Draw.alpha(accent, 40) : 0x18FFFFFF);
             d.outline(x - 2, y - 2, x + w + 2, y + h + 2, hl ? accent : 0x40FFFFFF);
             m.draw(d, width, height, true);
+            if (hl) {
+                // resize handle
+                d.rect(x + w - 2, y + h - 2, x + w + 3, y + h + 3, 0xFF0F141C);
+                d.rect(x + w - 1, y + h - 1, x + w + 2, y + h + 2, accent);
+            }
             if (hl) {
                 String label = m.name + "  " + Math.round(m.scale.get() * 100) + "%";
                 int ly = y - 13 < 0 ? y + h + 4 : y - 13;
@@ -89,7 +104,7 @@ public final class HudEditorScreen extends Screen {
         }
 
         // help bar
-        String help = "Drag to move  •  Scroll to resize  •  Right-click for settings  •  Shift = no snapping  •  Esc to go back";
+        String help = "Drag to move  •  Drag the corner (or scroll) to resize  •  Right-click for settings  •  Esc to go back";
         int hw = Draw.textWidth(help) + 16;
         int hx = (width - hw) / 2, hy = height - 22;
         if (hw > width - 8) { help = "Drag • Scroll to resize • Right-click: settings"; hw = Draw.textWidth(help) + 16; hx = (width - hw) / 2; }
@@ -105,6 +120,13 @@ public final class HudEditorScreen extends Screen {
     @Override
     public boolean mouseClicked(MouseButtonEvent e, boolean doubleClick) {
         double mx = e.x(), my = e.y();
+        for (HudModule h : shown()) {
+            if (e.button() == 0 && onHandle(h, mx, my)) {
+                resizing = h; resizeStartW = Math.max(8, h.scaledW()); resizeStartScale = h.scale.get();
+                resizeX = h.x(width); resizeY = h.y(height);
+                return true;
+            }
+        }
         HudModule m = at(mx, my);
         if (m == null) {
             if (Widgets.in(mx, my, width / 2 - 40, height / 2 - 9, 80, 18)) {
@@ -127,6 +149,13 @@ public final class HudEditorScreen extends Screen {
 
     @Override
     public boolean mouseDragged(MouseButtonEvent e, double dx, double dy) {
+        if (resizing != null) {
+            double newW = Math.max(10, e.x() - resizeX);
+            resizing.scale.set(resizeStartScale * newW / resizeStartW);
+            resizing.moveTo(resizeX, resizeY, width, height);
+            Config.markDirty();
+            return true;
+        }
         if (dragging == null) return super.mouseDragged(e, dx, dy);
         int w = dragging.scaledW(), h = dragging.scaledH();
         int x = (int) Math.round(e.x() - grabX), y = (int) Math.round(e.y() - grabY);
@@ -158,7 +187,7 @@ public final class HudEditorScreen extends Screen {
 
     @Override
     public boolean mouseReleased(MouseButtonEvent e) {
-        dragging = null; guideX = null; guideY = null;
+        dragging = null; resizing = null; guideX = null; guideY = null;
         return super.mouseReleased(e);
     }
 

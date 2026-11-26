@@ -48,7 +48,7 @@ public final class MenuScreen extends Screen {
 
     // layout (recomputed every frame)
     private int px, py, pw, ph;
-    private static final int HEADER = 30, SIDEBAR = 96;
+    private static final int HEADER = 26, SIDEBAR = 84;
     private static final String[] CATEGORIES = {"All", "HUD", "PvP", "Visual", "Utility"};
 
     public MenuScreen(Screen parent) {
@@ -73,8 +73,8 @@ public final class MenuScreen extends Screen {
     // ------------------------------------------------------------------ layout helpers
 
     private void layout() {
-        pw = Math.min(500, width - 16);
-        ph = Math.min(300, height - 16);
+        pw = Math.min(400, width - 24);
+        ph = Math.min(240, height - 24);
         px = (width - pw) / 2;
         float t = Math.min(1f, (System.currentTimeMillis() - openedAt) / 160f);
         float ease = 1 - (1 - t) * (1 - t);
@@ -137,20 +137,11 @@ public final class MenuScreen extends Screen {
 
     private void drawHeader(Draw d, int mx, int my) {
         d.rect(px, py + HEADER - 1, px + pw, py + HEADER, Theme.BORDER);
-        // logo: a small panda badge
-        int lx = px + 10, ly = py + 8;
-        d.round(lx, ly, lx + 14, ly + 14, Theme.accent());
-        d.rect(lx - 1, ly - 1, lx + 3, ly + 3, 0xFF0F141C);
-        d.rect(lx + 11, ly - 1, lx + 15, ly + 3, 0xFF0F141C);
-        d.rect(lx + 3, ly + 5, lx + 6, ly + 9, 0xFF0F141C);
-        d.rect(lx + 8, ly + 5, lx + 11, ly + 9, 0xFF0F141C);
-        d.rect(lx + 6, ly + 10, lx + 8, ly + 11, 0xFF0F141C);
-        int x = d.text("Panda", lx + 20, py + 11, Theme.accent(), false);
-        x = d.text("Client", x, py + 11, Theme.TEXT, false);
-        d.text("v" + PandaClientMod.VERSION, x + 5, py + 11, Theme.MUTED, false);
+        int x = d.text("PANDA", px + 10, py + 9, Theme.accent(), true);
+        d.text("CLIENT", x + 1, py + 9, Theme.TEXT, true);
 
         // search box
-        int sw = Math.min(150, pw - 230), sx = px + pw - sw - 10, sy = py + 7;
+        int sw = Math.min(130, pw - 200), sx = px + pw - sw - 6, sy = py + 5;
         boolean hover = Widgets.in(mx, my, sx, sy, sw, 16);
         d.round(sx, sy, sx + sw, sy + 16, searchFocused ? Theme.HOVER : hover ? Theme.RAISED : Theme.SURFACE);
         if (searchFocused) d.outline(sx, sy, sx + sw, sy + 16, Theme.accent());
@@ -186,13 +177,14 @@ public final class MenuScreen extends Screen {
         Widgets.button(d, x + 6, bottom - 62, bw, 18, "Accent: " + Modules.THEME.get(), Widgets.in(mx, my, x + 6, bottom - 62, bw, 18), false);
     }
 
-    private int cols() { return contentW() >= 360 ? 3 : 2; }
-    private static final int CARD_H = 52, GAP = 6;
+    private int cols() { return contentW() >= 280 ? 2 : 1; }
+    private static final int CARD_H = 26, GAP = 4;
 
     private void drawGrid(Draw d, int mx, int my) {
         List<Module> mods = visibleModules();
         int cols = cols(), cx = contentX() + 8, cw = (contentW() - 16 - GAP * (cols - 1)) / cols;
         int y0 = contentY() + 8 - (int) Math.round(scroll);
+        Module hovered = null;
         boolean inContent = Widgets.in(mx, my, contentX(), contentY(), contentW(), contentH());
         for (int i = 0; i < mods.size(); i++) {
             Module m = mods.get(i);
@@ -201,25 +193,21 @@ public final class MenuScreen extends Screen {
             boolean hover = inContent && Widgets.in(mx, my, x, y, cw, CARD_H);
             float on = anim(m, m.enabled());
             d.round(x, y, x + cw, y + CARD_H, hover ? Theme.RAISED : Theme.SURFACE);
-            if (on > 0) d.rect(x + 1, y + CARD_H - 2, x + 1 + Math.round((cw - 2) * on), y + CARD_H - 1, Draw.alpha(Theme.accent(), (int) (200 * on)));
-            d.text(Widgets.ellipsize(m.name, cw - 40), x + 7, y + 7, Theme.TEXT, false);
-            String tag = m.category.label;
-            d.push(); d.translate(x + 7, y + 18); d.scale(0.75f);
-            d.text(tag.toUpperCase(Locale.ROOT), 0, 0, Draw.alpha(Theme.accent(), 200), false);
-            d.pop();
-            int ly = y + 27;
-            d.push(); d.translate(x + 7, ly); d.scale(0.75f);
-            for (String line : Widgets.wrap(m.description, (int) ((cw - 34) / 0.75f), 2)) {
-                d.text(line, 0, 0, Theme.MUTED, false);
-                d.translate(0, 10);
-            }
-            d.pop();
-            Widgets.toggle(d, x + cw - 27, y + CARD_H - 16, m.enabled(), on);
+            if (on > 0) d.rect(x, y + 6, x + 2, y + CARD_H - 6, Draw.alpha(Theme.accent(), (int) (255 * on)));
+            d.text(Widgets.ellipsize(m.name, cw - 58), x + 8, y + 9, m.enabled() ? Theme.TEXT : Theme.MUTED, false);
+            Widgets.toggle(d, x + cw - 26, y + 8, m.enabled(), on);
             if (!m.settings.isEmpty()) {
-                boolean gh = Widgets.in(mx, my, x + cw - 20, y + 4, 15, 13);
-                d.round(x + cw - 20, y + 4, x + cw - 5, y + 17, gh ? Theme.HOVER : Theme.RAISED);
-                for (int k = 0; k < 3; k++) d.rect(x + cw - 16 + k * 3, y + 10, x + cw - 14 + k * 3, y + 12, Theme.TEXT);
+                boolean gh = Widgets.in(mx, my, x + cw - 44, y + 6, 14, 14);
+                d.round(x + cw - 44, y + 6, x + cw - 30, y + 20, gh ? Theme.HOVER : Theme.RAISED);
+                for (int k = 0; k < 3; k++) d.rect(x + cw - 41 + k * 3, y + 12, x + cw - 39 + k * 3, y + 14, Theme.TEXT);
             }
+            if (hover) hovered = m;
+        }
+        if (hovered != null) {
+            // description of the hovered mod, in a small bar at the bottom of the panel
+            String desc = Widgets.ellipsize(hovered.description, pw - SIDEBAR - 16);
+            d.rect(contentX(), py + ph - 16, px + pw, py + ph, 0xF00F141C);
+            d.text(desc, contentX() + 8, py + ph - 12, Theme.MUTED, false);
         }
         if (mods.isEmpty()) d.centered("No mods match \"" + search + "\"", contentX() + contentW() / 2, contentY() + 40, Theme.MUTED, false);
         contentHeight = ((mods.size() + cols - 1) / cols) * (CARD_H + GAP) + 10;
@@ -358,7 +346,7 @@ public final class MenuScreen extends Screen {
         layout();
         waitingKey = null;
         // search
-        int sw = Math.min(150, pw - 230), sx = px + pw - sw - 10, sy = py + 7;
+        int sw = Math.min(130, pw - 200), sx = px + pw - sw - 6, sy = py + 5;
         searchFocused = Widgets.in(mx, my, sx, sy, sw, 16);
         if (searchFocused) { open = null; return true; }
         // sidebar
@@ -386,7 +374,7 @@ public final class MenuScreen extends Screen {
             Module m = mods.get(i);
             int x = cx + (i % cols) * (cw + GAP), y = y0 + (i / cols) * (CARD_H + GAP);
             if (!Widgets.in(mx, my, x, y, cw, CARD_H)) continue;
-            boolean gear = !m.settings.isEmpty() && Widgets.in(mx, my, x + cw - 20, y + 4, 15, 13);
+            boolean gear = !m.settings.isEmpty() && Widgets.in(mx, my, x + cw - 44, y + 6, 14, 14);
             if (gear || button == 1) openSettings(m);
             else { m.toggle(); Config.markDirty(); }
             return true;

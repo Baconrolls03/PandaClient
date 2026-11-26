@@ -21,9 +21,9 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 
 public final class PandaClientMod implements ClientModInitializer {
-    public static final String VERSION = "0.1.0";
+    public static final String VERSION = "0.2.0";
     private static CameraType cameraBeforeFreelook;
-    private static boolean menuWasDown, sprintWasDown, sneakWasDown, freelookWasDown;
+    private static boolean hitboxesApplied, menuWasDown, sprintWasDown, sneakWasDown, freelookWasDown;
     private static int prevSelfHurt;
 
     @Override
@@ -71,6 +71,15 @@ public final class PandaClientMod implements ClientModInitializer {
         Config.tick();
         Combat.tick();
         com.pandaclient.mod.util.HitColorTexture.tick();
+        // Hitboxes: follow the switch (F3+B still works on its own).
+        if (mc.debugEntries != null && Modules.HITBOXES.enabled() != hitboxesApplied) {
+            hitboxesApplied = Modules.HITBOXES.enabled();
+            var id = net.minecraft.client.gui.components.debug.DebugScreenEntries.ENTITY_HITBOXES;
+            if (mc.debugEntries.isCurrentlyEnabled(id) != hitboxesApplied) mc.debugEntries.toggleStatus(id);
+        }
+        // PandaClient title screen instead of the vanilla one.
+        if (Modules.TITLE_SCREEN.enabled() && mc.screen != null && mc.screen.getClass() == net.minecraft.client.gui.screens.TitleScreen.class)
+            mc.setScreen(new com.pandaclient.mod.gui.PandaTitleScreen());
         if (Modules.COSMETICS.enabled()) {
             com.pandaclient.mod.cosmetics.CosmeticsApi.loadCatalog();
             if (mc.level != null && mc.level.getGameTime() % 40 == 0) {
