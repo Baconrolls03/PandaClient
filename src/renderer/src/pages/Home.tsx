@@ -3,7 +3,7 @@ import { ArrowRight, Compass, Download, Plus, Zap } from 'lucide-react'
 import type { MrSearchHit, SearchQuery } from '@shared/types'
 import { api } from '@/lib/api'
 import { useStore } from '@/lib/store'
-import { compact, LOADER_NAMES, timeAgo } from '@/lib/format'
+import { compact, timeAgo } from '@/lib/format'
 import { Logo } from '@/components/Logo'
 import { PlayButton } from '@/components/PlayButton'
 import { NewsCard } from '@/components/NewsCard'
@@ -61,7 +61,7 @@ export function Home() {
       const list = await api.versions.list()
       const mc = list.versions.find((v) => v.type === 'release' && v.fabric)?.id
       if (!mc) throw new Error("Couldn't reach Mojang to find the latest version.")
-      return api.instances.create({ name: 'PandaClient', mcVersion: mc, loader: 'fabric', loaderVersion: null, performancePack: true })
+      return api.instances.create({ name: 'PandaClient', mcVersion: mc, loaderVersion: null, performancePack: true })
     })
     setQuickBusy(false)
     if (inst) {
@@ -88,7 +88,7 @@ export function Home() {
                 <div className="min-w-0">
                   <h1 className="truncate text-3xl font-bold tracking-tight">{selected.name}</h1>
                   <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-muted">
-                    <LoaderBadge loader={selected.loader} version={selected.loaderVersion ?? undefined} />
+                    <LoaderBadge version={selected.loaderVersion} />
                     <span>Minecraft {selected.mcVersion}</span>
                     <span>·</span>
                     <span>{selected.lastPlayed ? `Played ${timeAgo(selected.lastPlayed)}` : 'Never played'}</span>
@@ -174,7 +174,7 @@ export function Home() {
         </div>
       </div>
       <p className="pb-2 text-center text-[11px] text-muted/70">
-        {selected ? `${LOADER_NAMES[selected.loader]} instances` : 'Content'} from Modrinth · Minecraft files always downloaded from Mojang
+        Fabric content from Modrinth · Minecraft files always downloaded from Mojang
       </p>
     </div>
   )

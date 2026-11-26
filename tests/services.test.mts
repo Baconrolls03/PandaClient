@@ -38,7 +38,9 @@ const projects = [
   project('P_IRIS', 'iris', 'Iris'),
   project('P_PACK', 'testpack', 'Test Pack', 'modpack'),
   project('P_EVIL', 'evilpack', 'Evil Pack', 'modpack'),
-  project('P_RP', 'faithful', 'Faithful', 'resourcepack', ['minecraft'])
+  project('P_RP', 'faithful', 'Faithful', 'resourcepack', ['minecraft']),
+  project('P_FORGE', 'forgeonly', 'Forge Only Mod', 'mod', ['forge']),
+  project('P_FPACK', 'forgepack', 'Forge Pack', 'modpack', ['forge'])
 ]
 const sodiumDep = [{ project_id: 'P_SOD', version_id: null, file_name: null, dependency_type: 'required' }]
 const versions: any[] = [
@@ -48,7 +50,8 @@ const versions: any[] = [
   ver('V_LITH1', 'P_LITH', '0.11', '2024-01-01', mkFile('lithium-0.11.jar', 'lith'), [], ['fabric'], ['1.20.1']),
   ver('V_IRIS1', 'P_IRIS', '1.7.0', '2024-06-01', mkFile('iris-1.7.0.jar', 'iris old'), sodiumDep),
   ver('V_IRIS2', 'P_IRIS', '1.8.0', '2024-09-01', mkFile('iris-1.8.0.jar', 'iris new'), sodiumDep),
-  ver('V_RP1', 'P_RP', '1.0', '2024-09-01', mkFile('faithful.zip', 'rp'), [], ['minecraft'])
+  ver('V_RP1', 'P_RP', '1.0', '2024-09-01', mkFile('faithful.zip', 'rp'), [], ['minecraft']),
+  ver('V_FORGE1', 'P_FORGE', '1.0', '2024-09-01', mkFile('forgeonly.jar', 'forge'), [], ['forge'])
 ]
 
 // Modpack: one client file, one server-only file, overrides + client-overrides
@@ -66,10 +69,12 @@ const pack = zipSync({
   'overrides/config/sodium.json': enc('{"a":1}'),
   'client-overrides/options.txt': enc('fov:90')
 })
+const forgePack = zipSync({ 'modrinth.index.json': enc(JSON.stringify({ ...packIndex, name: 'Forge Pack', files: [], dependencies: { minecraft: '1.20.1', forge: '47.3.0' } })) })
 const evil = zipSync({ 'modrinth.index.json': enc(JSON.stringify({ ...packIndex, name: 'Evil', files: [{ ...packIndex.files[0], path: '../../escaped.jar' }] })) })
-for (const [name, data, vid, pid] of [['testpack.mrpack', pack, 'V_PACK1', 'P_PACK'], ['evil.mrpack', evil, 'V_EVIL1', 'P_EVIL']] as const) {
+for (const [name, data, vid, pid, loader] of [['testpack.mrpack', pack, 'V_PACK1', 'P_PACK', 'fabric'], ['evil.mrpack', evil, 'V_EVIL1', 'P_EVIL', 'fabric'], ['forgepack.mrpack', forgePack, 'V_FPACK1', 'P_FPACK', 'fabric']] as const) {
+  // forgepack is (wrongly) tagged fabric on the fake server so the index check is what refuses it
   files.set(name, data)
-  versions.push(ver(vid, pid, '1.0', '2024-09-01', { hashes: { sha1: sha1(data), sha512: '' }, url: `${BASE}/files/${name}`, filename: name, primary: true, size: data.length }))
+  versions.push(ver(vid, pid, '1.0', '2024-09-01', { hashes: { sha1: sha1(data), sha512: '' }, url: `${BASE}/files/${name}`, filename: name, primary: true, size: data.length }, [], [loader]))
 }
 
 const findP = (k: string) => projects.find((p) => p.id === k || p.slug === k)
@@ -149,7 +154,7 @@ const tasks = await import(`${SRC}/tasks.ts`)
 const ok = (msg: string) => console.log('  ✓', msg)
 
 // 1. create + performance pack
-const inst = await instances.createInstance({ name: 'My Fabric', mcVersion: '1.21.1', loader: 'fabric', loaderVersion: '0.16.5' })
+const inst = await instances.createInstance({ name: 'My Fabric', mcVersion: '1.21.1', loaderVersion: '0.16.5' })
 assert.equal(inst.id, 'my-fabric')
 ok('instance created with slug id')
 const skipped = await content.installMany(inst.id, content.PERFORMANCE_PACK, 'perf')
@@ -189,10 +194,12 @@ await content.installProject(inst.id, 'faithful')
 assert.ok(existsSync(inst.path + '/resourcepacks/faithful.zip'))
 ok('resource pack installed into resourcepacks/')
 
-// 4. vanilla instance can't take fabric mods
-const van = await instances.createInstance({ name: 'Vanilla', mcVersion: '1.21.1', loader: 'vanilla', loaderVersion: null })
-await assert.rejects(content.installProject(van.id, 'sodium'), /no version for Vanilla/)
-ok('vanilla instance refuses Fabric mod with clear error')
+// 4. Fabric-only: a mod without a Fabric build is refused, a Forge modpack is refused before anything is created
+await assert.rejects(content.installProject(inst.id, 'forgeonly'), /no Fabric version/)
+ok('Forge-only mod refused with a clear error')
+await assert.rejects(mrpack.installModpack('forgepack'), /uses Forge\. PandaClient runs Fabric modpacks only/)
+assert.ok(!existsSync(process.env.TEST_ROOT + '/game/instances/forge-pack'))
+ok('Forge modpack refused, no instance left behind')
 
 // 5. modpack
 const packInst = await mrpack.installModpack('testpack')

@@ -62,13 +62,13 @@ const HITS: MrSearchHit[] = SAMPLE.map(([type, slug, title, desc, cats, download
   description: desc,
   categories: cats,
   display_categories: cats,
-  versions: ['1.20.1', '1.20.4', '1.21.1', '1.21.4', '1.21.10'],
+  versions: ['1.20.1', '1.21.1', '1.21.11', '26.1', '26.2', '26.3'],
   downloads,
   follows,
   icon_url: icon(title[0], (i * 47) % 360),
   date_created: '2023-01-10T00:00:00Z',
   date_modified: new Date(Date.now() - i * 86400000 * 3).toISOString(),
-  latest_version: '1.21.10',
+  latest_version: '26.3',
   client_side: 'required',
   server_side: type === 'shader' || type === 'resourcepack' ? 'unsupported' : 'optional',
   featured_gallery: shot((i * 47) % 360, title),
@@ -85,7 +85,7 @@ const CATEGORIES = [
   ...['worldgen', 'adventure', 'utility'].map((name) => ({ name, project_type: 'datapack', header: 'categories' }))
 ]
 
-const MC = ['1.21.10', '1.21.8', '1.21.5', '1.21.4', '1.21.1', '1.20.6', '1.20.4', '1.20.1', '1.19.4', '1.19.2', '1.18.2', '1.17.1', '1.16.5', '1.14.4', '1.12.2', '1.8.9']
+const MC = ['26.3', '26.2', '26.1.2', '26.1', '1.21.11', '1.21.10', '1.21.8', '1.21.4', '1.21.1', '1.20.6', '1.20.4', '1.20.1', '1.19.4', '1.19.2', '1.18.2', '1.17.1', '1.16.5', '1.14.4']
 
 const BODY = (title: string) => `## About ${title}
 
@@ -138,7 +138,7 @@ function toProject(h: MrSearchHit): MrProject {
 
 function versionsFor(h: MrSearchHit): MrVersion[] {
   const loaders = h.categories.filter((c) => ['fabric', 'forge', 'neoforge', 'quilt'].includes(c))
-  return ['1.21.10', '1.21.8', '1.21.4', '1.21.1', '1.20.4', '1.20.1'].map((gv, i) => ({
+  return ['26.3', '26.2', '1.21.11', '1.21.1', '1.20.4', '1.20.1'].map((gv, i) => ({
     id: `${h.project_id}-v${i}`,
     project_id: h.project_id,
     name: `${h.title} ${3 - i * 0.1 > 0 ? (3 - i * 0.1).toFixed(1) : '0.1'} for ${gv}`,
@@ -166,11 +166,11 @@ export function createMock(): PandaApi {
     maxDownloads: 8
   }
   const now = Date.now()
-  const mkInst = (id: string, name: string, mc: string, loader: Instance['loader'], lv: string | null, hue: number | null, played: number | null, modpack: Instance['modpack'] = null): Instance => ({
+  const mkInst = (id: string, name: string, mc: string, lv: string | null, hue: number | null, played: number | null, modpack: Instance['modpack'] = null): Instance => ({
     id,
     name,
     mcVersion: mc,
-    loader,
+    loader: 'fabric',
     loaderVersion: lv,
     created: new Date(now - 30 * 86400000).toISOString(),
     lastPlayed: played == null ? null : new Date(now - played).toISOString(),
@@ -182,14 +182,13 @@ export function createMock(): PandaApi {
     path: `${settings.gameDir}\\instances\\${id}`
   })
   let instances: Instance[] = [
-    mkInst('pandaclient', 'PandaClient', '1.21.10', 'fabric', '0.17.2', null, 3600_000),
-    mkInst('fabulously-optimized', 'Fabulously Optimized', '1.21.8', 'fabric', '0.17.2', 200, 2 * 86400000, { projectId: 'P12', versionId: 'x', title: 'Fabulously Optimized' }),
-    mkInst('create-adventure', 'Create Adventure', '1.20.1', 'forge', '47.3.0', 25, 6 * 86400000),
-    mkInst('pvp-1-8', 'PvP 1.8.9', '1.8.9', 'vanilla', null, 0, null)
+    mkInst('pandaclient', 'PandaClient', '26.3', '0.20.1', null, 3600_000),
+    mkInst('fabulously-optimized', 'Fabulously Optimized', '26.2', '0.20.1', 200, 2 * 86400000, { projectId: 'P12', versionId: 'x', title: 'Fabulously Optimized' }),
+    mkInst('cobblemon', 'Cobblemon', '1.21.1', '0.17.2', 25, 6 * 86400000),
+    mkInst('pvp', 'PvP 1.21.11', '1.21.11', '0.20.1', 0, null)
   ]
   const contentFor = (inst: Instance): ContentItem[] => {
-    if (inst.loader === 'vanilla') return []
-    const picks = inst.loader === 'forge' ? [8, 6, 7, 11] : [1, 0, 2, 3, 4, 5, 9, 10, 11]
+    const picks = inst.id === 'pvp' ? [1, 0, 9] : [1, 0, 2, 3, 4, 5, 9, 10, 11]
     const items: ContentItem[] = picks.map((p, i) => {
       const h = HITS[p]
       return {
@@ -233,8 +232,9 @@ export function createMock(): PandaApi {
   const find = (id: string) => instances.find((i) => i.id === id)!
   const hitBy = (id: string) => HITS.find((h) => h.project_id === id || h.slug === id)!
 
-  const versionList: VersionInfo[] = MC.map((id, i) => ({ id, type: 'release', releaseTime: new Date(Date.UTC(2025, 9 - i, 1)).toISOString(), fabric: !['1.12.2', '1.8.9'].includes(id) }))
-  versionList.splice(1, 0, { id: '25w41a', type: 'snapshot', releaseTime: '2025-10-08T00:00:00Z', fabric: true })
+  const versionList: VersionInfo[] = MC.map((id, i) => ({ id, type: 'release', releaseTime: new Date(Date.UTC(2026, 9 - i, 1)).toISOString(), fabric: true }))
+  versionList.push({ id: '1.12.2', type: 'release', releaseTime: '2017-09-18T00:00:00Z', fabric: false }, { id: '1.8.9', type: 'release', releaseTime: '2015-12-09T00:00:00Z', fabric: false })
+  versionList.unshift({ id: '26.4-pre-1', type: 'snapshot', releaseTime: '2026-11-20T00:00:00Z', fabric: true })
 
   return {
     window: { minimize: () => {}, close: () => {} },
@@ -255,14 +255,13 @@ export function createMock(): PandaApi {
     },
     versions: {
       list: async () => ({ versions: versionList, latestRelease: MC[0], offline: false }),
-      loaders: async (loader) =>
-        loader === 'vanilla' ? [] : loader === 'forge' ? [{ version: '47.3.0', stable: true }, { version: '47.2.0', stable: true }] : [{ version: '0.17.2', stable: true }, { version: '0.17.0', stable: true }, { version: '0.16.14', stable: true }]
+      fabric: async () => [{ version: '0.20.1', stable: true }, { version: '0.20.0', stable: true }, { version: '0.19.2', stable: true }]
     },
     instances: {
       list: async () => [...instances].sort((a, b) => (b.lastPlayed ?? b.created).localeCompare(a.lastPlayed ?? a.created)),
       create: async (input) => {
         const id = input.name.toLowerCase().replace(/[^a-z0-9]+/g, '-') || 'instance'
-        const inst = mkInst(id, input.name || 'New instance', input.mcVersion, input.loader, input.loaderVersion ?? '0.17.2', null, null)
+        const inst = mkInst(id, input.name || 'New instance', input.mcVersion, input.loaderVersion ?? '0.20.1', null, null)
         instances = [...instances, inst]
         content.set(id, [])
         changed()
@@ -366,10 +365,10 @@ export function createMock(): PandaApi {
       ],
       read: async () =>
         [
-          '[18:22:01] [main/INFO]: Loading Minecraft 1.21.10 with Fabric Loader 0.17.2',
+          '[18:22:01] [main/INFO]: Loading Minecraft 26.3 with Fabric Loader 0.20.1',
           '[18:22:01] [main/INFO]: Loading 9 mods:',
-          '\t- fabricloader 0.17.2',
-          '\t- sodium 0.7.2+mc1.21.10',
+          '\t- fabricloader 0.20.1',
+          '\t- sodium 0.9.3+mc26.3',
           '[18:22:03] [main/WARN]: Mod resource pack "lithium" has no pack.mcmeta',
           '[18:22:05] [Render thread/INFO]: Setting user: Player',
           '[18:22:06] [Render thread/INFO]: Backend library: LWJGL version 3.3.3',
@@ -403,7 +402,7 @@ export function createMock(): PandaApi {
       installModpack: async (id) => {
         const h = hitBy(id)
         await fakeTask(`Installing ${h.title}`, 15)
-        const inst = mkInst(h.slug, h.title, '1.21.10', 'fabric', '0.17.2', 300, null, { projectId: h.project_id, versionId: 'v', title: h.title })
+        const inst = mkInst(h.slug, h.title, '26.3', '0.20.1', 300, null, { projectId: h.project_id, versionId: 'v', title: h.title })
         inst.iconUrl = h.icon_url
         instances = [...instances, inst]
         content.set(inst.id, contentFor(inst))

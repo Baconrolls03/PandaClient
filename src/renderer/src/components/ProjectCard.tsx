@@ -19,7 +19,6 @@ export function ProjectCard({
   installing?: boolean
 }) {
   const tags = (hit.display_categories ?? hit.categories).filter((c) => !HIDDEN.has(c)).slice(0, 3)
-  const loaders = hit.categories.filter((c) => ['fabric', 'forge', 'neoforge', 'quilt'].includes(c))
   return (
     <div
       onClick={onOpen}
@@ -36,11 +35,6 @@ export function ProjectCard({
           {tags.map((t) => (
             <span key={t} className="rounded-md bg-bg px-1.5 py-0.5 text-[11px] text-muted">
               {titleCase(t)}
-            </span>
-          ))}
-          {loaders.map((l) => (
-            <span key={l} className="rounded-md bg-mint/10 px-1.5 py-0.5 text-[11px] text-mint">
-              {titleCase(l)}
             </span>
           ))}
         </div>

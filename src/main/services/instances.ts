@@ -75,7 +75,7 @@ async function uniqueId(name: string): Promise<string> {
 
 /** Create the folder + metadata. Content (perf pack, modpack files) is added by the caller. */
 export async function createInstance(input: Omit<CreateInstanceInput, 'performancePack'> & { modpack?: Instance['modpack'] }): Promise<Instance> {
-  const name = input.name.trim() || `${input.loader === 'vanilla' ? 'Vanilla' : input.loader} ${input.mcVersion}`
+  const name = input.name.trim() || `Fabric ${input.mcVersion}`
   const id = await uniqueId(name)
   const dir = join(instancesRoot(), id)
   await mkdir(dir, { recursive: true })
@@ -85,7 +85,7 @@ export async function createInstance(input: Omit<CreateInstanceInput, 'performan
     id,
     name,
     mcVersion: input.mcVersion,
-    loader: input.loader,
+    loader: 'fabric',
     loaderVersion: input.loaderVersion,
     created: new Date().toISOString(),
     lastPlayed: null,

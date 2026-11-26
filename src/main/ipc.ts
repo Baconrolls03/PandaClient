@@ -3,7 +3,7 @@ import { totalmem } from 'node:os'
 import type { CreateInstanceInput, Settings, SystemInfo } from '@shared/types'
 import { getSettings, updateSettings } from './services/settings'
 import { listVersions } from './services/versions'
-import { loaderVersions } from './services/loaders'
+import { fabricVersions, latestStableFabric } from './services/loaders'
 import { detectJava } from './services/java'
 import * as instances from './services/instances'
 import * as content from './services/content'
@@ -25,13 +25,9 @@ const FILE_FILTERS: Record<string, Electron.FileFilter[]> = {
 }
 
 async function createInstance(input: CreateInstanceInput) {
-  let loaderVersion = input.loaderVersion
-  if (!loaderVersion && input.loader !== 'vanilla') {
-    const list = await loaderVersions(input.loader, input.mcVersion).catch(() => [])
-    loaderVersion = (list.find((l) => l.stable) ?? list[0])?.version ?? null
-  }
+  const loaderVersion = input.loaderVersion || (await latestStableFabric(input.mcVersion).catch(() => null))
   const inst = await instances.createInstance({ ...input, loaderVersion })
-  if (input.performancePack && (input.loader === 'fabric' || input.loader === 'quilt')) {
+  if (input.performancePack) {
     // Runs in the background; progress shows in the downloads panel.
     content.installMany(inst.id, content.PERFORMANCE_PACK, `Performance mods for ${inst.name}`).catch(() => {})
   }
@@ -79,7 +75,7 @@ export function registerIpc(win: BrowserWindow): void {
 
   // Versions
   ipcMain.handle('versions:list', () => listVersions())
-  ipcMain.handle('versions:loaders', (_e, loader, mc) => loaderVersions(loader, mc))
+  ipcMain.handle('versions:fabric', (_e, mc: string) => fabricVersions(mc))
 
   // Instances
   ipcMain.handle('instances:list', () => instances.listInstances())

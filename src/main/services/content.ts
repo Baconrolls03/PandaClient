@@ -4,7 +4,7 @@ import { basename, join } from 'node:path'
 import { CONTENT_FOLDERS, type ContentItem, type ContentType, type Instance, type MrProject, type MrVersion } from '@shared/types'
 import { download, sha1File } from './http'
 import { getInstance, instanceDir } from './instances'
-import { modLoadersFor } from './loaders'
+import { MOD_LOADERS } from './loaders'
 import * as mr from './modrinth'
 import { type TaskHandle, withTask } from './tasks'
 
@@ -160,14 +160,14 @@ export async function installedProjectIds(id: string): Promise<string[]> {
 
 /* ───────────── Updates ───────────── */
 
-function updateLoaders(inst: Instance, type: ContentType): string[] {
+function updateLoaders(type: ContentType): string[] {
   switch (type) {
     case 'mod':
-      return modLoadersFor(inst.loader)
+      return MOD_LOADERS
     case 'resourcepack':
       return ['minecraft']
     case 'shader':
-      return ['iris', 'optifine', 'canvas', 'vanilla']
+      return ['iris', 'canvas', 'vanilla']
     case 'datapack':
       return ['datapack']
   }
@@ -182,8 +182,7 @@ export async function checkUpdates(id: string): Promise<ContentItem[]> {
     for (const type of Object.keys(CONTENT_FOLDERS) as ContentType[]) {
       const ofType = items.filter((i) => i.type === type && i.version)
       if (!ofType.length) continue
-      const loaders = updateLoaders(inst, type)
-      if (type === 'mod' && !loaders.length) continue
+      const loaders = updateLoaders(type)
       const latest = await mr.latestFromHashes(
         ofType.map((i) => i.sha1),
         loaders,
@@ -221,8 +220,7 @@ function typeFor(project: MrProject, version: MrVersion, inst: Instance): Conten
   if (project.project_type === 'resourcepack') return 'resourcepack'
   if (project.project_type === 'shader') return 'shader'
   if (project.project_type === 'modpack') throw new Error('Modpacks install as their own instance.')
-  const modLoaders = modLoadersFor(inst.loader)
-  if (version.loaders.some((l) => modLoaders.includes(l))) return 'mod'
+  if (version.loaders.some((l) => MOD_LOADERS.includes(l))) return 'mod'
   if (version.loaders.includes('datapack')) return 'datapack'
   return 'mod'
 }
@@ -234,13 +232,11 @@ async function bestVersion(project: MrProject, inst: Instance): Promise<MrVersio
   if (pt === 'resourcepack' || pt === 'shader') {
     found = pick(await mr.versions(project.id, { gameVersions: gv }))
   } else {
-    const modLoaders = modLoadersFor(inst.loader)
-    if (modLoaders.length) found = pick(await mr.versions(project.id, { loaders: modLoaders, gameVersions: gv }))
+    found = pick(await mr.versions(project.id, { loaders: MOD_LOADERS, gameVersions: gv }))
     if (!found && project.loaders.includes('datapack')) found = pick(await mr.versions(project.id, { loaders: ['datapack'], gameVersions: gv }))
   }
   if (!found) {
-    const loaderName = inst.loader === 'vanilla' ? 'Vanilla' : inst.loader[0].toUpperCase() + inst.loader.slice(1)
-    throw new Error(`${project.title} has no version for ${loaderName} ${inst.mcVersion}`)
+    throw new Error(`${project.title} has no Fabric version for Minecraft ${inst.mcVersion}`)
   }
   return found
 }

@@ -1,10 +1,9 @@
 import { useMemo, useState } from 'react'
 import { FileUp, Library as LibraryIcon, Plus } from 'lucide-react'
-import { LOADERS, type Loader } from '@shared/types'
 import { api } from '@/lib/api'
 import { useStore } from '@/lib/store'
 import { InstanceCard } from '@/components/InstanceCard'
-import { Button, Chip, Empty, SearchField, Select } from '@/components/ui'
+import { Button, Empty, SearchField, Select } from '@/components/ui'
 
 type Sort = 'played' | 'name' | 'created' | 'version'
 
@@ -12,17 +11,14 @@ export function Library() {
   const { instances, openModal, attempt, navigate } = useStore()
   const [q, setQ] = useState('')
   const [sort, setSort] = useState<Sort>('played')
-  const [loader, setLoader] = useState<Loader | 'all'>('all')
 
   const list = useMemo(() => {
-    let l = instances.filter((i) => (loader === 'all' || i.loader === loader) && `${i.name} ${i.mcVersion}`.toLowerCase().includes(q.toLowerCase()))
+    let l = instances.filter((i) => `${i.name} ${i.mcVersion}`.toLowerCase().includes(q.toLowerCase()))
     if (sort === 'name') l = [...l].sort((a, b) => a.name.localeCompare(b.name))
     if (sort === 'created') l = [...l].sort((a, b) => b.created.localeCompare(a.created))
     if (sort === 'version') l = [...l].sort((a, b) => b.mcVersion.localeCompare(a.mcVersion, undefined, { numeric: true }))
     return l
-  }, [instances, q, sort, loader])
-
-  const usedLoaders = LOADERS.filter((l) => instances.some((i) => i.loader === l.id))
+  }, [instances, q, sort])
 
   async function importPack() {
     const file = await api.settings.pickFile('mrpack')
@@ -53,16 +49,6 @@ export function Library() {
       {instances.length > 0 && (
         <div className="flex flex-wrap items-center gap-3">
           <SearchField value={q} onChange={setQ} placeholder="Search instances" className="w-72" />
-          <div className="flex gap-1.5">
-            <Chip active={loader === 'all'} onClick={() => setLoader('all')}>
-              All
-            </Chip>
-            {usedLoaders.map((l) => (
-              <Chip key={l.id} active={loader === l.id} onClick={() => setLoader(l.id)}>
-                {l.name}
-              </Chip>
-            ))}
-          </div>
           <Select
             value={sort}
             onChange={setSort}
@@ -90,7 +76,7 @@ export function Library() {
             </div>
           }
         >
-          Create one for any Minecraft version and loader, or install a modpack from Modrinth.
+          Create one for any Minecraft version Fabric supports, or install a Fabric modpack from Modrinth.
         </Empty>
       ) : (
         <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">

@@ -3,7 +3,7 @@ import { ImagePlus, Trash2 } from 'lucide-react'
 import type { Instance, SystemInfo } from '@shared/types'
 import { api } from '@/lib/api'
 import { useStore } from '@/lib/store'
-import { gb, LOADER_NAMES } from '@/lib/format'
+import { gb } from '@/lib/format'
 import { Button, Card, InstanceIcon, TextField, Toggle } from '@/components/ui'
 
 export function InstanceSettingsTab({ inst, onDelete }: { inst: Instance; onDelete: () => void }) {
@@ -62,7 +62,7 @@ export function InstanceSettingsTab({ inst, onDelete }: { inst: Instance; onDele
           <dd>{inst.mcVersion}</dd>
           <dt className="text-muted">Loader</dt>
           <dd>
-            {LOADER_NAMES[inst.loader]} {inst.loaderVersion ?? ''}
+            Fabric {inst.loaderVersion ?? ''}
           </dd>
           <dt className="text-muted">Folder</dt>
           <dd className="truncate font-mono text-xs leading-5 text-muted">{inst.path}</dd>

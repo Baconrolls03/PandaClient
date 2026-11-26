@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Loader2, MoreHorizontal, Search, X } from 'lucide-react'
-import type { Loader } from '@shared/types'
 import { Logo } from './Logo'
 
 export function Card({ title, description, children, action }: { title?: string; description?: string; children: ReactNode; action?: ReactNode }) {
@@ -237,17 +236,26 @@ export function ProjectIcon({ url, size = 48, className = '' }: { url: string | 
   )
 }
 
-export function LoaderBadge({ loader, version }: { loader: Loader; version?: string }) {
-  const names: Record<Loader, string> = { vanilla: 'Vanilla', fabric: 'Fabric', quilt: 'Quilt', forge: 'Forge', neoforge: 'NeoForge' }
-  return (
-    <Badge tone={loader === 'vanilla' ? 'muted' : loader === 'fabric' || loader === 'quilt' ? 'mint' : 'blue'}>
-      {names[loader]}
-      {version ? ` ${version}` : ''}
-    </Badge>
-  )
+export function LoaderBadge({ version }: { version?: string | null }) {
+  return <Badge tone="mint">Fabric{version ? ` ${version}` : ''}</Badge>
 }
 
-export function Modal({ title, onClose, children, footer, width = 'max-w-lg' }: { title: string; onClose: () => void; children: ReactNode; footer?: ReactNode; width?: string }) {
+export function Modal({
+  title,
+  onClose,
+  children,
+  footer,
+  width = 'max-w-lg',
+  allowOverflow = false
+}: {
+  title: string
+  onClose: () => void
+  children: ReactNode
+  footer?: ReactNode
+  width?: string
+  /** Let dropdowns inside spill out of the dialog (for short dialogs that never need to scroll). */
+  allowOverflow?: boolean
+}) {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose()
     window.addEventListener('keydown', onKey)
@@ -255,14 +263,14 @@ export function Modal({ title, onClose, children, footer, width = 'max-w-lg' }: 
   }, [onClose])
   return (
     <div className="fixed inset-0 z-50 grid place-items-center bg-black/60 p-6 backdrop-blur-sm" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
-      <div className={`flex max-h-[85vh] w-full ${width} animate-pop flex-col overflow-hidden rounded-2xl border border-border bg-surface shadow-lift`}>
+      <div className={`flex max-h-[85vh] w-full ${width} animate-pop flex-col rounded-2xl border border-border bg-surface shadow-lift ${allowOverflow ? '' : 'overflow-hidden'}`}>
         <header className="flex items-center justify-between border-b border-border px-6 py-4">
           <h2 className="font-semibold">{title}</h2>
           <IconButton label="Close" onClick={onClose}>
             <X size={16} />
           </IconButton>
         </header>
-        <div className="min-h-0 flex-1 overflow-y-auto p-6">{children}</div>
+        <div className={`min-h-0 flex-1 p-6 ${allowOverflow ? '' : 'overflow-y-auto'}`}>{children}</div>
         {footer && <footer className="flex justify-end gap-2 border-t border-border px-6 py-4">{footer}</footer>}
       </div>
     </div>

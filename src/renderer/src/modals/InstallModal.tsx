@@ -6,18 +6,12 @@ import { useStore } from '@/lib/store'
 import { LOADER_NAMES } from '@/lib/format'
 import { Badge, Button, InstanceIcon, Modal, Select, Spinner } from '@/components/ui'
 
-const MOD_LOADERS = ['fabric', 'quilt', 'forge', 'neoforge']
-
 /** Can `project` be installed into `inst`? */
 export function compatibility(project: MrProject, inst: Instance): { ok: boolean; reason?: string } {
   if (!project.game_versions.includes(inst.mcVersion)) return { ok: false, reason: `No ${inst.mcVersion} version` }
-  if (project.project_type === 'mod') {
-    const loaders = inst.loader === 'quilt' ? ['quilt', 'fabric'] : [inst.loader]
-    if (!project.loaders.some((l) => loaders.includes(l)) && !project.loaders.includes('datapack')) {
-      return { ok: false, reason: `Not for ${LOADER_NAMES[inst.loader]}` }
-    }
+  if (project.project_type === 'mod' && !project.loaders.includes('fabric') && !project.loaders.includes('datapack')) {
+    return { ok: false, reason: 'No Fabric version' }
   }
-  if (project.project_type === 'shader' && inst.loader === 'vanilla') return { ok: true, reason: 'Needs Iris or OptiFine' }
   return { ok: true }
 }
 
@@ -33,7 +27,7 @@ export function InstallModal({ projectId, title, projectType }: { projectId: str
   useEffect(() => {
     api.modrinth.project(projectId).then(setProject).catch(() => {})
     if (isPack) {
-      api.modrinth.versions(projectId).then((v) => {
+      api.modrinth.versions(projectId, { loaders: ['fabric'] }).then((v) => {
         setVersions(v)
         setVersionId(v[0]?.id ?? '')
       })
@@ -71,12 +65,12 @@ export function InstallModal({ projectId, title, projectType }: { projectId: str
 
   async function newInstanceFor() {
     if (!project) return
-    const releases = (await api.versions.list()).versions.filter((v) => v.type === 'release').map((v) => v.id)
-    const mc = releases.find((r) => project.game_versions.includes(r))
-    if (!mc) return toast(`${title} doesn't support any release version`, 'error')
-    const loader = (['fabric', 'neoforge', 'forge', 'quilt'] as const).find((l) => project.loaders.includes(l)) ?? (project.project_type === 'mod' ? 'fabric' : 'vanilla')
+    const list = await api.versions.list()
+    const releases = list.versions.filter((v) => v.type === 'release').map((v) => v.id)
+    const fabricMc = releases.find((r) => project.game_versions.includes(r) && list.versions.find((v) => v.id === r)?.fabric)
+    if (!fabricMc) return toast(`${title} doesn't support any version Fabric runs on`, 'error')
     closeModal()
-    const inst = await attempt(() => api.instances.create({ name: `${title} ${mc}`, mcVersion: mc, loader, loaderVersion: null, performancePack: false }))
+    const inst = await attempt(() => api.instances.create({ name: `${title} ${fabricMc}`, mcVersion: fabricMc, loaderVersion: null, performancePack: false }))
     if (!inst) return
     navigate({ name: 'instance', id: inst.id })
     await attempt(() => api.content.install(inst.id, projectId), `Installed ${title} into ${inst.name}`)
@@ -98,10 +92,12 @@ export function InstallModal({ projectId, title, projectType }: { projectId: str
           </>
         }
       >
-        <p className="mb-4 text-sm text-muted">Modpacks install as a new instance with everything set up for you.</p>
+        <p className="mb-4 text-sm text-muted">Modpacks install as a new instance with everything set up for you. Only Fabric versions are listed.</p>
         <label className="mb-1.5 block text-xs font-medium text-muted">Version</label>
         {versions == null ? (
           <Spinner />
+        ) : versions.length === 0 ? (
+          <p className="text-sm text-danger">This modpack has no Fabric version, so PandaClient can't run it.</p>
         ) : (
           <Select
             value={versionId}
@@ -131,7 +127,7 @@ export function InstallModal({ projectId, title, projectType }: { projectId: str
                 <div className="min-w-0 flex-1">
                   <div className="truncate text-sm font-medium">{inst.name}</div>
                   <div className="flex items-center gap-2 text-xs text-muted">
-                    {LOADER_NAMES[inst.loader]} {inst.mcVersion}
+                    Fabric {inst.mcVersion}
                     {c.reason && <Badge tone={c.ok ? 'amber' : 'muted'}>{c.reason}</Badge>}
                   </div>
                 </div>
@@ -150,8 +146,8 @@ export function InstallModal({ projectId, title, projectType }: { projectId: str
           <button onClick={newInstanceFor} className="mt-2 flex items-center gap-3 rounded-xl border border-dashed border-border p-3 text-sm font-medium text-mint transition-colors hover:bg-raised">
             <Plus size={18} /> New instance with {title}
           </button>
-          {project.project_type === 'mod' && !project.loaders.some((l) => MOD_LOADERS.includes(l)) && (
-            <p className="mt-2 text-xs text-muted">This project doesn't list a mod loader.</p>
+          {project.project_type === 'mod' && !project.loaders.includes('fabric') && (
+            <p className="mt-2 text-xs text-muted">{title} isn't made for Fabric, so PandaClient can't install it.</p>
           )}
         </div>
       )}

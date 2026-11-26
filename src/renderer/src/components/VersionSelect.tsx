@@ -106,7 +106,7 @@ export function VersionSelect({ versions, value, onChange, showSnapshots, onShow
               />
             </label>
           </div>
-          <div className="max-h-80 overflow-y-auto p-2">
+          <div className="max-h-64 overflow-y-auto p-2">
             {offline && (
               <div className="mb-2 flex items-center gap-2 rounded-xl bg-raised px-3 py-2 text-xs text-muted">
                 <WifiOff size={14} /> Offline. Showing cached versions.

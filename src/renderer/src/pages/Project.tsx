@@ -51,11 +51,11 @@ export function Project({ id, instanceId }: { id: string; instanceId?: string })
     if (inst && project) api.content.installedProjects(inst.id).then((ids) => setInstalled(ids.includes(project.id)))
   }, [inst, project])
   useEffect(() => {
-    if (inst) {
-      setGvFilter(inst.mcVersion)
-      setLoaderFilter(inst.loader === 'vanilla' ? '' : inst.loader)
-    }
+    if (inst) setGvFilter(inst.mcVersion)
   }, [inst])
+  useEffect(() => {
+    if (project) setLoaderFilter(project.project_type === 'mod' || project.project_type === 'modpack' ? 'fabric' : '')
+  }, [project])
 
   const filtered = useMemo(
     () => (versions ?? []).filter((v) => (!gvFilter || v.game_versions.includes(gvFilter)) && (!loaderFilter || v.loaders.includes(loaderFilter))),
@@ -66,6 +66,8 @@ export function Project({ id, instanceId }: { id: string; instanceId?: string })
   if (!project) return <div className="grid h-full place-items-center"><Spinner /></div>
 
   const isPack = project.project_type === 'modpack'
+  // Fabric-only launcher: mods and modpacks need a Fabric version (data-pack mods can still go in as data packs).
+  const noFabric = (project.project_type === 'mod' || isPack) && !project.loaders.includes('fabric') && !project.loaders.includes('datapack')
   const allGv = [...new Set((versions ?? []).flatMap((v) => v.game_versions))]
   const allLoaders = [...new Set((versions ?? []).flatMap((v) => v.loaders))]
   const releaseVersions = project.game_versions.filter((v) => /^\d+(\.\d+)+$/.test(v)).reverse()
@@ -121,7 +123,9 @@ export function Project({ id, instanceId }: { id: string; instanceId?: string })
             </div>
           </div>
           <div className="flex flex-col items-end gap-2">
-            {installed ? (
+            {noFabric ? (
+              <Button size="lg" variant="secondary" disabled>Not available for Fabric</Button>
+            ) : installed ? (
               <Button size="lg" variant="secondary" disabled><Check size={18} /> Installed</Button>
             ) : (
               <Button size="lg" variant="primary" busy={installing === 'best'} onClick={() => install()}>

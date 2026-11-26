@@ -1,8 +1,8 @@
 # PandaClient
 
-A simple, clean Minecraft: Java Edition launcher. You get Feather-style one-click play and a Modrinth-style
-library: any version, any loader, and mods, modpacks, resource packs, shaders and data packs
-straight from Modrinth.
+A simple, clean, Fabric-only Minecraft: Java Edition launcher. You get Feather-style one-click play and a
+Modrinth-style library: any version Fabric supports, and Fabric mods, modpacks, resource packs, shaders
+and data packs straight from Modrinth.
 
 See [PLAN.md](./PLAN.md) for the roadmap and folder structure.
 

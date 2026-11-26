@@ -3,7 +3,7 @@ import { existsSync } from 'node:fs'
 import { mkdir, readdir, readFile, stat, writeFile } from 'node:fs/promises'
 import { dirname, join, relative } from 'node:path'
 import { unzipSync, zipSync, type Zippable } from 'fflate'
-import type { Instance, Loader } from '@shared/types'
+import type { Instance } from '@shared/types'
 import { download, getBuffer, pool } from './http'
 import { createInstance, emitInstancesChanged, getInstance, removeInstance, saveIconBuffer } from './instances'
 import { listContent } from './content'
@@ -34,12 +34,11 @@ const ALLOWED_HOSTS = ['cdn.modrinth.com', 'github.com', 'raw.githubusercontent.
 // Test runs point the API at a local fake server; allow its host too.
 if (process.env['PANDA_MODRINTH_API']) ALLOWED_HOSTS.push(new URL(process.env['PANDA_MODRINTH_API']).host)
 
-function loaderFromDeps(deps: MrpackIndex['dependencies']): { loader: Loader; version: string | null } {
-  if (deps['fabric-loader']) return { loader: 'fabric', version: deps['fabric-loader'] }
-  if (deps['quilt-loader']) return { loader: 'quilt', version: deps['quilt-loader'] }
-  if (deps.neoforge) return { loader: 'neoforge', version: deps.neoforge }
-  if (deps.forge) return { loader: 'forge', version: deps.forge }
-  return { loader: 'vanilla', version: null }
+/** PandaClient only runs Fabric, so packs for other loaders are refused up front. */
+function fabricVersionFromDeps(name: string, deps: MrpackIndex['dependencies']): string {
+  if (deps['fabric-loader']) return deps['fabric-loader']
+  const other = deps.neoforge ? 'NeoForge' : deps.forge ? 'Forge' : deps['quilt-loader'] ? 'Quilt' : 'no mod loader'
+  throw new Error(`${name} uses ${other}. PandaClient runs Fabric modpacks only.`)
 }
 
 async function installFromBuffer(
@@ -54,7 +53,7 @@ async function installFromBuffer(
   const index = JSON.parse(new TextDecoder().decode(indexRaw)) as MrpackIndex
   if (index.game !== 'minecraft' || !index.dependencies.minecraft) throw new Error('Unsupported modpack')
 
-  const { loader, version: loaderVersion } = loaderFromDeps(index.dependencies)
+  const loaderVersion = fabricVersionFromDeps(index.name, index.dependencies)
   // Validate every path before creating anything.
   const files = index.files.filter((f) => f.env?.client !== 'unsupported')
   for (const f of files) safeJoin('/instance', f.path)
@@ -65,7 +64,6 @@ async function installFromBuffer(
   const inst = await createInstance({
     name: index.name,
     mcVersion: index.dependencies.minecraft,
-    loader,
     loaderVersion,
     modpack: extra.modpack ?? null
   })
@@ -119,10 +117,11 @@ export async function installModpack(projectId: string, versionId?: string): Pro
   return withTask(`Installing ${project.title}`, async (task) => {
     let version = versionId ? await mr.version(versionId) : undefined
     if (!version) {
-      const all = (await mr.versions(project.id)).sort((a, b) => b.date_published.localeCompare(a.date_published))
+      const all = (await mr.versions(project.id, { loaders: ['fabric'] })).sort((a, b) => b.date_published.localeCompare(a.date_published))
       version = all.find((v) => v.version_type === 'release') ?? all[0]
     }
-    if (!version) throw new Error(`${project.title} has no versions`)
+    if (!version) throw new Error(`${project.title} has no Fabric version. PandaClient runs Fabric modpacks only.`)
+    if (!version.loaders.includes('fabric')) throw new Error(`${project.title} ${version.version_number} isn't a Fabric modpack.`)
     const file = version.files.find((f) => f.primary) ?? version.files[0]
     task.update(`Downloading ${project.title} ${version.version_number}`, 0)
     const buf = await getBuffer(file.url, (r, t) => t && task.update(`Downloading ${project.title} ${version.version_number}`, r / t))
@@ -171,8 +170,7 @@ export async function exportMrpack(id: string): Promise<string | null> {
       files: [],
       dependencies: { minecraft: inst.mcVersion }
     }
-    const loaderKey = { fabric: 'fabric-loader', quilt: 'quilt-loader', forge: 'forge', neoforge: 'neoforge' } as const
-    if (inst.loader !== 'vanilla' && inst.loaderVersion) index.dependencies[loaderKey[inst.loader]] = inst.loaderVersion
+    if (inst.loaderVersion) index.dependencies['fabric-loader'] = inst.loaderVersion
 
     const zip: Zippable = {}
     const folders = { mod: 'mods', resourcepack: 'resourcepacks', shader: 'shaderpacks', datapack: 'datapacks' } as const

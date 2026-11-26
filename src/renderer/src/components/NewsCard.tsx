@@ -6,8 +6,8 @@ const entries = [
     date: 'Nov 2026',
     title: 'Library & Discover',
     items: [
-      'Instances for Vanilla, Fabric, Quilt, Forge and NeoForge',
-      'Browse and install mods, modpacks, resource packs, shaders and data packs from Modrinth',
+      'Fabric instances for any version Fabric supports',
+      'Browse and install Fabric mods and modpacks, resource packs, shaders and data packs from Modrinth',
       'Content, Worlds, Screenshots, Files and Logs for every instance',
       'Update checks, .mrpack import & export'
     ]

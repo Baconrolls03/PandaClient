@@ -30,17 +30,10 @@ const releases = list.versions.filter((v: any) => v.type === 'release')
 const fabricLatest = releases.find((v: any) => v.fabric)!.id
 ok(`Mojang: ${list.versions.length} versions, latest release ${list.latestRelease}, newest with Fabric ${fabricLatest}`)
 
-// Loaders
-for (const [loader, mc] of [['fabric', fabricLatest], ['quilt', '1.21.1'], ['forge', '1.20.1'], ['neoforge', '1.21.1'], ['neoforge', list.latestRelease]] as const) {
-  const lv = await loaders.loaderVersions(loader, mc)
-  if (loader === 'neoforge' && mc === list.latestRelease && lv.length === 0) {
-    ok(`neoforge ${mc}: none yet`)
-    continue
-  }
-  assert.ok(lv.length > 0, `${loader} ${mc} has versions`)
-  if (loader === 'quilt') assert.equal(lv[0].version, [...lv].map((l: any) => l.version).sort((a: string, b: string) => b.localeCompare(a, undefined, { numeric: true }))[0])
-  ok(`${loader} ${mc}: ${lv.length} versions, newest ${lv[0].version}${lv[0].stable ? '' : ' (beta)'}, first stable ${lv.find((l: any) => l.stable)?.version}`)
-}
+// Fabric loader versions
+const fabricLoaders = await loaders.fabricVersions(fabricLatest)
+assert.ok(fabricLoaders.length > 0)
+ok(`fabric ${fabricLatest}: ${fabricLoaders.length} loader versions, latest stable ${await loaders.latestStableFabric(fabricLatest)}`)
 
 // Search every project type
 for (const type of ['mod', 'modpack', 'resourcepack', 'shader', 'datapack'] as const) {
@@ -56,8 +49,8 @@ const members = await mr.members('sodium')
 ok(`tags: ${cats.length} categories, ${gvs.length} game versions; sodium team: ${members.map((m: any) => m.user.username).join(', ')}`)
 
 // Instance + performance pack on the newest Fabric version
-const fabricLoader = (await loaders.loaderVersions('fabric', fabricLatest)).find((l: any) => l.stable)!.version
-const inst = await instances.createInstance({ name: 'Live Fabric', mcVersion: fabricLatest, loader: 'fabric', loaderVersion: fabricLoader })
+const fabricLoader = await loaders.latestStableFabric(fabricLatest)
+const inst = await instances.createInstance({ name: 'Live Fabric', mcVersion: fabricLatest, loaderVersion: fabricLoader })
 const skipped = await content.installMany(inst.id, content.PERFORMANCE_PACK, 'perf')
 let items = await content.listContent(inst.id)
 ok(`perf pack on ${fabricLatest}: ${items.map((i: any) => `${i.project?.title} ${i.version?.number}`).join(' | ')}${skipped.length ? ` (not available yet: ${skipped.join(', ')})` : ''}`)
@@ -78,7 +71,7 @@ ok(`mods: ${byType('mod').join(', ')}`)
 ok(`resource packs: ${byType('resourcepack').join(', ')} · shaders: ${byType('shader').join(', ')} · data packs: ${byType('datapack').join(', ') || '(none)'}`)
 
 // Update flow: older Sodium on 1.21.1
-const old = await instances.createInstance({ name: 'Live Old', mcVersion: '1.21.1', loader: 'fabric', loaderVersion: null })
+const old = await instances.createInstance({ name: 'Live Old', mcVersion: '1.21.1', loaderVersion: null })
 const sodiumVersions = (await mr.versions('sodium', { loaders: ['fabric'], gameVersions: ['1.21.1'] })).sort((a: any, b: any) => b.date_published.localeCompare(a.date_published))
 const older = sodiumVersions[sodiumVersions.length - 1]
 await content.installProject(old.id, 'sodium', older.id)
@@ -94,14 +87,15 @@ assert.equal(after.length, 1)
 assert.equal(after[0].version.number, s.update.number)
 ok(`updated: ${after[0].file} (old file removed)`)
 
-// Vanilla instance refuses a Fabric-only mod
-const van = await instances.createInstance({ name: 'Live Vanilla', mcVersion: '1.21.1', loader: 'vanilla', loaderVersion: null })
-await assert.rejects(content.installProject(van.id, 'sodium'))
-await content.installProject(van.id, 'faithful-32x')
-await content.installProject(van.id, 'terralith')
-const vanItems = await content.listContent(van.id)
-assert.ok(vanItems.some((i: any) => i.type === 'datapack' && i.project?.slug === 'terralith'))
-ok(`vanilla: Sodium refused; installed ${vanItems.map((i: any) => `${i.project?.title} (${i.type})`).join(', ')}`)
+// Fabric-only rules against real projects
+const forgeMod = (await mr.search({ query: '', type: 'mod', sort: 'downloads', categories: [], loaders: ['forge'], gameVersions: ['1.20.1'], environment: null, offset: 0, limit: 50 })).hits.find((h: any) => !h.categories.includes('fabric') && !h.categories.includes('datapack'))
+await assert.rejects(content.installProject(old.id, forgeMod.slug), /no Fabric version/)
+ok(`Forge-only mod refused: ${forgeMod.title}`)
+const forgePack = (await mr.search({ query: '', type: 'modpack', sort: 'downloads', categories: [], loaders: ['forge'], gameVersions: [], environment: null, offset: 0, limit: 50 })).hits.find((h: any) => !h.categories.includes('fabric'))
+await assert.rejects(mrpack.installModpack(forgePack.slug), /Fabric/)
+ok(`Forge modpack refused: ${forgePack.title}`)
+const shaders = await mr.search({ query: '', type: 'shader', sort: 'downloads', categories: [], loaders: ['iris'], gameVersions: [], environment: null, offset: 0, limit: 5 })
+ok(`Iris shaders: ${shaders.total_hits}, e.g. ${shaders.hits.slice(0, 2).map((h: any) => h.title).join(', ')}`)
 
 // Real modpack
 const pack = await mrpack.installModpack('fabulously-optimized')

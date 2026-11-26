@@ -45,7 +45,7 @@ export function Instance({ id, tab = 'content' }: { id: string; tab?: InstanceTa
           <div className="min-w-0 flex-1">
             <h1 className="truncate text-2xl font-bold tracking-tight">{inst.name}</h1>
             <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-muted">
-              <LoaderBadge loader={inst.loader} version={inst.loaderVersion ?? undefined} />
+              <LoaderBadge version={inst.loaderVersion} />
               <Badge>Minecraft {inst.mcVersion}</Badge>
               {inst.modpack && (
                 <button onClick={() => navigate({ name: 'project', id: inst.modpack!.projectId })}>

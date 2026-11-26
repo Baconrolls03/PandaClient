@@ -1,5 +1,7 @@
 # PandaClient — Plan
 
+**Fabric-only.** Every instance runs Fabric. Discover only shows Fabric mods and modpacks and Iris shaders (resource packs and data packs work everywhere). That keeps launching simple, since Fabric is just a version profile on top of vanilla, and it matches Feather. Fabric supports Minecraft 1.14 and newer.
+
 A lightweight, clean Minecraft: Java Edition launcher in the spirit of Feather / Modrinth App:
 one big Play button, any Minecraft version, Fabric + a curated performance mod set installed
 automatically, and (later) anything else straight from Modrinth.
@@ -44,7 +46,7 @@ Security: `contextIsolation: true`, `nodeIntegration: false`, `sandbox: true`, a
 │   │       ├── http.ts         fetch/download with sha1 check, concurrency pool, User-Agent
 │   │       ├── tasks.ts        download/progress tracker → Downloads panel
 │   │       ├── modrinth.ts     search, projects, versions, hashes → versions, update lookup, tags
-│   │       ├── loaders.ts      Fabric / Quilt / Forge / NeoForge version lists
+│   │       ├── loaders.ts      Fabric loader versions
 │   │       ├── instances.ts    create, list, update, icon, duplicate, delete (to Recycle Bin)
 │   │       ├── content.ts      scan + identify files, install with dependencies, toggle, update
 │   │       ├── mrpack.ts       modpack install, .mrpack import & export
@@ -80,19 +82,16 @@ Security: `contextIsolation: true`, `nodeIntegration: false`, `sandbox: true`, a
 
 1. ✅ **UI shell + theme**: frameless window, title bar, settings, Java detect, live version list.
 2. ✅ **Modrinth-style library**:
-   - Instances for Vanilla, Fabric, Quilt, Forge and NeoForge, any version.
-   - Discover with filters for all five project types, project pages, installs that resolve dependencies.
-   - Modpack install, import and export.
+   - Fabric instances for any version Fabric supports (Vanilla, Quilt, Forge and NeoForge were dropped in favour of Fabric-only).
+   - Discover with filters for all five project types (Fabric-filtered), project pages, installs that resolve dependencies.
+   - Fabric modpack install, import and export. Modpacks for other loaders are refused up front.
    - Update checks.
    - Content, Worlds (with servers), Screenshots, Files, Logs and Settings for each instance.
    - Feather-style play bar and downloads panel.
 3. **Microsoft login (msmc)**: login popup, refresh token in Electron `safeStorage`, skin head and username.
 4. **Java runtime**: use detected Java when its major version fits, otherwise download Mojang's runtime.
-5. **Launch (MCLC)**:
-   - Vanilla through MCLC.
-   - Fabric and Quilt by writing the Meta profile JSON into `versions/`.
-   - Forge and NeoForge by running their installers.
-   - Stream progress to the play bar, and honour "close launcher on launch".
+5. **Launch (MCLC)**: install vanilla through MCLC, write Fabric Meta's profile JSON into `versions/`, launch it,
+   stream progress to the play bar, and honour "close launcher on launch".
 6. **Packaging**: electron-builder NSIS installer, app icon from `assets/logo.png`.
 
 ### Later (not now)

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { FileUp, ImagePlus, Zap } from 'lucide-react'
-import { LOADERS, type Loader, type LoaderVersion, type VersionList } from '@shared/types'
+import type { LoaderVersion, VersionList } from '@shared/types'
 import { api } from '@/lib/api'
 import { useStore } from '@/lib/store'
 import { Button, InstanceIcon, Modal, Select, TextField, Toggle } from '@/components/ui'
@@ -10,7 +10,6 @@ export function CreateInstanceModal() {
   const { closeModal, settings, update, attempt, navigate, toast } = useStore()
   const [list, setList] = useState<VersionList | null>(null)
   const [name, setName] = useState('')
-  const [loader, setLoader] = useState<Loader>('fabric')
   const [mc, setMc] = useState('')
   const [loaderVersions, setLoaderVersions] = useState<LoaderVersion[] | null>(null)
   const [loaderVersion, setLoaderVersion] = useState('')
@@ -28,21 +27,20 @@ export function CreateInstanceModal() {
   useEffect(() => {
     setLoaderVersions(null)
     setLoaderVersion('')
-    if (!mc || loader === 'vanilla') return setLoaderVersions([])
+    if (!mc) return
     let cancelled = false
     api.versions
-      .loaders(loader, mc)
+      .fabric(mc)
       .then((v) => !cancelled && setLoaderVersions(v))
       .catch(() => !cancelled && setLoaderVersions([]))
     return () => {
       cancelled = true
     }
-  }, [loader, mc])
+  }, [mc])
 
-  const versions = useMemo(() => (list?.versions ?? []).filter((v) => loader !== 'fabric' || v.fabric), [list, loader])
-  const noLoader = loader !== 'vanilla' && loaderVersions != null && loaderVersions.length === 0
-  const loaderName = LOADERS.find((l) => l.id === loader)!.name
-  const placeholder = `${loaderName} ${mc}`
+  const versions = useMemo(() => (list?.versions ?? []).filter((v) => v.fabric), [list])
+  const noLoader = loaderVersions != null && loaderVersions.length === 0
+  const placeholder = `Fabric ${mc}`
 
   async function create() {
     setBusy(true)
@@ -50,9 +48,8 @@ export function CreateInstanceModal() {
       api.instances.create({
         name: name.trim() || placeholder,
         mcVersion: mc,
-        loader,
         loaderVersion: loaderVersion || null,
-        performancePack: perfPack && (loader === 'fabric' || loader === 'quilt'),
+        performancePack: perfPack,
         iconFile
       })
     )
@@ -78,6 +75,7 @@ export function CreateInstanceModal() {
       title="New instance"
       onClose={closeModal}
       width="max-w-xl"
+      allowOverflow
       footer={
         <>
           <Button variant="ghost" onClick={importPack} className="mr-auto">
@@ -110,21 +108,6 @@ export function CreateInstanceModal() {
           </div>
         </div>
 
-        <div>
-          <label className="mb-1.5 block text-xs font-medium text-muted">Loader</label>
-          <div className="grid grid-cols-5 gap-1 rounded-xl border border-border bg-bg p-1">
-            {LOADERS.map((l) => (
-              <button
-                key={l.id}
-                onClick={() => setLoader(l.id)}
-                className={`rounded-lg py-2 text-sm font-medium transition-all ${loader === l.id ? 'bg-raised text-text shadow-soft' : 'text-muted hover:text-text'}`}
-              >
-                {l.name}
-              </button>
-            ))}
-          </div>
-        </div>
-
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="mb-1.5 block text-xs font-medium text-muted">Minecraft version</label>
@@ -141,13 +124,11 @@ export function CreateInstanceModal() {
             />
           </div>
           <div>
-            <label className="mb-1.5 block text-xs font-medium text-muted">{loaderName} version</label>
-            {loader === 'vanilla' ? (
-              <div className="flex h-14 items-center rounded-2xl border border-border bg-bg px-4 text-sm text-muted">Not needed</div>
-            ) : loaderVersions == null ? (
+            <label className="mb-1.5 block text-xs font-medium text-muted">Fabric Loader</label>
+            {loaderVersions == null ? (
               <div className="flex h-14 items-center rounded-2xl border border-border bg-bg px-4 text-sm text-muted">Loading…</div>
             ) : noLoader ? (
-              <div className="flex h-14 items-center rounded-2xl border border-danger/40 bg-danger/5 px-4 text-sm text-danger">No {loaderName} for {mc}</div>
+              <div className="flex h-14 items-center rounded-2xl border border-danger/40 bg-danger/5 px-4 text-sm text-danger">No Fabric for {mc}</div>
             ) : (
               <Select
                 value={loaderVersion}
@@ -162,7 +143,7 @@ export function CreateInstanceModal() {
           </div>
         </div>
 
-        {(loader === 'fabric' || loader === 'quilt') && (
+        {(
           <div className="flex items-center gap-4 rounded-2xl border border-mint/25 bg-mint/5 p-4">
             <div className="grid size-10 place-items-center rounded-xl bg-mint/15 text-mint">
               <Zap size={18} />

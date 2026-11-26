@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
 import { ChevronLeft, ChevronRight, PackageSearch, X } from 'lucide-react'
-import type { Instance, MrCategory, MrGameVersion, MrSearchResult, ProjectType, SearchQuery, SortIndex } from '@shared/types'
+import type { MrCategory, MrGameVersion, MrSearchResult, ProjectType, SearchQuery, SortIndex } from '@shared/types'
 import { api } from '@/lib/api'
 import { useStore } from '@/lib/store'
-import { LOADER_NAMES, titleCase } from '@/lib/format'
+import { titleCase } from '@/lib/format'
 import { ProjectCard } from '@/components/ProjectCard'
 import { Chip, Empty, InstanceIcon, SearchField, Select, Spinner, Tabs } from '@/components/ui'
 
@@ -16,8 +16,9 @@ const TYPES: { id: ProjectType; label: string }[] = [
 ]
 const PAGE = 20
 
-function instanceLoaders(inst: Instance): string[] {
-  return inst.loader === 'quilt' ? ['quilt', 'fabric'] : inst.loader === 'vanilla' ? [] : [inst.loader]
+/** Everything Discover shows must run on Fabric: Fabric mods and modpacks, Iris shaders. */
+function loadersFor(type: ProjectType): string[] {
+  return type === 'mod' || type === 'modpack' ? ['fabric'] : type === 'shader' ? ['iris'] : []
 }
 
 function FilterGroup({ title, children }: { title: string; children: React.ReactNode }) {
@@ -36,7 +37,6 @@ export function Discover({ type, instanceId }: { type: ProjectType; instanceId?:
   const [debounced, setDebounced] = useState('')
   const [sort, setSort] = useState<SortIndex>('relevance')
   const [categories, setCategories] = useState<string[]>([])
-  const [loaders, setLoaders] = useState<string[]>([])
   const [gameVersion, setGameVersion] = useState('')
   const [environment, setEnvironment] = useState<SearchQuery['environment']>('client')
   const [page, setPage] = useState(0)
@@ -58,10 +58,9 @@ export function Discover({ type, instanceId }: { type: ProjectType; instanceId?:
   // Reset filters that don't apply when switching type.
   useEffect(() => {
     setCategories([])
-    setLoaders([])
     setPage(0)
   }, [type])
-  useEffect(() => setPage(0), [debounced, sort, categories, loaders, gameVersion, environment])
+  useEffect(() => setPage(0), [debounced, sort, categories, gameVersion, environment])
   useEffect(() => {
     if (inst) api.content.installedProjects(inst.id).then((ids) => setInstalled(new Set(ids)))
     else setInstalled(new Set())
@@ -73,13 +72,13 @@ export function Discover({ type, instanceId }: { type: ProjectType; instanceId?:
       type,
       sort,
       categories,
-      loaders: inst && type === 'mod' ? instanceLoaders(inst) : type === 'mod' || type === 'modpack' ? loaders : [],
+      loaders: loadersFor(type),
       gameVersions: inst ? [inst.mcVersion] : gameVersion ? [gameVersion] : [],
       environment: type === 'mod' || type === 'datapack' ? environment : null,
       offset: page * PAGE,
       limit: PAGE
     }),
-    [debounced, type, sort, categories, loaders, gameVersion, environment, page, inst]
+    [debounced, type, sort, categories, gameVersion, environment, page, inst]
   )
 
   useEffect(() => {
@@ -124,7 +123,7 @@ export function Discover({ type, instanceId }: { type: ProjectType; instanceId?:
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Discover</h1>
-          <p className="mt-1 text-sm text-muted">Thousands of projects from Modrinth, installed in one click.</p>
+          <p className="mt-1 text-sm text-muted">Fabric mods, modpacks and more from Modrinth, installed in one click.</p>
         </div>
         <Tabs tabs={TYPES} value={type} onChange={(t) => navigate({ name: 'discover', type: t, instanceId })} />
       </div>
@@ -136,7 +135,7 @@ export function Discover({ type, instanceId }: { type: ProjectType; instanceId?:
             Installing into <span className="font-semibold">{inst.name}</span>
             <span className="text-muted">
               {' '}
-              · showing only {LOADER_NAMES[inst.loader]} {inst.mcVersion} compatible results
+              · showing only results for Fabric {inst.mcVersion}
             </span>
           </div>
           <button aria-label="Clear instance" onClick={() => navigate({ name: 'discover', type })} className="grid size-8 place-items-center rounded-lg text-muted hover:bg-raised hover:text-text">
@@ -173,15 +172,6 @@ export function Discover({ type, instanceId }: { type: ProjectType; instanceId?:
                 options={[{ value: '', label: 'All versions' }, ...gameVersions.slice(0, 80).map((g) => ({ value: g.version, label: g.version }))]}
               />
             </div>
-          )}
-          {(type === 'mod' || type === 'modpack') && !inst && (
-            <FilterGroup title="Loader">
-              {['fabric', 'quilt', 'forge', 'neoforge'].map((l) => (
-                <Chip key={l} active={loaders.includes(l)} onClick={() => setLoaders(toggle(loaders, l))}>
-                  {LOADER_NAMES[l]}
-                </Chip>
-              ))}
-            </FilterGroup>
           )}
           {type !== 'modpack' && type !== 'shader' && type !== 'resourcepack' && (
             <FilterGroup title="Environment">

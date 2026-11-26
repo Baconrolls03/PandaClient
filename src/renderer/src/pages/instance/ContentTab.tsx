@@ -61,7 +61,7 @@ export function ContentTab({ inst }: { inst: Instance }) {
     load()
   }
 
-  const discoverType: ProjectType = filter === 'all' ? (inst.loader === 'vanilla' ? 'resourcepack' : 'mod') : TO_PROJECT[filter]
+  const discoverType: ProjectType = filter === 'all' ? 'mod' : TO_PROJECT[filter]
 
   return (
     <div className="flex flex-col gap-4">
@@ -111,7 +111,7 @@ export function ContentTab({ inst }: { inst: Instance }) {
             </Button>
           }
         >
-          {inst.loader === 'vanilla' ? 'Add resource packs, shaders and data packs.' : 'Add mods, resource packs, shaders and data packs.'}
+          Add Fabric mods, resource packs, shaders and data packs.
         </Empty>
       ) : (
         <div className="overflow-hidden rounded-2xl border border-border bg-surface shadow-soft">

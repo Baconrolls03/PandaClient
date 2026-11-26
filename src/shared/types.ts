@@ -36,15 +36,8 @@ export interface Account {
 
 /* ───────────── Versions & loaders ───────────── */
 
-export type Loader = 'vanilla' | 'fabric' | 'quilt' | 'forge' | 'neoforge'
-
-export const LOADERS: { id: Loader; name: string }[] = [
-  { id: 'vanilla', name: 'Vanilla' },
-  { id: 'fabric', name: 'Fabric' },
-  { id: 'quilt', name: 'Quilt' },
-  { id: 'forge', name: 'Forge' },
-  { id: 'neoforge', name: 'NeoForge' }
-]
+/** PandaClient is a Fabric-only launcher. Kept as a field so instance.json stays forward compatible. */
+export type Loader = 'fabric'
 
 export interface VersionInfo {
   id: string
@@ -91,9 +84,9 @@ export interface Instance {
 export interface CreateInstanceInput {
   name: string
   mcVersion: string
-  loader: Loader
+  /** Fabric loader version; null = latest stable. */
   loaderVersion: string | null
-  /** Install Fabric API, Sodium, Lithium, Iris (Fabric / Quilt only). */
+  /** Install Fabric API, Sodium, Lithium, Iris. */
   performancePack: boolean
   /** Local image file to use as the icon. */
   iconFile?: string | null
@@ -336,7 +329,7 @@ export interface PandaApi {
   }
   versions: {
     list(): Promise<VersionList>
-    loaders(loader: Loader, mcVersion: string): Promise<LoaderVersion[]>
+    fabric(mcVersion: string): Promise<LoaderVersion[]>
   }
   instances: {
     list(): Promise<Instance[]>

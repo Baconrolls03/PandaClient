@@ -27,7 +27,7 @@ const api: PandaApi = {
   },
   versions: {
     list: () => invoke('versions:list'),
-    loaders: (loader, mc) => invoke('versions:loaders', loader, mc)
+    fabric: (mc) => invoke('versions:fabric', mc)
   },
   instances: {
     list: () => invoke('instances:list'),
