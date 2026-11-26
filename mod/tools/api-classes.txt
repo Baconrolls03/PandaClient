@@ -37,3 +37,17 @@ net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements
 net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper
 net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents
 org.joml.Matrix3x2fStack
+com.mojang.blaze3d.platform.Window
+net.minecraft.world.phys.Vec3
+net.minecraft.world.phys.HitResult
+net.minecraft.world.phys.EntityHitResult
+net.minecraft.world.entity.player.Inventory
+net.minecraft.world.item.Items
+net.minecraft.client.gui.components.Button
+net.minecraft.client.gui.components.EditBox
+net.minecraft.client.gui.screens.inventory.InventoryScreen
+net.minecraft.world.level.Level
+net.minecraft.util.Mth
+net.minecraft.client.renderer.entity.EntityRenderDispatcher
+net.minecraft.client.player.ClientInput
+net.minecraft.world.entity.player.Input

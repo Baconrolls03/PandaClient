@@ -21,3 +21,7 @@ for k in $classes; do
   echo "===== $k"
   javap -cp "$CP" -public "$k" 2>&1 | head -120
 done
+for k in $(grep -v '^#' mod/tools/mixin-classes.txt | grep -v '^$'); do
+  echo "===== (private) $k"
+  javap -cp "$CP" -p "$k" 2>&1 | grep '(' | head -150
+done
