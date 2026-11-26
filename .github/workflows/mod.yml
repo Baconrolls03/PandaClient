@@ -23,11 +23,6 @@ jobs:
         run: |
           set -o pipefail
           gradle -p mod build --no-daemon 2>&1 | tee build.log
-      # Public signatures (javap) of the Minecraft / Fabric API classes the mod uses, so the mod
-      # can be written against the exact 1.21.11 API. Printed first so the errors stay at the end of the log.
-      - name: API signatures
-        if: always()
-        run: bash mod/tools/print-api.sh || true
       - name: Summary
         if: always()
         run: |

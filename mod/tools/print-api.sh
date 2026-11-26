@@ -1,27 +1,16 @@
 #!/usr/bin/env bash
-# Print public signatures (javap) of the classes the mod talks to. No source code is printed.
+# Print the public signatures (javap) of the classes in tools/api.txt for one group (no source code).
 set -u
-find_jar() { # $1 = class file path inside the jar
-  for j in $(find "$HOME/.gradle" mod/.gradle -name '*.jar' 2>/dev/null); do
-    if unzip -l "$j" 2>/dev/null | grep -q " $1\$"; then echo "$j"; return; fi
-  done
-}
-MC=$(find_jar 'net/minecraft/client/gui/GuiGraphics.class')
-echo "Minecraft jar: $MC"
-CP="$MC"
-for c in 'net/fabricmc/fabric/api/client/rendering/v1/hud/HudElementRegistry.class' \
-         'net/fabricmc/fabric/api/client/keybinding/v1/KeyBindingHelper.class' \
-         'net/fabricmc/fabric/api/client/event/lifecycle/v1/ClientTickEvents.class' \
-         'net/fabricmc/fabric/api/client/rendering/v1/hud/VanillaHudElements.class'; do
-  j=$(find_jar "$c"); echo "Fabric: $c -> $j"; CP="$CP:$j"
-done
-for f in $(find "$HOME/.gradle" -name 'lwjgl-glfw-*.jar' | head -1) $(find "$HOME/.gradle" -name 'joml-*.jar' | head -1); do CP="$CP:$f"; done
-classes=$(cat mod/tools/api-classes.txt | grep -v '^#' | grep -v '^$')
-for k in $classes; do
-  echo "===== $k"
-  javap -cp "$CP" -public "$k" 2>&1 | head -120
-done
-for k in $(grep -v '^#' mod/tools/mixin-classes.txt | grep -v '^$'); do
-  echo "===== (private) $k"
-  javap -cp "$CP" -p "$k" 2>&1 | grep '(' | head -150
+GROUP="${1:-1}"
+jars=$(find "$HOME/.gradle" mod/.gradle -name '*.jar' 2>/dev/null | grep -Ev 'sources|javadoc')
+find_jar() { for j in $jars; do if unzip -l "$j" 2>/dev/null | grep -q " $1\$"; then echo "$j"; return; fi; done; }
+CP="$(find_jar 'net/minecraft/client/gui/GuiGraphics.class')"
+for c in net/fabricmc/fabric/api/client/rendering/v1/hud/HudElementRegistry.class \
+         net/fabricmc/fabric/api/client/keybinding/v1/KeyBindingHelper.class \
+         net/fabricmc/fabric/api/client/event/lifecycle/v1/ClientTickEvents.class; do CP="$CP:$(find_jar $c)"; done
+for f in $(echo "$jars" | grep -E '/(joml|lwjgl-glfw|datafixerupper|brigadier|authlib|guava)-[0-9]' ); do CP="$CP:$f"; done
+grep -v '^#' mod/tools/api.txt | grep "^$GROUP|" | while IFS='|' read -r g cls priv filter; do
+  echo "== $cls"
+  flag=-public; [ "$priv" = p ] && flag=-p
+  javap -cp "$CP" $flag "$cls" 2>&1 | grep -E "$filter" | sed -E 's/^  //; s/(public|final|java\.lang\.|net\.minecraft\.|com\.mojang\.) ?//g' | head -90
 done
