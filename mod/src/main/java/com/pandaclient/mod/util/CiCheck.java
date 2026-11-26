@@ -4,7 +4,6 @@ import com.pandaclient.mod.gui.HudEditorScreen;
 import com.pandaclient.mod.gui.MenuScreen;
 import com.pandaclient.mod.module.Modules;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.screens.TitleScreen;
 import org.spongepowered.asm.mixin.MixinEnvironment;
 
 /**
@@ -18,8 +17,10 @@ public final class CiCheck {
 
     public static void tick(Minecraft mc) {
         if (!ON) return;
-        if (ticks < 0) { if (mc.screen instanceof TitleScreen) ticks = 0; else return; }
-        ticks++;
+        // First launch shows the accessibility welcome screen instead of the title screen; either is fine.
+        if (mc.getOverlay() != null || mc.screen == null && ticks < 0) return;
+        if (ticks < 0) log("game ready on " + mc.screen.getClass().getSimpleName());
+        ticks = Math.max(ticks, 0) + 1;
         switch (ticks) {
             case 40 -> { mc.setScreen(new MenuScreen(null)); log("menu"); }
             case 140 -> { mc.setScreen(MenuScreen.openAt(null, Modules.KEYSTROKES)); log("settings"); }

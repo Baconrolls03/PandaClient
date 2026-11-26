@@ -39,13 +39,15 @@ public final class Modules {
     public static final LowFire LOW_FIRE = new LowFire();
     public static final TimeChanger TIME = new TimeChanger();
     public static final WeatherChanger WEATHER = new WeatherChanger();
+    public static final HitColor HIT_COLOR = new HitColor();
     public static final ChatTimestamps CHAT_TIMESTAMPS = new ChatTimestamps();
+    public static final Cosmetics COSMETICS = new Cosmetics();
 
     private static final List<Module> ALL = Collections.unmodifiableList(new ArrayList<>(List.of(
         FPS, CPS, KEYSTROKES, ARMOR, POTIONS, COORDS, DIRECTION, PING, SERVER, CLOCK, MEMORY, REACH, COMBO, SPEED, ITEMS,
         TOGGLE_SPRINT, ZOOM, FREELOOK, NO_HURT_CAM,
-        FULLBRIGHT, CROSSHAIR, BLOCK_OUTLINE, LOW_FIRE, TIME, WEATHER,
-        CHAT_TIMESTAMPS)));
+        FULLBRIGHT, CROSSHAIR, BLOCK_OUTLINE, HIT_COLOR, LOW_FIRE, TIME, WEATHER,
+        CHAT_TIMESTAMPS, COSMETICS)));
 
     public static List<Module> all() { return ALL; }
 

@@ -54,6 +54,15 @@ public final class PandaClientMod implements ClientModInitializer {
         com.pandaclient.mod.util.CiCheck.tick(mc);
         Config.tick();
         Combat.tick();
+        com.pandaclient.mod.util.HitColorTexture.tick();
+        if (Modules.COSMETICS.enabled()) {
+            com.pandaclient.mod.cosmetics.CosmeticsApi.loadCatalog();
+            if (mc.level != null && mc.level.getGameTime() % 40 == 0) {
+                java.util.List<java.util.UUID> ids = new java.util.ArrayList<>();
+                for (var p : mc.level.players()) ids.add(p.getUUID());
+                com.pandaclient.mod.cosmetics.CosmeticsApi.request(ids);
+            }
+        }
         while (Keys.MENU.consumeClick()) if (mc.screen == null) mc.setScreen(new MenuScreen(null));
         while (Keys.HUD_EDITOR.consumeClick()) if (mc.screen == null) mc.setScreen(new HudEditorScreen(null));
         for (Module m : Modules.all()) if (m.enabled()) m.tick();
