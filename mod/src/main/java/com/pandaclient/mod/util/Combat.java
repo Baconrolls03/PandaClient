@@ -23,6 +23,7 @@ public final class Combat {
         combo = entityId == lastTargetId ? combo + 1 : 1;
         lastTargetId = entityId; comboAt = System.currentTimeMillis();
     }
+    public static int pendingTarget() { return pendingTarget; }
     /** You took damage → combo broken. */
     public static void selfHurt() { combo = 0; }
     public static void tick() {

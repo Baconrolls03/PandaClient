@@ -14,10 +14,19 @@ public abstract class HudModule extends Module {
     public double fx, fy;
     public final Setting.Num scale = add(new Setting.Num("scale", "Scale", 1.0, 0.5, 3.0, 0.05));
 
+    /** True while the HUD editor is open (elements show sample data). */
+    public static boolean editing;
+
     protected HudModule(String id, String name, String description, boolean on, double fx, double fy) {
-        super(id, name, description, Category.HUD, on);
+        this(id, name, description, Category.HUD, on, fx, fy);
+    }
+    protected HudModule(String id, String name, String description, Category category, boolean on, double fx, double fy) {
+        super(id, name, description, category, on);
         this.fx = fx; this.fy = fy;
     }
+
+    /** Whether there is anything to draw right now (outside the editor). */
+    public boolean visible() { return true; }
 
     /** Unscaled size in GUI pixels for the current content. */
     public abstract int width();

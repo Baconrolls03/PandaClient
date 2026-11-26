@@ -6,7 +6,6 @@ import com.pandaclient.mod.util.Game;
 
 public final class CoordsHud extends HudModule {
     public final Setting.Bool showDirection = add(new Setting.Bool("direction", "Show direction", true));
-    public final Setting.Bool showBiome = add(new Setting.Bool("biome", "Show biome", false));
     public final Setting.Num decimals = add(new Setting.Num("decimals", "Decimals", 0, 0, 2, 1));
     public final Setting.Color textColor = add(new Setting.Color("textColor", "Text colour", 0xFFFFFFFF));
     public final Setting.Color labelColor = add(new Setting.Color("labelColor", "Label colour", 0xFF6EE08F));
@@ -24,7 +23,6 @@ public final class CoordsHud extends HudModule {
         l.add(new String[]{"Y: ", String.format(f, p[1])});
         l.add(new String[]{"Z: ", String.format(f, p[2])});
         if (showDirection.on()) l.add(new String[]{"Facing: ", Game.inWorld() ? Game.facing() : "North (-Z)"});
-        if (showBiome.on()) l.add(new String[]{"Biome: ", Game.inWorld() ? Game.biome() : "Plains"});
         return l.toArray(new String[0][]);
     }
 

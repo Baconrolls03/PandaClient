@@ -1,0 +1,23 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "com.pandaclient.mod.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "client": [
+    "CameraMixin",
+    "ChatComponentMixin",
+    "ClientLevelDataMixin",
+    "EntityMixin",
+    "GameRendererMixin",
+    "GuiMixin",
+    "KeyMappingMixin",
+    "LevelMixin",
+    "LevelRendererMixin",
+    "LightTextureMixin",
+    "MouseHandlerMixin",
+    "MultiPlayerGameModeMixin",
+    "OptionInstanceMixin",
+    "ScreenEffectRendererMixin"
+  ],
+  "injectors": { "defaultRequire": 1 }
+}

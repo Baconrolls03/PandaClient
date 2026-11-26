@@ -16,6 +16,9 @@ public abstract class TextHud extends HudModule {
     protected TextHud(String id, String name, String description, boolean on, double fx, double fy) {
         super(id, name, description, on, fx, fy);
     }
+    protected TextHud(String id, String name, String description, com.pandaclient.mod.module.Category c, boolean on, double fx, double fy) {
+        super(id, name, description, c, on, fx, fy);
+    }
 
     /** Label shown before the value, e.g. "FPS". Empty for none. */
     protected abstract String label();
@@ -28,7 +31,7 @@ public abstract class TextHud extends HudModule {
         return brackets.on() ? "[" + l + v + "]" : l + v;
     }
 
-    @Override public int width() { return Draw.textWidth(text(true)) + (background.on() ? 10 : 0); }
+    @Override public int width() { return Draw.textWidth(text(editing)) + (background.on() ? 10 : 0); }
     @Override public int height() { return background.on() ? 16 : 9; }
 
     @Override public void render(Draw d, boolean preview) {

@@ -33,7 +33,6 @@ public final class Config {
         if (!Files.exists(FILE)) return;
         try {
             JsonObject root = JsonParser.parseString(Files.readString(FILE, StandardCharsets.UTF_8)).getAsJsonObject();
-            if (root.has("menuKey")) Modules.MENU_KEY.load(root.get("menuKey"));
             if (root.has("theme")) Modules.THEME.load(root.get("theme"));
             JsonObject mods = root.has("mods") ? root.getAsJsonObject("mods") : new JsonObject();
             for (Module m : Modules.all()) {
@@ -55,7 +54,6 @@ public final class Config {
         dirtyAt = -1;
         JsonObject root = new JsonObject();
         root.addProperty("version", 1);
-        root.add("menuKey", Modules.MENU_KEY.save());
         root.add("theme", Modules.THEME.save());
         JsonObject mods = new JsonObject();
         for (Module m : Modules.all()) {
