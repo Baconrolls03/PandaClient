@@ -32,6 +32,14 @@ public final class PandaClientMod implements ClientModInitializer {
         Config.load();
         HudElementRegistry.addLast(Identifier.fromNamespaceAndPath("pandaclient", "hud"), PandaClientMod::renderHud);
         ClientTickEvents.END_CLIENT_TICK.register(PandaClientMod::tick);
+        // A "PandaClient" button on the title screen and the pause menu (Esc), so the menu is easy to find.
+        net.fabricmc.fabric.api.client.screen.v1.ScreenEvents.AFTER_INIT.register((client, screen, w, h) -> {
+            if (screen instanceof net.minecraft.client.gui.screens.TitleScreen || screen instanceof net.minecraft.client.gui.screens.PauseScreen) {
+                net.fabricmc.fabric.api.client.screen.v1.Screens.getButtons(screen).add(
+                    net.minecraft.client.gui.components.Button.builder(net.minecraft.network.chat.Component.literal("PandaClient"),
+                        b -> client.setScreen(new MenuScreen(screen))).bounds(6, 6, 90, 20).build());
+            }
+        });
         Runtime.getRuntime().addShutdownHook(new Thread(Config::save, "PandaClient config save"));
         System.out.println("[PandaClient] " + VERSION + " loaded with " + Modules.all().size() + " mods");
     }
