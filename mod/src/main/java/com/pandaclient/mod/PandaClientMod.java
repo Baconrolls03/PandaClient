@@ -32,6 +32,11 @@ public final class PandaClientMod implements ClientModInitializer {
         Config.load();
         HudElementRegistry.addLast(Identifier.fromNamespaceAndPath("pandaclient", "hud"), PandaClientMod::renderHud);
         ClientTickEvents.END_CLIENT_TICK.register(PandaClientMod::tick);
+        // Hats, glasses, wings... on every player model.
+        net.fabricmc.fabric.api.client.rendering.v1.LivingEntityFeatureRendererRegistrationCallback.EVENT.register((type, renderer, helper, ctx) -> {
+            if (renderer instanceof net.minecraft.client.renderer.entity.player.AvatarRenderer<?> avatar)
+                helper.register(new com.pandaclient.mod.cosmetics.AccessoryLayer(pandaclient$parent(avatar)));
+        });
         // A "PandaClient" button on the title screen and the pause menu (Esc), so the menu is easy to find.
         net.fabricmc.fabric.api.client.screen.v1.ScreenEvents.AFTER_INIT.register((client, screen, w, h) -> {
             if (!(screen instanceof net.minecraft.client.gui.screens.TitleScreen || screen instanceof net.minecraft.client.gui.screens.PauseScreen)) return;
@@ -42,6 +47,11 @@ public final class PandaClientMod implements ClientModInitializer {
         });
         Runtime.getRuntime().addShutdownHook(new Thread(Config::save, "PandaClient config save"));
         System.out.println("[PandaClient] " + VERSION + " loaded with " + Modules.all().size() + " mods");
+    }
+
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private static net.minecraft.client.renderer.entity.RenderLayerParent<net.minecraft.client.renderer.entity.state.AvatarRenderState, net.minecraft.client.model.player.PlayerModel> pandaclient$parent(Object r) {
+        return (net.minecraft.client.renderer.entity.RenderLayerParent) r;
     }
 
     private static void renderHud(GuiGraphics g, net.minecraft.client.DeltaTracker dt) {

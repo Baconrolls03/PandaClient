@@ -11,16 +11,23 @@
     "EntityMixin",
     "GameRendererMixin",
     "GuiMixin",
+    "HeldItemMixin",
+    "HitboxColorMixin",
     "KeyMappingMixin",
     "LevelMixin",
     "LevelRendererMixin",
     "LightTextureMixin",
     "MouseHandlerMixin",
     "MultiPlayerGameModeMixin",
+    "NametagMixin",
     "OptionInstanceMixin",
     "OverlayTextureMixin",
+    "OwnNametagMixin",
     "PlayerTabOverlayMixin",
-    "ScreenEffectRendererMixin"
+    "ScoreNumbersMixin",
+    "ScoreboardMixin",
+    "ScreenEffectRendererMixin",
+    "SkyRendererMixin"
   ],
   "injectors": { "defaultRequire": 1 }
 }

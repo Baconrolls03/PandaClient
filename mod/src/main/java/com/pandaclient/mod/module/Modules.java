@@ -44,6 +44,11 @@ public final class Modules {
     public static final HitParticles PARTICLES = new HitParticles();
     public static final AutoGG AUTO_GG = new AutoGG();
     public static final PandaBadge BADGE = new PandaBadge();
+    public static final Nametags NAMETAGS = new Nametags();
+    public static final Scoreboard SCOREBOARD = new Scoreboard();
+    public static final OldAnimations OLD_ANIMATIONS = new OldAnimations();
+    public static final SkyColor SKY_COLOR = new SkyColor();
+    public static final HitboxColor HITBOX_COLOR = new HitboxColor();
     public static final CustomTitleScreen TITLE_SCREEN = new CustomTitleScreen();
     public static final Fullbright FULLBRIGHT = new Fullbright();
     public static final Crosshair CROSSHAIR = new Crosshair();
@@ -57,8 +62,8 @@ public final class Modules {
 
     private static final List<Module> ALL = Collections.unmodifiableList(new ArrayList<>(List.of(
         FPS, CPS, KEYSTROKES, ARMOR, POTIONS, COORDS, DIRECTION, PING, SERVER, CLOCK, MEMORY, REACH, COMBO, SPEED, ITEMS, TARGET, SATURATION, DAY, TOTEMS, ARROWS, BOW,
-        TOGGLE_SPRINT, ZOOM, FREELOOK, NO_HURT_CAM, HITBOXES, HIT_SOUNDS,
-        FULLBRIGHT, CROSSHAIR, BLOCK_OUTLINE, HIT_COLOR, PARTICLES, LOW_FIRE, TIME, WEATHER,
+        TOGGLE_SPRINT, ZOOM, FREELOOK, NO_HURT_CAM, HITBOXES, HITBOX_COLOR, HIT_SOUNDS,
+        FULLBRIGHT, CROSSHAIR, OLD_ANIMATIONS, NAMETAGS, SCOREBOARD, SKY_COLOR, BLOCK_OUTLINE, HIT_COLOR, PARTICLES, LOW_FIRE, TIME, WEATHER,
         CHAT_TIMESTAMPS, AUTO_GG, BADGE, COSMETICS, TITLE_SCREEN)));
 
     public static List<Module> all() { return ALL; }
