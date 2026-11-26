@@ -3,7 +3,7 @@ import { copyFile, mkdir, readdir, rm } from 'node:fs/promises'
 import { join } from 'node:path'
 import { app } from 'electron'
 import type { Instance } from '@shared/types'
-import { installProject, installedProjectIds } from './content'
+import { installProject, listContent } from './content'
 import { sha1File } from './http'
 
 /** Minecraft versions the bundled PandaClient mod is built for. */
@@ -46,7 +46,11 @@ export async function ensurePandaMod(inst: Instance, enabled: boolean, log: (msg
     log('Adding the PandaClient mod')
     await copyFile(src, target)
   }
-  if (!(await installedProjectIds(inst.id)).includes(FABRIC_API_ID)) {
+  const items = await listContent(inst.id)
+  const hasFabricApi = items.some(
+    (i) => i.type === 'mod' && i.enabled && (i.project?.id === FABRIC_API_ID || i.project?.slug === 'fabric-api' || /^fabric-api/i.test(i.file))
+  )
+  if (!hasFabricApi) {
     log('Installing Fabric API (needed by the PandaClient mod)')
     await installProject(inst.id, 'fabric-api')
   }
