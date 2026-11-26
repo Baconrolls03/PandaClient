@@ -23,7 +23,7 @@ import net.minecraft.world.entity.LivingEntity;
 public final class PandaClientMod implements ClientModInitializer {
     public static final String VERSION = "0.1.0";
     private static CameraType cameraBeforeFreelook;
-    private static boolean sprintWasDown, sneakWasDown, freelookWasDown;
+    private static boolean menuWasDown, sprintWasDown, sneakWasDown, freelookWasDown;
     private static int prevSelfHurt;
 
     @Override
@@ -71,7 +71,12 @@ public final class PandaClientMod implements ClientModInitializer {
                 com.pandaclient.mod.cosmetics.CosmeticsApi.request(ids);
             }
         }
-        while (Keys.MENU.consumeClick()) if (mc.screen == null) mc.setScreen(new MenuScreen(null));
+        // Read our keys straight from the keyboard: with many mods installed another mod may use the same
+        // key, and Minecraft then only fires one of the key binds.
+        boolean menuDown = physicallyDown(mc, Keys.MENU);
+        while (Keys.MENU.consumeClick()) { /* handled below */ }
+        if (menuDown && !menuWasDown && mc.screen == null) mc.setScreen(new MenuScreen(null));
+        menuWasDown = menuDown;
         while (Keys.HUD_EDITOR.consumeClick()) if (mc.screen == null) mc.setScreen(new HudEditorScreen(null));
         for (Module m : Modules.all()) if (m.enabled()) m.tick();
 
@@ -91,13 +96,13 @@ public final class PandaClientMod implements ClientModInitializer {
 
         // Zoom
         var zoom = Modules.ZOOM;
-        boolean zoomHeld = (inGame && Keys.ZOOM.isDown()) || com.pandaclient.mod.util.CiCheck.forceZoom;
+        boolean zoomHeld = (inGame && physicallyDown(mc, Keys.ZOOM)) || com.pandaclient.mod.util.CiCheck.forceZoom;
         if (!zoomHeld) zoom.scrollFactor = 1;
         zoom.held = zoomHeld;
 
         // Freelook: hold (or toggle) to orbit the camera in third person.
         var fl = Modules.FREELOOK;
-        boolean flDown = (inGame && Keys.FREELOOK.isDown()) || com.pandaclient.mod.util.CiCheck.forceFreelook;
+        boolean flDown = (inGame && physicallyDown(mc, Keys.FREELOOK)) || com.pandaclient.mod.util.CiCheck.forceFreelook;
         boolean want = fl.active;
         if (!fl.enabled()) want = false;
         else if (fl.hold.on()) want = flDown;
