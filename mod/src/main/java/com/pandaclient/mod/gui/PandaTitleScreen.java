@@ -8,16 +8,23 @@ import net.minecraft.client.gui.screens.multiplayer.JoinMultiplayerScreen;
 import net.minecraft.client.gui.screens.options.OptionsScreen;
 import net.minecraft.client.gui.screens.worldselection.SelectWorldScreen;
 import net.minecraft.client.input.MouseButtonEvent;
+import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
 
 /**
- * PandaClient's main menu: an animated night scene (stars, moon, hills, swaying bamboo, fireflies)
- * with the PandaClient logo and big, simple buttons.
+ * PandaClient's main menu: a painted twilight bamboo valley (full-resolution artwork) that slowly
+ * drifts and follows the mouse, drifting fireflies, the PandaClient logo and smooth glass buttons.
  */
 public final class PandaTitleScreen extends Screen {
+    private static final Identifier BG = Identifier.fromNamespaceAndPath("pandaclient", "textures/gui/title_background.png");
+    private static final Identifier LOGO = Identifier.fromNamespaceAndPath("pandaclient", "textures/gui/title_logo.png");
+    private static final int BG_W = 1920, BG_H = 1080, LOGO_W = 1024, LOGO_H = 393;
+    private static final String[] LABELS = {"Singleplayer", "Multiplayer", "PandaClient Mods", "Options", "Quit"};
+
     private final long start = System.currentTimeMillis();
-    private final float[] hover = new float[5];
-    private static final String[] LABELS = {"Singleplayer", "Multiplayer", "PandaClient Mods", "Options", "Quit Game"};
+    private final float[] hover = new float[LABELS.length];
+    private float mouseX = 0.5f, mouseY = 0.5f;
 
     public PandaTitleScreen() { super(Component.literal("PandaClient")); }
 
@@ -36,126 +43,119 @@ public final class PandaTitleScreen extends Screen {
     public void renderBackground(GuiGraphics g, int mx, int my, float delta) {
         Draw d = new Draw(g);
         float t = t();
-        int w = width, h = height;
-        // sky: deep navy at the top fading to violet near the hills
-        int steps = 48;
-        for (int i = 0; i < steps; i++) {
-            float f = i / (float) (steps - 1);
-            int c = Draw.lerpColor(0xFF0B1022, 0xFF3B2659, f * f);
-            d.rect(0, h * i / steps, w, h * (i + 1) / steps + 1, c);
+        // smooth the parallax so it glides after the mouse
+        mouseX += ((mx / (float) Math.max(1, width)) - mouseX) * 0.06f;
+        mouseY += ((my / (float) Math.max(1, height)) - mouseY) * 0.06f;
+
+        // artwork: cover the screen, slow "breathing" zoom, parallax towards the mouse
+        float cover = Math.max(width / (float) BG_W, height / (float) BG_H);
+        float zoom = 1.06f + 0.015f * (float) Math.sin(t * 0.12f);
+        float s = cover * zoom;
+        float dw = BG_W * s, dh = BG_H * s;
+        float ox = (width - dw) / 2f - (mouseX - 0.5f) * width * 0.04f;
+        float oy = (height - dh) / 2f - (mouseY - 0.5f) * height * 0.03f;
+        g.pose().pushMatrix();
+        g.pose().translate(ox, oy);
+        g.pose().scale(s, s);
+        g.blit(RenderPipelines.GUI_TEXTURED, BG, 0, 0, 0f, 0f, BG_W, BG_H, BG_W, BG_H);
+        g.pose().popMatrix();
+
+        // soft vignette: darker top and bottom so the logo and buttons read clearly
+        int bands = 24;
+        for (int i = 0; i < bands; i++) {
+            float f = 1 - i / (float) bands;
+            int a = (int) (f * f * 150);
+            int h1 = height * i / (bands * 4), h2 = height * (i + 1) / (bands * 4);
+            d.rect(0, h1, width, h2 + 1, Draw.alpha(0xFF070A12, a));
+            d.rect(0, height - h2 - 1, width, height - h1, Draw.alpha(0xFF070A12, (int) (a * 1.3f)));
         }
-        // stars
-        if (Modules.TITLE_SCREEN.stars.on()) {
-            for (int i = 0; i < 90; i++) {
-                int x = (int) (hash(i, 1) * w), y = (int) (hash(i, 2) * h * 0.6f);
-                float tw = 0.5f + 0.5f * (float) Math.sin(t * (1 + hash(i, 3) * 2) + i);
-                int a = (int) (90 + 165 * tw);
-                int s = hash(i, 4) > 0.85f ? 2 : 1;
-                d.rect(x, y, x + s, y + s, Draw.alpha(0xFFFFFFFF, a));
-            }
-        }
-        // moon with a soft glow
-        int mxp = (int) (w * 0.8f), myp = (int) (h * 0.2f);
-        for (int r = 26; r > 12; r -= 4) d.round(mxp - r, myp - r, mxp + r, myp + r, Draw.alpha(0xFFF3E7C4, 12));
-        d.round(mxp - 12, myp - 12, mxp + 12, myp + 12, 0xFFF3E7C4);
-        d.rect(mxp - 5, myp - 4, mxp - 1, myp, 0xFFE2D3A8);
-        d.rect(mxp + 3, myp + 3, mxp + 7, myp + 6, 0xFFE2D3A8);
-        // three layers of hills, slowly drifting
-        hills(d, w, h, 0.62f, 26, 0.011f, t * 4, 0xFF2A1E44);
-        hills(d, w, h, 0.72f, 20, 0.017f, t * 8, 0xFF1E1734);
-        hills(d, w, h, 0.83f, 14, 0.025f, t * 14, 0xFF130F22);
-        // bamboo in the foreground, swaying
-        for (int i = 0; i < 9; i++) {
-            float side = i < 5 ? i * 16 + 6 : w - (i - 5) * 16 - 14;
-            int bh = (int) (h * (0.45f + hash(i, 9) * 0.3f));
-            float sway = (float) Math.sin(t * 0.8f + i) * 3;
-            for (int y = h; y > h - bh; y -= 2) {
-                float k = (h - y) / (float) bh;
-                int x = (int) (side + sway * k * k);
-                d.rect(x, y - 2, x + 4, y, (h - y) % 22 < 2 ? 0xFF0A1A14 : 0xFF14281F);
-            }
-            int topX = (int) (side + sway);
-            d.rect(topX - 6, h - bh, topX + 2, h - bh + 2, 0xFF1B3A2B);
-            d.rect(topX + 2, h - bh + 6, topX + 10, h - bh + 8, 0xFF1B3A2B);
-        }
-        // fireflies
+        d.rect(0, 0, width, height, 0x22070A12);
+
+        // fireflies drifting over the art
         if (Modules.TITLE_SCREEN.fireflies.on()) {
-            for (int i = 0; i < 18; i++) {
-                float x = hash(i, 5) * w + (float) Math.sin(t * 0.4f + i) * 30;
-                float y = h * 0.6f + hash(i, 6) * h * 0.35f + (float) Math.cos(t * 0.6f + i * 2) * 12;
-                int a = (int) (120 + 135 * (0.5f + 0.5f * Math.sin(t * 3 + i)));
-                d.rect((int) x, (int) y, (int) x + 2, (int) y + 2, Draw.alpha(0xFFFFE27A, a));
-                d.rect((int) x - 1, (int) y - 1, (int) x + 3, (int) y + 3, Draw.alpha(0xFFFFE27A, a / 6));
+            for (int i = 0; i < 26; i++) {
+                float px = (hash(i, 5) * width + t * (6 + hash(i, 7) * 10) + (float) Math.sin(t * 0.5f + i) * 18) % (width + 20) - 10;
+                float py = height * (0.35f + hash(i, 6) * 0.6f) + (float) Math.cos(t * 0.7f + i * 2) * 10 - (mouseY - 0.5f) * 8;
+                float pulse = 0.5f + 0.5f * (float) Math.sin(t * (1.5f + hash(i, 8)) + i);
+                int a = (int) (70 + 185 * pulse);
+                int x = (int) px, y = (int) py;
+                d.rect(x - 2, y - 2, x + 3, y + 3, Draw.alpha(0xFFE9FF9A, a / 8));
+                d.rect(x - 1, y - 1, x + 2, y + 2, Draw.alpha(0xFFE9FF9A, a / 3));
+                d.rect(x, y, x + 1, y + 1, Draw.alpha(0xFFFFFFE0, a));
             }
         }
+
+        // fade in from black when the menu opens
+        float fade = Math.min(1f, t / 0.8f);
+        if (fade < 1) d.rect(0, 0, width, height, Draw.alpha(0xFF000000, (int) ((1 - fade) * 255)));
     }
 
-    private static void hills(Draw d, int w, int h, float base, int amp, float freq, float shift, int color) {
-        for (int x = 0; x < w; x += 2) {
-            float xx = x + shift;
-            double y = h * base - amp * (Math.sin(xx * freq) * 0.6 + Math.sin(xx * freq * 2.3 + 1.7) * 0.3 + Math.sin(xx * freq * 5.1 + 4) * 0.1);
-            d.rect(x, (int) y, x + 2, h, color);
-        }
-    }
-
-    private int bw() { return Math.min(200, width - 40); }
+    private int bw() { return Math.min(210, width - 40); }
     private int bx() { return width / 2 - bw() / 2; }
-    private int by(int i) { return height / 2 - 10 + i * 24; }
+    private int top() { return Math.max(height / 2 - 6, logoH() + 20); }
+    private int logoW() { return Math.min(width - 40, Math.min(330, (int) (width * 0.42f))); }
+    private int logoH() { return Math.round(logoW() * LOGO_H / (float) LOGO_W); }
+
+    /** x, y, w, h of button i. */
+    private int[] box(int i) {
+        int y = top() + i * 24;
+        if (i < 3) return new int[]{bx(), y, bw(), 20};
+        int half = (bw() - 4) / 2;
+        return new int[]{i == 3 ? bx() : bx() + half + 4, top() + 3 * 24 + 4, half, 20};
+    }
 
     @Override
     public void render(GuiGraphics g, int mx, int my, float delta) {
         super.render(g, mx, my, delta);
         Draw d = new Draw(g);
         float t = t();
-        // logo: a pixel panda head and the name
-        int ly = height / 2 - 78 + (int) Math.round(Math.sin(t * 1.5) * 2);
-        int cx = width / 2;
-        int ph = 28, px = cx - ph / 2, pyy = ly;
-        d.rect(px - 4, pyy - 4, px + 6, pyy + 6, 0xFF141B24);
-        d.rect(px + ph - 6, pyy - 4, px + ph + 4, pyy + 6, 0xFF141B24);
-        d.round(px, pyy, px + ph, pyy + ph, 0xFFF3F5F8);
-        d.rect(px + 4, pyy + 9, px + 11, pyy + 17, 0xFF141B24);
-        d.rect(px + ph - 11, pyy + 9, px + ph - 4, pyy + 17, 0xFF141B24);
-        d.rect(px + 7, pyy + 11, px + 9, pyy + 13, Theme.accent());
-        d.rect(px + ph - 9, pyy + 11, px + ph - 7, pyy + 13, Theme.accent());
-        d.rect(px + 12, pyy + 19, px + ph - 12, pyy + 22, 0xFF141B24);
-        d.push();
-        d.translate(cx, ly + ph + 6);
-        d.scale(2f);
-        String a = "PANDA", b = "CLIENT";
-        int tw = Draw.textWidth(a + b);
-        int x = d.text(a, -tw / 2, 0, Theme.accent(), true);
-        d.text(b, x, 0, 0xFFF3F5F8, true);
-        d.pop();
+        float in = Math.min(1f, Math.max(0f, (t - 0.2f) / 0.6f));
+        float ease = 1 - (1 - in) * (1 - in) * (1 - in);
 
-        // buttons
+        // logo, floating gently
+        int lw = logoW(), lh = logoH();
+        float ly = top() - lh - 14 + (float) Math.sin(t * 1.2f) * 2.5f - (1 - ease) * 12;
+        g.pose().pushMatrix();
+        g.pose().translate(width / 2f - lw / 2f, ly);
+        float k = lw / (float) LOGO_W;
+        g.pose().scale(k, k);
+        g.blit(RenderPipelines.GUI_TEXTURED, LOGO, 0, 0, 0f, 0f, LOGO_W, LOGO_H, LOGO_W, LOGO_H);
+        g.pose().popMatrix();
+
+        // buttons: frosted glass, mint accent and a soft glow on hover; they slide in one after another
         for (int i = 0; i < LABELS.length; i++) {
-            int x0 = bx(), y0 = by(i), w = bw();
-            if (i >= 3) { w = bw() / 2 - 2; if (i == 4) x0 = bx() + bw() / 2 + 2; y0 = by(3); }
-            boolean hov = Widgets.in(mx, my, x0, y0, w, 20);
-            hover[i] += ((hov ? 1 : 0) - hover[i]) * 0.25f;
-            int bg = Draw.lerpColor(0xB0141B24, 0xE01E2733, hover[i]);
-            d.round(x0, y0, x0 + w, y0 + 20, bg);
-            int edge = Draw.lerpColor(0x40FFFFFF, Theme.accent(), hover[i]);
-            d.rect(x0 + 1, y0 + 19, x0 + w - 1, y0 + 20, edge);
-            if (i == 2) d.rect(x0 + 1, y0, x0 + 3, y0 + 20, Theme.accent());
-            int lift = Math.round(hover[i] * 1);
-            d.centered(LABELS[i], x0 + w / 2, y0 + 6 - lift, hov ? 0xFFFFFFFF : 0xFFD6DEE8, true);
+            int[] b = box(i);
+            float appear = Math.min(1f, Math.max(0f, (t - 0.35f - i * 0.07f) / 0.35f));
+            if (appear <= 0) continue;
+            float ap = 1 - (1 - appear) * (1 - appear);
+            int x0 = b[0], y0 = b[1] + Math.round((1 - ap) * 10), w = b[2], h = b[3];
+            boolean hov = appear >= 1 && Widgets.in(mx, my, x0, y0, w, h);
+            hover[i] += ((hov ? 1 : 0) - hover[i]) * 0.2f;
+            float hv = hover[i];
+            int alphaMul = (int) (255 * ap);
+            if (hv > 0.02f) d.round(x0 - 2, y0 - 2, x0 + w + 2, y0 + h + 2, Draw.alpha(Theme.accent(), (int) (60 * hv * ap)));
+            d.round(x0, y0, x0 + w, y0 + h, Draw.alpha(Draw.lerpColor(0xFF0E1420, 0xFF1A2433, hv), (int) ((150 + 70 * hv) * ap)));
+            d.rect(x0 + 1, y0, x0 + w - 1, y0 + 1, Draw.alpha(0xFFFFFFFF, (int) ((22 + 30 * hv) * ap)));
+            int bar = Math.round(2 + hv * (w - 4));
+            if (i == 2 || hv > 0.02f) d.rect(x0 + 1, y0 + h - 2, x0 + 1 + (i == 2 ? Math.max(bar, 24) : bar), y0 + h - 1, Draw.alpha(Theme.accent(), alphaMul));
+            int tc = Draw.alpha(Draw.lerpColor(0xFFDCE4EE, 0xFFFFFFFF, hv), alphaMul);
+            d.centered(LABELS[i], x0 + w / 2, y0 + 6, tc, true);
         }
 
+        // footer
         int mods = FabricLoader.getInstance().getAllMods().size();
-        d.text("Minecraft 1.21.11 (" + mods + " mods)", 4, height - 12, 0xA0FFFFFF, true);
-        String r = "PandaClient";
-        d.text(r, width - Draw.textWidth(r) - 4, height - 12, 0xA0FFFFFF, true);
+        int fa = (int) (170 * ease);
+        d.text("Minecraft 1.21.11  ·  " + mods + " mods", 6, height - 12, Draw.alpha(0xFFFFFFFF, fa), true);
+        String who = minecraft.getUser() != null ? "Signed in as " + minecraft.getUser().getName() : "PandaClient";
+        d.text(who, width - Draw.textWidth(who) - 6, height - 12, Draw.alpha(0xFFFFFFFF, fa), true);
     }
 
     @Override
     public boolean mouseClicked(MouseButtonEvent e, boolean doubleClick) {
-        if (e.button() != 0) return super.mouseClicked(e, doubleClick);
+        if (e.button() != 0 || t() < 0.6f) return super.mouseClicked(e, doubleClick);
         for (int i = 0; i < LABELS.length; i++) {
-            int x0 = bx(), y0 = by(i), w = bw();
-            if (i >= 3) { w = bw() / 2 - 2; if (i == 4) x0 = bx() + bw() / 2 + 2; y0 = by(3); }
-            if (!Widgets.in(e.x(), e.y(), x0, y0, w, 20)) continue;
+            int[] b = box(i);
+            if (!Widgets.in(e.x(), e.y(), b[0], b[1], b[2], b[3])) continue;
             switch (i) {
                 case 0 -> minecraft.setScreen(new SelectWorldScreen(this));
                 case 1 -> minecraft.setScreen(new JoinMultiplayerScreen(this));

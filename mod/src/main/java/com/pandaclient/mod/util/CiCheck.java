@@ -77,6 +77,12 @@ public final class CiCheck {
             case 285 -> log("shot freelook");
             case 340 -> { forceFreelook = false; Modules.TOGGLE_SPRINT.sprinting = false; mc.setScreen(MenuScreen.openAt(null, Modules.CROSSHAIR)); log("shot crosshair-settings"); }
             case 420 -> { mc.setScreen(new HudEditorScreen(null)); log("shot hud-world"); }
+            case 470 -> mc.setScreen(new net.minecraft.client.gui.screens.PauseScreen(true));
+            case 480 -> {
+                StringBuilder b = new StringBuilder();
+                for (var w : net.fabricmc.fabric.api.client.screen.v1.Screens.getButtons(mc.screen)) b.append('[').append(w.getMessage().getString()).append(" @").append(w.getX()).append(',').append(w.getY()).append("] ");
+                log("pause menu (" + mc.screen.getClass().getSimpleName() + ") buttons: " + b);
+            }
             case 500 -> { mc.setScreen(null); log("freelook restored camera=" + mc.options.getCameraType()); }
             case 520 -> finish(mc);
             default -> {}
