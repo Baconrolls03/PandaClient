@@ -3,13 +3,13 @@ productName: PandaClient
 copyright: PandaClient. Not affiliated with Mojang or Microsoft.
 directories:
   output: release
-  buildResources: build
+  buildResources: assets
 files:
   - out/**
   - assets/**
   - package.json
 asarUnpack: []
-icon: build/icon.png
+icon: assets/icon.png
 artifactName: ${productName}-Setup-${version}.${ext}
 
 win:
