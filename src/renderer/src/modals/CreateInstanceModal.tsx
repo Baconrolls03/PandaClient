@@ -9,7 +9,7 @@ import { IconEditor, type IconChoice } from './IconEditor'
 import { VersionSelect } from '@/components/VersionSelect'
 
 export function CreateInstanceModal() {
-  const { closeModal, settings, update, attempt, navigate, toast } = useStore()
+  const { closeModal, settings, update, attempt, navigate, toast, openModal } = useStore()
   const [list, setList] = useState<VersionList | null>(null)
   const [name, setName] = useState('')
   const [mc, setMc] = useState('')
@@ -66,14 +66,6 @@ export function CreateInstanceModal() {
     }
   }
 
-  async function importPack() {
-    const file = await api.settings.pickFile('mrpack')
-    if (!file) return
-    closeModal()
-    const inst = await attempt(() => api.instances.importMrpack(file), 'Modpack imported')
-    if (inst) navigate({ name: 'instance', id: inst.id })
-  }
-
   return (
     <Modal
       title="New instance"
@@ -82,8 +74,8 @@ export function CreateInstanceModal() {
       allowOverflow
       footer={
         <>
-          <Button variant="ghost" onClick={importPack} className="mr-auto">
-            <FileUp size={16} /> Import .mrpack
+          <Button variant="ghost" onClick={() => openModal({ kind: 'import' })} className="mr-auto">
+            <FileUp size={16} /> Import from another launcher
           </Button>
           <Button variant="ghost" onClick={closeModal}>
             Cancel

@@ -448,6 +448,35 @@ export function createMock(): PandaApi {
         return inst
       }
     },
+    importer: {
+      // Browser preview: example sources (the desktop app scans your real folders).
+      scan: async () => {
+        await wait(700)
+        return [
+          { id: 'l', launcher: 'lunar', name: 'Lunar Client · lunar / 1.21', path: 'C:\\Users\\you\\.lunarclient\\profiles\\lunar\\1.21', mcVersion: '1.21', loader: 'fabric', counts: { mods: 14, resourcepacks: 3, shaderpacks: 2, saves: 4 } },
+          { id: 'm1', launcher: 'modrinth', name: 'Fabulously Optimized', path: 'C:\\Users\\you\\AppData\\Roaming\\ModrinthApp\\profiles\\Fabulously Optimized', mcVersion: null, loader: null, counts: { mods: 52, resourcepacks: 1, shaderpacks: 0, saves: 2 } },
+          { id: 'm2', launcher: 'modrinth', name: 'All the Mods 10', path: 'C:\\Users\\you\\AppData\\Roaming\\ModrinthApp\\profiles\\All the Mods 10', mcVersion: '1.21.1', loader: 'neoforge', counts: { mods: 412, resourcepacks: 0, shaderpacks: 0, saves: 1 } },
+          { id: 'd', launcher: 'dawn', name: 'Dawn · profiles / default', path: 'C:\\Users\\you\\AppData\\Roaming\\.dawn\\profiles\\default', mcVersion: '26.3', loader: 'fabric', counts: { mods: 9, resourcepacks: 2, shaderpacks: 1, saves: 0 } },
+          { id: 'v', launcher: 'minecraft', name: 'Minecraft Launcher', path: 'C:\\Users\\you\\AppData\\Roaming\\.minecraft', mcVersion: null, loader: null, counts: { mods: 0, resourcepacks: 5, shaderpacks: 0, saves: 7 } }
+        ]
+      },
+      describeFolder: async () => {
+        throw new Error('Browsing folders only works in the desktop app.')
+      },
+      detectVersion: async () => {
+        await wait(600)
+        return '1.21.1'
+      },
+      run: async (input) => {
+        await fakeTask(`Importing ${input.name}`, 8)
+        const inst = mkInst(input.name.toLowerCase().replace(/[^a-z0-9]+/g, '-'), input.name, input.mcVersion, '0.20.1', 120, null)
+        inst.iconPreset = input.iconPreset ?? null
+        instances = [...instances, inst]
+        content.set(inst.id, [])
+        changed()
+        return { instanceId: inst.id, mods: 12, resourcepacks: 3, shaderpacks: 2, saves: 4, other: ['mod configs', 'game options & keybinds', 'server list'], skipped: [{ file: 'jei-forge-1.21.1.jar', reason: 'Forge mod' }, { file: 'create-neoforge.jar', reason: 'NeoForge mod' }] }
+      }
+    },
     wardrobe: {
       // Live catalogue when the PandaClient server is reachable, else the copy in the repo.
       catalog: () => live(async () => {

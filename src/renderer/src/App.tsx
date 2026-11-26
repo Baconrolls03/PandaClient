@@ -15,6 +15,7 @@ import { Instance } from '@/pages/instance/Instance'
 import { CreateInstanceModal } from '@/modals/CreateInstanceModal'
 import { InstallModal } from '@/modals/InstallModal'
 import { SettingsModal } from '@/modals/SettingsModal'
+import { ImportModal } from '@/modals/ImportModal'
 import { useAppearance } from '@/lib/appearance'
 
 function Shell() {
@@ -41,6 +42,7 @@ function Shell() {
       {modal?.kind === 'create-instance' && <CreateInstanceModal />}
       {modal?.kind === 'install' && <InstallModal projectId={modal.projectId} title={modal.title} projectType={modal.projectType} />}
       {modal?.kind === 'settings' && <SettingsModal section={modal.section} />}
+      {modal?.kind === 'import' && <ImportModal />}
       <Toasts />
     </div>
   )

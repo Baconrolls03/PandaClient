@@ -54,6 +54,7 @@ export type ModalState =
   | { kind: 'create-instance' }
   | { kind: 'install'; projectId: string; title: string; projectType: string }
   | { kind: 'settings'; section?: SettingsSection }
+  | { kind: 'import' }
 
 export type SettingsSection = 'appearance' | 'behavior' | 'accounts' | 'java' | 'window' | 'hooks' | 'resources' | 'about'
 

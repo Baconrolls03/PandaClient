@@ -427,6 +427,41 @@ export interface MojangProfile {
   capes: MojangCape[]
 }
 
+/* ───────────── Importing from other launchers ───────────── */
+
+export type LauncherId = 'minecraft' | 'modrinth' | 'curseforge' | 'prism' | 'lunar' | 'feather' | 'dawn' | 'folder'
+
+export interface ImportSource {
+  id: string
+  launcher: LauncherId
+  name: string
+  /** The game folder (the one holding mods/, saves/ …). */
+  path: string
+  mcVersion: string | null
+  /** Loader the other launcher used, when it records one (fabric, forge, neoforge, quilt). */
+  loader: string | null
+  counts: { mods: number; resourcepacks: number; shaderpacks: number; saves: number }
+}
+
+export interface ImportInput {
+  path: string
+  name: string
+  mcVersion: string
+  iconPreset?: IconPreset | null
+  include: { mods: boolean; resourcepacks: boolean; shaderpacks: boolean; saves: boolean; config: boolean; options: boolean; servers: boolean; screenshots: boolean }
+}
+
+export interface ImportResult {
+  instanceId: string
+  mods: number
+  resourcepacks: number
+  shaderpacks: number
+  saves: number
+  other: string[]
+  /** Mods that can't run on Fabric. */
+  skipped: { file: string; reason: string }[]
+}
+
 /* ───────────── API exposed on window.panda ───────────── */
 
 export interface PandaApi {
@@ -504,6 +539,14 @@ export interface PandaApi {
     categories(): Promise<MrCategory[]>
     gameVersions(): Promise<MrGameVersion[]>
     installModpack(projectId: string, versionId?: string): Promise<Instance>
+  }
+  importer: {
+    /** Look for other launchers' instances on this computer. */
+    scan(): Promise<ImportSource[]>
+    describeFolder(path: string): Promise<ImportSource>
+    /** Guess the Minecraft version from the mods (via Modrinth). */
+    detectVersion(path: string): Promise<string | null>
+    run(input: ImportInput): Promise<ImportResult>
   }
   wardrobe: {
     catalog(): Promise<Cosmetic[]>

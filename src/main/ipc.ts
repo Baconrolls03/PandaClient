@@ -18,6 +18,7 @@ import { launchGame, runningInstances, stopGame } from './services/game/launch'
 import { safeJoin } from './services/paths'
 import * as panda from './services/pandaApi'
 import * as mojangProfile from './services/mojangProfile'
+import * as importer from './services/importer'
 
 const SETTINGS_KEYS: (keyof Settings)[] = [
   'ramMb', 'javaPath', 'jvmArgs', 'window', 'hooks', 'gameDir', 'maxDownloads', 'onLaunch', 'refocusOnExit', 'selectedInstance',
@@ -144,6 +145,12 @@ export function registerIpc(win: BrowserWindow): void {
   ipcMain.handle('modrinth:categories', () => mr.categories())
   ipcMain.handle('modrinth:gameVersions', () => mr.gameVersions())
   ipcMain.handle('modrinth:installModpack', (_e, id: string, versionId?: string) => mrpack.installModpack(id, versionId))
+
+  // Import from other launchers
+  ipcMain.handle('importer:scan', () => importer.scanSources())
+  ipcMain.handle('importer:describeFolder', (_e, p: string) => importer.describeFolder(p))
+  ipcMain.handle('importer:detectVersion', (_e, p: string) => importer.detectVersion(p))
+  ipcMain.handle('importer:run', (_e, input) => importer.importSource(input))
 
   // Wardrobe: PandaClient cosmetics (our server) + real skins/capes (Mojang)
   ipcMain.handle('wardrobe:catalog', () => panda.catalog())

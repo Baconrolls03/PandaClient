@@ -2,7 +2,7 @@ import { mkdirSync } from 'node:fs'
 // Stand-in for the bits of Electron the services use.
 const root = process.env.TEST_ROOT!
 mkdirSync(root, { recursive: true })
-export const app = { getPath: (_n: string) => root + '/userData', getVersion: () => '0.1.0', getAppPath: () => root, quit: () => {} }
+export const app = { getPath: (n: string) => (n === 'appData' ? root + '/appData' : root + '/userData'), getVersion: () => '0.1.0', getAppPath: () => root, quit: () => {} }
 export const net = { fetch: (u: string, i?: RequestInit) => fetch(u, i) }
 export const shell = {
   trashItem: async () => {

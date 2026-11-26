@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { ArrowRight, Compass, Download, Plus, Shirt, Zap } from 'lucide-react'
+import { ArrowRight, Compass, Download, FileUp, Plus, Shirt, Zap } from 'lucide-react'
 import type { MrSearchHit, SearchQuery } from '@shared/types'
 import { api } from '@/lib/api'
 import { useStore } from '@/lib/store'
@@ -129,6 +129,9 @@ export function Home() {
                 </Button>
                 <Button size="lg" variant="secondary" onClick={() => openModal({ kind: 'create-instance' })}>
                   <Plus size={18} /> Custom instance
+                </Button>
+                <Button size="lg" variant="ghost" onClick={() => openModal({ kind: 'import' })}>
+                  <FileUp size={18} /> Import from another launcher
                 </Button>
                 <Button size="lg" variant="ghost" onClick={() => navigate({ name: 'discover', type: 'modpack' })}>
                   <Compass size={18} /> Browse modpacks

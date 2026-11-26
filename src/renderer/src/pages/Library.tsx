@@ -9,7 +9,7 @@ import { playtime, timeAgo } from '@/lib/format'
 type Sort = 'played' | 'name' | 'created' | 'version'
 
 export function Library() {
-  const { instances, openModal, attempt, navigate, settings, update, launch, running } = useStore()
+  const { instances, openModal, navigate, settings, update, launch, running } = useStore()
   const [q, setQ] = useState('')
   const [sort, setSort] = useState<Sort>('played')
 
@@ -21,13 +21,6 @@ export function Library() {
     return l
   }, [instances, q, sort])
 
-  async function importPack() {
-    const file = await api.settings.pickFile('mrpack')
-    if (!file) return
-    const inst = await attempt(() => api.instances.importMrpack(file), 'Modpack imported')
-    if (inst) navigate({ name: 'instance', id: inst.id })
-  }
-
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-6 p-8">
       <div className="flex flex-wrap items-end justify-between gap-4">
@@ -38,8 +31,8 @@ export function Library() {
           </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="ghost" onClick={importPack}>
-            <FileUp size={16} /> Import .mrpack
+          <Button variant="ghost" onClick={() => openModal({ kind: 'import' })}>
+            <FileUp size={16} /> Import
           </Button>
           <Button variant="primary" onClick={() => openModal({ kind: 'create-instance' })}>
             <Plus size={16} /> New instance
@@ -80,7 +73,10 @@ export function Library() {
               <Button variant="primary" onClick={() => openModal({ kind: 'create-instance' })}>
                 <Plus size={16} /> New instance
               </Button>
-              <Button onClick={() => navigate({ name: 'discover', type: 'modpack' })}>Browse modpacks</Button>
+              <Button onClick={() => openModal({ kind: 'import' })}>
+                <FileUp size={16} /> Import from Lunar, Modrinth…
+              </Button>
+              <Button variant="ghost" onClick={() => navigate({ name: 'discover', type: 'modpack' })}>Browse modpacks</Button>
             </div>
           }
         >

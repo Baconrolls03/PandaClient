@@ -83,6 +83,12 @@ const api: PandaApi = {
     gameVersions: () => invoke('modrinth:gameVersions'),
     installModpack: (id, versionId) => invoke('modrinth:installModpack', id, versionId)
   },
+  importer: {
+    scan: () => invoke('importer:scan'),
+    describeFolder: (p) => invoke('importer:describeFolder', p),
+    detectVersion: (p) => invoke('importer:detectVersion', p),
+    run: (input) => invoke('importer:run', input)
+  },
   wardrobe: {
     catalog: () => invoke('wardrobe:catalog'),
     loadout: () => invoke('wardrobe:loadout'),
