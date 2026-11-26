@@ -1,6 +1,10 @@
 // Talks to the PandaClient backend (Supabase edge function "api") for cosmetics and the online count.
 import { net } from 'electron'
-import type { Cosmetic, IncomingShare, Instance, Loadout, SharePlayer } from '@shared/types'
+import { existsSync, readFileSync } from 'node:fs'
+import { join } from 'node:path'
+import type { Cosmetic, Friend, IncomingShare, Instance, Loadout, SharePlayer } from '@shared/types'
+import { getSettings } from './settings'
+import { runningInstances } from './game/launch'
 import { getInstance } from './instances'
 import { buildMrpack, importMrpackBuffer } from './mrpack'
 import { launchAuth, pandaToken, setPandaToken } from './accounts'
@@ -78,7 +82,7 @@ export const onOnlineChanged = (fn: (n: number | null) => void) => (listeners.ad
 async function beat(): Promise<void> {
   let next: number | null = null
   try {
-    next = (await authed<{ online: number }>('/heartbeat', { method: 'POST', body: '{}' })).online
+    next = (await authed<{ online: number }>('/heartbeat', { method: 'POST', body: JSON.stringify({ server: currentServer() }) })).online
   } catch {
     // Not signed in (or Mojang/our server unreachable): just read the public count.
     next = await request<{ online: number }>('/online')
@@ -150,3 +154,23 @@ export async function acceptShare(id: string): Promise<Instance> {
   await dismissShare(id).catch(() => {})
   return inst
 }
+
+/* ───────────── Presence + friends ───────────── */
+
+/** The server the PandaClient mod says you're on (it writes this file next to its settings). */
+function currentServer(): string | null {
+  try {
+    if (!runningInstances().length) return null
+    const file = join(getSettings().gameDir, 'pandaclient-presence.json')
+    if (!existsSync(file)) return null
+    const p = JSON.parse(readFileSync(file, 'utf8')) as { server?: string; updated?: number }
+    return p.server && Date.now() - (p.updated ?? 0) < 30 * 60_000 ? p.server.slice(0, 100) : null
+  } catch {
+    return null
+  }
+}
+
+export const friends = () => authed<Friend[]>('/friends')
+export const addFriend = (username: string) => authed<{ status: string; username: string }>('/friends/add', { method: 'POST', body: JSON.stringify({ username }) })
+export const acceptFriend = (uuid: string) => authed('/friends/accept', { method: 'POST', body: JSON.stringify({ uuid }) })
+export const removeFriend = (uuid: string) => authed('/friends/remove', { method: 'POST', body: JSON.stringify({ uuid }) })

@@ -61,7 +61,8 @@ const api: PandaApi = {
   },
   screenshots: {
     list: (id) => invoke('screenshots:list', id),
-    remove: (id, f) => invoke('screenshots:remove', id, f)
+    remove: (id, f) => invoke('screenshots:remove', id, f),
+    copy: (id, f) => invoke('screenshots:copy', id, f)
   },
   files: {
     list: (id, dir) => invoke('files:list', id, dir),
@@ -104,6 +105,15 @@ const api: PandaApi = {
     resetSkin: () => invoke('wardrobe:resetSkin'),
     setCape: (id) => invoke('wardrobe:setCape', id),
     readImage: (file) => invoke('wardrobe:readImage', file)
+  },
+  friends: {
+    list: () => invoke('friends:list'),
+    add: (u) => invoke('friends:add', u),
+    accept: (u) => invoke('friends:accept', u),
+    remove: (u) => invoke('friends:remove', u)
+  },
+  servers: {
+    ping: (a) => invoke('servers:ping', a)
   },
   share: {
     players: (q) => invoke('share:players', q),

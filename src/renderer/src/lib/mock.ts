@@ -380,6 +380,7 @@ export function createMock(): PandaApi {
     },
     screenshots: {
       list: async () => [0, 1, 2, 3, 4, 5].map((n) => ({ file: `2025-10-0${n + 1}_18.22.0${n}.png`, url: shot(n * 50 + 90, `2025-10-0${n + 1}`), mtime: now - n * 86400000 })),
+      copy: async () => {},
       remove: async () => {}
     },
     files: {
@@ -507,6 +508,18 @@ export function createMock(): PandaApi {
       readImage: async () => {
         throw new Error('Only in the desktop app')
       }
+    },
+    friends: {
+      list: async () => [
+        { uuid: '069a79f4-44e9-4726-a5be-fca90e38aaf5', username: 'Notch', status: 'friends', online: true, server: 'mc.hypixel.net' },
+        { uuid: '853c80ef-3c37-49fd-aa49-938b674adae6', username: 'jeb_', status: 'incoming', online: false, server: null }
+      ],
+      add: async (u) => ({ status: 'outgoing', username: u }),
+      accept: async () => {},
+      remove: async () => {}
+    },
+    servers: {
+      ping: async () => ({ online: 31250, max: 200000, motd: 'A Minecraft server', icon: null, version: '1.8-1.21', pingMs: 42 })
     },
     share: {
       players: async (q) => (q ? [{ uuid: '00000000-0000-0000-0000-000000000001', username: `${q}Friend`, online: true }] : []),

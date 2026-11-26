@@ -10,6 +10,8 @@ export type Route =
   | { name: 'discover'; type: ProjectType; instanceId?: string }
   | { name: 'project'; id: string; instanceId?: string }
   | { name: 'wardrobe' }
+  | { name: 'friends' }
+  | { name: 'servers' }
 
 export type InstanceTab = 'content' | 'worlds' | 'screenshots' | 'files' | 'logs' | 'settings'
 

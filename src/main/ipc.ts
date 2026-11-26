@@ -1,7 +1,8 @@
-import { app, BrowserWindow, dialog, ipcMain, shell } from 'electron'
+import { app, BrowserWindow, clipboard, ClipboardItem, dialog, ipcMain, shell } from 'electron'
 import { totalmem } from 'node:os'
 import type { CreateInstanceInput, QuickPlay, Settings, SystemInfo } from '@shared/types'
 import { rm } from 'node:fs/promises'
+import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { getSettings, updateSettings } from './services/settings'
 import { listVersions } from './services/versions'
@@ -21,6 +22,7 @@ import * as mojangProfile from './services/mojangProfile'
 import * as importer from './services/importer'
 import * as updater from './services/updater'
 import { ensurePandaMod } from './services/pandaMod'
+import { pingServer } from './services/serverPing'
 
 const SETTINGS_KEYS: (keyof Settings)[] = [
   'ramMb', 'javaPath', 'jvmArgs', 'window', 'hooks', 'gameDir', 'maxDownloads', 'onLaunch', 'refocusOnExit', 'selectedInstance',
@@ -139,6 +141,11 @@ export function registerIpc(win: BrowserWindow): void {
   ipcMain.handle('worlds:removeServer', (_e, id: string, i: number) => files.removeServer(id, i))
   ipcMain.handle('screenshots:list', (_e, id: string) => files.listScreenshots(id))
   ipcMain.handle('screenshots:remove', (_e, id: string, f: string) => files.removeScreenshot(id, f))
+  ipcMain.handle('screenshots:copy', async (_e, id: string, f: string) => {
+    const inst = await instances.getInstance(id)
+    const png = await readFile(safeJoin(join(inst.path, 'screenshots'), String(f)))
+    await clipboard.write([new ClipboardItem({ 'image/png': new Blob([new Uint8Array(png)], { type: 'image/png' }) })])
+  })
   ipcMain.handle('files:list', (_e, id: string, dir: string) => files.listFiles(id, dir))
   ipcMain.handle('files:read', (_e, id: string, p: string) => files.readTextFile(id, p))
   ipcMain.handle('files:write', (_e, id: string, p: string, text: string) => files.writeTextFile(id, p, text))
@@ -177,6 +184,11 @@ export function registerIpc(win: BrowserWindow): void {
   ipcMain.handle('wardrobe:setCape', (_e, id: string | null) => mojangProfile.setCape(id))
   ipcMain.handle('wardrobe:readImage', (_e, file: string) => mojangProfile.readImage(file))
   ipcMain.handle('online:count', () => panda.onlineCount())
+  ipcMain.handle('friends:list', () => panda.friends())
+  ipcMain.handle('friends:add', (_e, u: string) => panda.addFriend(String(u).slice(0, 16)))
+  ipcMain.handle('friends:accept', async (_e, u: string) => void (await panda.acceptFriend(String(u))))
+  ipcMain.handle('friends:remove', async (_e, u: string) => void (await panda.removeFriend(String(u))))
+  ipcMain.handle('servers:ping', (_e, a: string) => pingServer(String(a).slice(0, 100)))
   ipcMain.handle('share:players', (_e, q: string) => panda.searchPlayers(String(q).slice(0, 16)))
   ipcMain.handle('share:send', (_e, id: string, to: string[]) => panda.shareInstance(id, Array.isArray(to) ? to.slice(0, 20).map(String) : []))
   ipcMain.handle('share:incoming', () => panda.incomingShares())

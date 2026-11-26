@@ -280,6 +280,20 @@ assert.ok(!existsSync(inst.path + '/mods/pandaclient.jar'), '1.21.1 instance unt
 await instances.removeInstance(pvp.id)
 ok('PandaClient mod: added/updated/removed on 1.21.11, other versions untouched')
 
+// 8c. crash helper names the mod that caused a crash
+const cd = await import(`${SRC}/crashDoctor.ts`)
+const crashInst = await instances.createInstance({ name: 'Crashy', mcVersion: '1.21.11', loaderVersion: '0.16.5' })
+mkdirSync(crashInst.path + '/mods', { recursive: true })
+mkdirSync(crashInst.path + '/crash-reports', { recursive: true })
+writeFileSync(crashInst.path + '/mods/badmod-1.0.jar', zipSync({ 'fabric.mod.json': new TextEncoder().encode(JSON.stringify({ id: 'badmod', name: 'Bad Mod' })) }))
+writeFileSync(crashInst.path + '/mods/goodmod-1.0.jar', zipSync({ 'fabric.mod.json': new TextEncoder().encode(JSON.stringify({ id: 'goodmod', name: 'Good Mod' })) }))
+writeFileSync(crashInst.path + '/crash-reports/crash-1.txt', '---- Minecraft Crash Report ----\nDescription: Rendering overlay\n\njava.lang.NullPointerException\n\tat x.y\nSuspected Mods: Bad Mod (badmod)\n')
+const report = await cd.diagnose(crashInst, Date.now() - 10_000)
+assert.deepEqual(report.mods.map((m: any) => m.file), ['badmod-1.0.jar'])
+assert.match(report.summary, /Bad Mod/)
+await instances.removeInstance(crashInst.id)
+ok('crash helper: ' + report.summary)
+
 // 9. duplicate / remove / list
 const dup = await instances.duplicateInstance(inst.id)
 assert.ok(existsSync(dup.path + '/mods/sodium-0.5.0.jar'))

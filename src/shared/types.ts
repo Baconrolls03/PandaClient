@@ -546,6 +546,8 @@ export interface PandaApi {
   screenshots: {
     list(id: string): Promise<Screenshot[]>
     remove(id: string, file: string): Promise<void>
+    /** Copy the picture to the clipboard (paste it into Discord etc.). */
+    copy(id: string, file: string): Promise<void>
   }
   files: {
     list(id: string, dir: string): Promise<FileEntry[]>
@@ -593,6 +595,15 @@ export interface PandaApi {
     setCape(capeId: string | null): Promise<MojangProfile>
     /** Read a local PNG for previewing (skins). */
     readImage(file: string): Promise<string>
+  }
+  friends: {
+    list(): Promise<Friend[]>
+    add(username: string): Promise<{ status: string; username: string }>
+    accept(uuid: string): Promise<void>
+    remove(uuid: string): Promise<void>
+  }
+  servers: {
+    ping(address: string): Promise<ServerStatus>
   }
   share: {
     /** PandaClient players whose name starts with q. */
@@ -642,4 +653,23 @@ export interface IncomingShare {
   /** Username of who shared it. */
   from: string
   url: string
+}
+
+export interface Friend {
+  uuid: string
+  username: string
+  /** friends = accepted, incoming = they asked you, outgoing = you asked them */
+  status: 'friends' | 'incoming' | 'outgoing'
+  online: boolean
+  /** Server they're playing on right now (friends only). */
+  server: string | null
+}
+
+export interface ServerStatus {
+  online: number
+  max: number
+  motd: string
+  icon: string | null
+  version: string
+  pingMs: number
 }

@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useState } from 'react'
-import { FolderOpen, Image, Trash2 } from 'lucide-react'
+import { FolderOpen, Image, Trash2, Copy } from 'lucide-react'
 import type { Instance, Screenshot } from '@shared/types'
 import { api } from '@/lib/api'
 import { useStore } from '@/lib/store'
 import { timeAgo } from '@/lib/format'
-import { Button, ConfirmIconButton, Empty, Spinner } from '@/components/ui'
+import { Button, ConfirmIconButton, Empty, IconButton, Spinner } from '@/components/ui'
 import { Lightbox } from '@/components/Lightbox'
 
 export function ScreenshotsTab({ inst }: { inst: Instance }) {
@@ -36,6 +36,10 @@ export function ScreenshotsTab({ inst }: { inst: Instance }) {
               </button>
               <div className="flex items-center justify-between px-3 py-2">
                 <span className="truncate text-xs text-muted">{timeAgo(s.mtime)}</span>
+                <span className="flex items-center gap-1">
+                <IconButton label="Copy" onClick={() => attempt(() => api.screenshots.copy(inst.id, s.file), 'Screenshot copied. Paste it anywhere')}>
+                  <Copy size={14} />
+                </IconButton>
                 <ConfirmIconButton
                   label="Delete"
                   onConfirm={async () => {
@@ -45,6 +49,7 @@ export function ScreenshotsTab({ inst }: { inst: Instance }) {
                 >
                   <Trash2 size={14} />
                 </ConfirmIconButton>
+                </span>
               </div>
             </div>
           ))}

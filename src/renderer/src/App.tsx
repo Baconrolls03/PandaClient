@@ -11,6 +11,8 @@ import { Library } from '@/pages/Library'
 import { Discover } from '@/pages/Discover'
 import { Project } from '@/pages/Project'
 import { Wardrobe } from '@/pages/Wardrobe'
+import { Friends } from '@/pages/Friends'
+import { Servers } from '@/pages/Servers'
 import { Instance } from '@/pages/instance/Instance'
 import { CreateInstanceModal } from '@/modals/CreateInstanceModal'
 import { InstallModal } from '@/modals/InstallModal'
@@ -37,6 +39,8 @@ function Shell() {
             {route.name === 'discover' && <Discover type={route.type} instanceId={route.instanceId} />}
             {route.name === 'project' && <Project id={route.id} instanceId={route.instanceId} />}
             {route.name === 'wardrobe' && <Wardrobe />}
+            {route.name === 'friends' && <Friends />}
+            {route.name === 'servers' && <Servers />}
           </main>
           <PlayBar />
         </div>

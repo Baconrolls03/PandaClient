@@ -1,4 +1,4 @@
-import { Compass, Home, Library, Plus, Settings as SettingsIcon, Shirt, type LucideIcon } from 'lucide-react'
+import { Compass, Globe, Home, Library, Plus, Settings as SettingsIcon, Shirt, Users, type LucideIcon } from 'lucide-react'
 import { useStore, type Route } from '@/lib/store'
 import { AccountCard } from './AccountCard'
 import { InstanceIcon } from './ui'
@@ -8,6 +8,8 @@ const items: { route: Route; match: Route['name'][]; label: string; icon: Lucide
   { route: { name: 'home' }, match: ['home'], label: 'Home', icon: Home },
   { route: { name: 'library' }, match: ['library', 'instance'], label: 'Library', icon: Library },
   { route: { name: 'discover', type: 'mod' }, match: ['discover', 'project'], label: 'Discover', icon: Compass },
+  { route: { name: 'servers' }, match: ['servers'], label: 'Servers', icon: Globe },
+  { route: { name: 'friends' }, match: ['friends'], label: 'Friends', icon: Users },
   { route: { name: 'wardrobe' }, match: ['wardrobe'], label: 'Wardrobe', icon: Shirt }
 ]
 

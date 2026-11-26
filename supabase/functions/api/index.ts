@@ -102,8 +102,58 @@ Deno.serve(async (req) => {
     }
 
     if (req.method === 'POST' && path === '/heartbeat') {
-      await db.from('players').update({ last_seen: new Date().toISOString() }).eq('uuid', me.uuid)
+      const body = await req.json().catch(() => ({}))
+      const server = typeof body.server === 'string' && body.server.length <= 100 ? body.server : null
+      await db.from('players').update({ last_seen: new Date().toISOString(), server, server_at: new Date().toISOString() }).eq('uuid', me.uuid)
       return json({ online: await onlineCount() })
+    }
+
+    // ── Friends ────────────────────────────────────────────────────────────
+    if (req.method === 'GET' && path === '/friends') {
+      const { data: rows } = await db.from('friends').select('a, b, status').or(`a.eq.${me.uuid},b.eq.${me.uuid}`)
+      const others = (rows ?? []).map((r) => (r.a === me.uuid ? r.b : r.a))
+      if (!others.length) return json([])
+      const { data: players } = await db.from('players').select('uuid, username, last_seen, server').in('uuid', others)
+      const byId = new Map((players ?? []).map((p) => [p.uuid, p]))
+      return json(
+        (rows ?? []).map((r) => {
+          const other = r.a === me.uuid ? r.b : r.a
+          const p = byId.get(other)
+          const online = !!p && Date.now() - new Date(p.last_seen).getTime() < 3 * 60_000
+          const status = r.status === 'accepted' ? 'friends' : r.a === me.uuid ? 'outgoing' : 'incoming'
+          return { uuid: other, username: p?.username ?? '?', status, online, server: status === 'friends' && online ? p?.server ?? null : null }
+        })
+      )
+    }
+
+    if (req.method === 'POST' && path === '/friends/add') {
+      const { username } = await req.json()
+      if (typeof username !== 'string' || !/^\w{1,16}$/.test(username)) return fail(400, 'Enter a Minecraft username')
+      const { data: p } = await db.from('players').select('uuid, username').ilike('username', username.replace(/_/g, '\\_')).maybeSingle()
+      if (!p) return fail(404, `${username} hasn't used PandaClient yet`)
+      if (p.uuid === me.uuid) return fail(400, "That's you!")
+      const { data: back } = await db.from('friends').select('status').eq('a', p.uuid).eq('b', me.uuid).maybeSingle()
+      if (back) {
+        await db.from('friends').update({ status: 'accepted' }).eq('a', p.uuid).eq('b', me.uuid)
+        return json({ status: 'friends', username: p.username })
+      }
+      await db.from('friends').upsert({ a: me.uuid, b: p.uuid }, { onConflict: 'a,b', ignoreDuplicates: true })
+      return json({ status: 'outgoing', username: p.username })
+    }
+
+    if (req.method === 'POST' && path === '/friends/accept') {
+      const { uuid } = await req.json()
+      if (typeof uuid !== 'string' || !UUID.test(uuid)) return fail(400, 'Bad request')
+      await db.from('friends').update({ status: 'accepted' }).eq('a', uuid).eq('b', me.uuid)
+      return json({ ok: true })
+    }
+
+    if (req.method === 'POST' && path === '/friends/remove') {
+      const { uuid } = await req.json()
+      if (typeof uuid !== 'string' || !UUID.test(uuid)) return fail(400, 'Bad request')
+      await db.from('friends').delete().eq('a', me.uuid).eq('b', uuid)
+      await db.from('friends').delete().eq('a', uuid).eq('b', me.uuid)
+      return json({ ok: true })
     }
 
     // ── Sharing mod instances ──────────────────────────────────────────────
