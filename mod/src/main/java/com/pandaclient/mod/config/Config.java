@@ -17,7 +17,9 @@ import java.nio.file.Path;
 /** Saves every mod's on/off state, settings and HUD position to config/pandaclient.json. */
 public final class Config {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
-    private static final Path FILE = FabricLoader.getInstance().getConfigDir().resolve("pandaclient.json");
+    /** The launcher passes one shared file for all instances (-Dpandaclient.config); otherwise this instance's config folder. */
+    private static final Path LOCAL = FabricLoader.getInstance().getConfigDir().resolve("pandaclient.json");
+    private static final Path FILE = System.getProperty("pandaclient.config") != null ? Path.of(System.getProperty("pandaclient.config")) : LOCAL;
     private static long dirtyAt = -1;
 
     private Config() {}
@@ -30,6 +32,10 @@ public final class Config {
     }
 
     public static void load() {
+        // First run with shared settings: start from this instance's own settings.
+        if (!Files.exists(FILE) && !FILE.equals(LOCAL) && Files.exists(LOCAL)) {
+            try { Files.createDirectories(FILE.getParent()); Files.copy(LOCAL, FILE); } catch (Exception ignored) {}
+        }
         if (!Files.exists(FILE)) return;
         try {
             JsonObject root = JsonParser.parseString(Files.readString(FILE, StandardCharsets.UTF_8)).getAsJsonObject();
@@ -68,7 +74,7 @@ public final class Config {
         root.add("mods", mods);
         try {
             Files.createDirectories(FILE.getParent());
-            Path tmp = FILE.resolveSibling("pandaclient.json.tmp");
+            Path tmp = FILE.resolveSibling(FILE.getFileName() + ".tmp");
             Files.writeString(tmp, GSON.toJson(root), StandardCharsets.UTF_8);
             Files.move(tmp, FILE, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
         } catch (Exception e) {

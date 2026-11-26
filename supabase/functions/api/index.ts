@@ -106,6 +106,58 @@ Deno.serve(async (req) => {
       return json({ online: await onlineCount() })
     }
 
+    // ── Sharing mod instances ──────────────────────────────────────────────
+    // Find PandaClient players by name (to pick who to share with).
+    if (req.method === 'GET' && path === '/players') {
+      const q = (new URL(req.url).searchParams.get('q') ?? '').trim()
+      if (!/^\w{1,16}$/.test(q)) return json([])
+      const { data } = await db.from('players').select('uuid, username, last_seen').ilike('username', `${q}%`).neq('uuid', me.uuid).order('last_seen', { ascending: false }).limit(10)
+      return json((data ?? []).map((p) => ({ uuid: p.uuid, username: p.username, online: Date.now() - new Date(p.last_seen).getTime() < 3 * 60_000 })))
+    }
+
+    // Start a share: create the rows and hand back a one-time upload URL for the .mrpack.
+    if (req.method === 'POST' && path === '/shares') {
+      const { to, name, size } = await req.json()
+      if (!Array.isArray(to) || !to.length || to.length > 20 || typeof name !== 'string' || typeof size !== 'number') return fail(400, 'Bad request')
+      if (size > 100 * 1024 * 1024) return fail(413, 'That instance is too big to share (over 100 MB). Try Download instead.')
+      const ids = to.filter((u) => typeof u === 'string' && UUID.test(u)).map((u: string) => dashed(u.replace(/-/g, '')))
+      const { data: known } = await db.from('players').select('uuid').in('uuid', ids)
+      if (!known?.length) return fail(400, 'Those players have not used PandaClient yet')
+      const file = `${me.uuid}/${crypto.randomUUID()}.mrpack`
+      const { data: up, error } = await db.storage.from('shares').createSignedUploadUrl(file)
+      if (error || !up) throw error ?? new Error('upload url')
+      await db.from('shares').insert(known.map((k) => ({ from_uuid: me.uuid, to_uuid: k.uuid, name: name.slice(0, 80), size, path: file })))
+      return json({ uploadUrl: up.signedUrl, path: file, recipients: known.length })
+    }
+
+    // The upload finished: let the recipients see it.
+    if (req.method === 'POST' && path === '/shares/ready') {
+      const { path: file } = await req.json()
+      if (typeof file !== 'string' || !file.startsWith(`${me.uuid}/`)) return fail(400, 'Bad request')
+      await db.from('shares').update({ ready: true }).eq('path', file).eq('from_uuid', me.uuid)
+      return json({ ok: true })
+    }
+
+    // Instances shared with me (with a short-lived download link).
+    if (req.method === 'GET' && path === '/shares') {
+      const { data } = await db.from('shares').select('id, name, size, path, created_at, players!shares_from_uuid_fkey(username)')
+        .eq('to_uuid', me.uuid).eq('ready', true).eq('dismissed', false).order('created_at', { ascending: false }).limit(20)
+      const out = []
+      for (const r of data ?? []) {
+        const { data: signed } = await db.storage.from('shares').createSignedUrl(r.path, 3600)
+        if (!signed) continue
+        out.push({ id: r.id, name: r.name, size: r.size, createdAt: r.created_at, from: (r.players as { username: string } | null)?.username ?? 'Someone', url: signed.signedUrl })
+      }
+      return json(out)
+    }
+
+    if (req.method === 'POST' && path === '/shares/dismiss') {
+      const { id } = await req.json()
+      if (typeof id !== 'string' || !UUID.test(id)) return fail(400, 'Bad request')
+      await db.from('shares').update({ dismissed: true }).eq('id', id).eq('to_uuid', me.uuid)
+      return json({ ok: true })
+    }
+
     return fail(404, 'Not found')
   } catch (e) {
     console.error(e)

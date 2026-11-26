@@ -105,6 +105,14 @@ const api: PandaApi = {
     setCape: (id) => invoke('wardrobe:setCape', id),
     readImage: (file) => invoke('wardrobe:readImage', file)
   },
+  share: {
+    players: (q) => invoke('share:players', q),
+    send: (id, to) => invoke('share:send', id, to),
+    incoming: () => invoke('share:incoming'),
+    onIncoming: (cb) => subscribe('share:incoming', cb),
+    accept: (id) => invoke('share:accept', id),
+    dismiss: (id) => invoke('share:dismiss', id)
+  },
   online: {
     count: () => invoke('online:count'),
     onChanged: (cb) => subscribe<number | null>('online:changed', cb)

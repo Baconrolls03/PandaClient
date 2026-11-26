@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { CalendarDays, Clock, Copy, FileArchive, FileText, Folder, FolderOpen, Globe, History, Image, Package, ScrollText, Settings2, Trash2 } from 'lucide-react'
 import { api } from '@/lib/api'
 import { useStore, type InstanceTab } from '@/lib/store'
+import { ExportModal } from '@/modals/ExportModal'
 import { playtime, timeAgo } from '@/lib/format'
 import { backgroundOf } from '@/lib/icons'
 import { applyIconChoice, choiceOf } from '@/lib/iconChoice'
@@ -40,6 +41,7 @@ function Stat({ icon, label, value }: { icon: React.ReactNode; label: string; va
 export function Instance({ id, tab = 'content' }: { id: string; tab?: InstanceTab }) {
   const { instances, navigate, attempt, toast, running } = useStore()
   const [deleting, setDeleting] = useState(false)
+  const [exporting, setExporting] = useState(false)
   const [editingIcon, setEditingIcon] = useState(false)
   const [contentCount, setContentCount] = useState<number | null>(null)
   const inst = instances.find((i) => i.id === id)
@@ -102,10 +104,7 @@ export function Instance({ id, tab = 'content' }: { id: string; tab?: InstanceTa
               <Button
                 variant="secondary"
                 size="sm"
-                onClick={async () => {
-                  const p = await attempt(() => api.instances.exportMrpack(inst.id))
-                  if (p) toast(`Exported to ${p}`, 'success')
-                }}
+                onClick={() => setExporting(true)}
               >
                 <FileText size={14} /> Export
               </Button>
@@ -139,6 +138,7 @@ export function Instance({ id, tab = 'content' }: { id: string; tab?: InstanceTa
         </div>
       </div>
 
+      {exporting && <ExportModal inst={inst} onClose={() => setExporting(false)} />}
       {deleting && <DeleteInstanceModal inst={inst} onClose={() => setDeleting(false)} />}
       {editingIcon && (
         <IconEditor

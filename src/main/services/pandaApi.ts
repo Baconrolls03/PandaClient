@@ -1,6 +1,8 @@
 // Talks to the PandaClient backend (Supabase edge function "api") for cosmetics and the online count.
 import { net } from 'electron'
-import type { Cosmetic, Loadout } from '@shared/types'
+import type { Cosmetic, IncomingShare, Instance, Loadout, SharePlayer } from '@shared/types'
+import { getInstance } from './instances'
+import { buildMrpack, importMrpackBuffer } from './mrpack'
 import { launchAuth, pandaToken, setPandaToken } from './accounts'
 
 export const PANDA_API = process.env['PANDA_API'] ?? 'https://yljkeadmxsmwiclrbvgp.supabase.co/functions/v1/api'
@@ -83,6 +85,7 @@ async function beat(): Promise<void> {
       .then((r) => r.online)
       .catch(() => null)
   }
+  if (next !== null) void pollShares()
   if (next !== online) {
     online = next
     listeners.forEach((l) => l(online))
@@ -94,3 +97,56 @@ export function startHeartbeat(): void {
   setInterval(() => void beat(), 60_000)
 }
 export const refreshOnline = () => beat()
+
+/* ───────────── Sharing mod instances ───────────── */
+
+let incoming: IncomingShare[] = []
+const shareListeners = new Set<(s: IncomingShare[]) => void>()
+export const incomingShares = () => incoming
+export const onSharesChanged = (fn: (s: IncomingShare[]) => void) => (shareListeners.add(fn), () => shareListeners.delete(fn))
+
+async function pollShares(): Promise<void> {
+  try {
+    const next = await authed<IncomingShare[]>('/shares')
+    if (JSON.stringify(next.map((s) => s.id)) !== JSON.stringify(incoming.map((s) => s.id))) {
+      incoming = next
+      shareListeners.forEach((l) => l(incoming))
+    } else incoming = next
+  } catch {
+    /* not signed in / offline */
+  }
+}
+
+export const searchPlayers = (q: string) => (q.trim() ? authed<SharePlayer[]>(`/players?q=${encodeURIComponent(q.trim())}`) : Promise.resolve([]))
+
+/** Pack the instance, upload it privately and notify the chosen players. Returns how many will see it. */
+export async function shareInstance(id: string, to: string[]): Promise<number> {
+  const inst = await getInstance(id)
+  const data = await buildMrpack(id)
+  const start = await authed<{ uploadUrl: string; path: string; recipients: number }>('/shares', {
+    method: 'POST',
+    body: JSON.stringify({ to, name: inst.name, size: data.length })
+  })
+  const up = await net.fetch(start.uploadUrl, { method: 'PUT', headers: { 'Content-Type': 'application/octet-stream', 'x-upsert': 'false' }, body: Buffer.from(data) })
+  if (!up.ok) throw new Error(`Upload failed (${up.status})`)
+  await authed('/shares/ready', { method: 'POST', body: JSON.stringify({ path: start.path }) })
+  return start.recipients
+}
+
+export async function dismissShare(id: string): Promise<void> {
+  await authed('/shares/dismiss', { method: 'POST', body: JSON.stringify({ id }) })
+  incoming = incoming.filter((s) => s.id !== id)
+  shareListeners.forEach((l) => l(incoming))
+}
+
+/** Download a shared instance and add it to the library. */
+export async function acceptShare(id: string): Promise<Instance> {
+  if (!incoming.some((s) => s.id === id)) await pollShares()
+  const share = incoming.find((s) => s.id === id)
+  if (!share) throw new Error('That shared instance is no longer available')
+  const res = await net.fetch(share.url)
+  if (!res.ok) throw new Error(`Download failed (${res.status})`)
+  const inst = await importMrpackBuffer(new Uint8Array(await res.arrayBuffer()))
+  await dismissShare(id).catch(() => {})
+  return inst
+}

@@ -40,7 +40,7 @@ export function buildCommand(
   installed: Installed,
   java: string,
   auth: LaunchAuth,
-  opts: { ramMb: number; jvmArgs: string; window: WindowSettings; quickPlay?: QuickPlay }
+  opts: { ramMb: number; jvmArgs: string; window: WindowSettings; quickPlay?: QuickPlay; extraJvm?: string[] }
 ): LaunchCommand {
   const v = installed.version
   const classpath = [...installed.libraries.classpath, installed.clientJar].join(delimiter)
@@ -86,7 +86,7 @@ export function buildCommand(
   else jvm.push(`-Djava.library.path=${installed.nativesDir}`, '-cp', classpath)
   const log = v.logging?.client
   if (log && installed.loggingConfig) jvm.push(log.argument.replace('${path}', installed.loggingConfig))
-  jvm.push(...splitArgs(opts.jvmArgs))
+  jvm.push(...(opts.extraJvm ?? []), ...splitArgs(opts.jvmArgs))
 
   let game: string[]
   if (v.arguments?.game?.length) game = expand(v.arguments.game, vars, features)
@@ -158,6 +158,8 @@ export async function launchGame(id: string, emit: Emit, quickPlay?: QuickPlay):
     const cmd = buildCommand(inst, installed, java, auth, {
       ramMb: inst.ramMb ?? s.ramMb,
       jvmArgs: [s.jvmArgs, inst.jvmArgs].filter(Boolean).join(' '),
+      // One PandaClient mod settings file (HUD layout, mods on/off) shared by every instance.
+      extraJvm: [`-Dpandaclient.config=${join(s.gameDir, 'pandaclient-mod.json')}`],
       window,
       quickPlay
     })

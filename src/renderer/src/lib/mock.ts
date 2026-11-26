@@ -508,6 +508,18 @@ export function createMock(): PandaApi {
         throw new Error('Only in the desktop app')
       }
     },
+    share: {
+      players: async (q) => (q ? [{ uuid: '00000000-0000-0000-0000-000000000001', username: `${q}Friend`, online: true }] : []),
+      send: async () => {
+        throw new Error('Only in the desktop app')
+      },
+      incoming: async () => [],
+      onIncoming: () => () => {},
+      accept: async () => {
+        throw new Error('Only in the desktop app')
+      },
+      dismiss: async () => {}
+    },
     online: {
       // Real count only; null (hidden) when the server can't be reached.
       count: () => live(async () => {

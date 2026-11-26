@@ -154,9 +154,24 @@ export async function exportMrpack(id: string): Promise<string | null> {
     filters: [{ name: 'Modrinth modpack', extensions: ['mrpack'] }]
   })
   if (canceled || !filePath) return null
-
   return withTask(`Exporting ${inst.name}`, async (task) => {
-    task.update('Collecting content', null)
+    const data = await buildMrpack(id, task)
+    task.update('Writing file', null)
+    await writeFile(filePath, data)
+    return filePath
+  })
+}
+
+/** Import a .mrpack someone shared (already downloaded into memory). */
+export async function importMrpackBuffer(data: Uint8Array): Promise<Instance> {
+  return withTask('Importing shared instance', async (task) => installFromBuffer(data, task))
+}
+
+/** Pack an instance as a Modrinth modpack (.mrpack) in memory. */
+export async function buildMrpack(id: string, task?: { update: (m: string, p: number | null) => void }): Promise<Uint8Array> {
+  const inst = await getInstance(id)
+  {
+    task?.update('Collecting content', null)
     const items = (await listContent(id)).filter((i) => i.enabled)
     const known = items.filter((i) => i.version)
     const versions = new Map((await mr.versionsByIds([...new Set(known.map((i) => i.version!.id))])).map((v) => [v.id, v]))
@@ -197,8 +212,6 @@ export async function exportMrpack(id: string): Promise<string | null> {
     }
     zip['modrinth.index.json'] = new TextEncoder().encode(JSON.stringify(index, null, 2))
 
-    task.update('Writing file', null)
-    await writeFile(filePath, zipSync(zip, { level: 6 }))
-    return filePath
-  })
+    return zipSync(zip, { level: 6 })
+  }
 }

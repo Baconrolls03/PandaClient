@@ -49,6 +49,7 @@ export function registerIpc(win: BrowserWindow): void {
   instances.onInstancesChanged(() => send('instances:changed'))
   tasks.onTasksChanged((list) => send('tasks:changed', list))
   panda.onOnlineChanged((n) => send('online:changed', n))
+  panda.onSharesChanged((s) => send('share:incoming', s))
   panda.startHeartbeat()
   updater.onUpdateChanged((s) => send('updater:changed', s))
   updater.startUpdater()
@@ -170,6 +171,11 @@ export function registerIpc(win: BrowserWindow): void {
   ipcMain.handle('wardrobe:setCape', (_e, id: string | null) => mojangProfile.setCape(id))
   ipcMain.handle('wardrobe:readImage', (_e, file: string) => mojangProfile.readImage(file))
   ipcMain.handle('online:count', () => panda.onlineCount())
+  ipcMain.handle('share:players', (_e, q: string) => panda.searchPlayers(String(q).slice(0, 16)))
+  ipcMain.handle('share:send', (_e, id: string, to: string[]) => panda.shareInstance(id, Array.isArray(to) ? to.slice(0, 20).map(String) : []))
+  ipcMain.handle('share:incoming', () => panda.incomingShares())
+  ipcMain.handle('share:accept', (_e, id: string) => panda.acceptShare(String(id)))
+  ipcMain.handle('share:dismiss', (_e, id: string) => panda.dismissShare(String(id)))
 
   // Tasks
   ipcMain.handle('tasks:list', () => tasks.listTasks())

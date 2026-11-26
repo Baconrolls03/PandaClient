@@ -583,6 +583,16 @@ export interface PandaApi {
     /** Read a local PNG for previewing (skins). */
     readImage(file: string): Promise<string>
   }
+  share: {
+    /** PandaClient players whose name starts with q. */
+    players(q: string): Promise<SharePlayer[]>
+    /** Share an instance with these players (uuids); resolves to how many will receive it. */
+    send(instanceId: string, to: string[]): Promise<number>
+    incoming(): Promise<IncomingShare[]>
+    onIncoming(cb: (shares: IncomingShare[]) => void): () => void
+    accept(id: string): Promise<Instance>
+    dismiss(id: string): Promise<void>
+  }
   online: {
     /** Real number of PandaClient players online, or null when offline. */
     count(): Promise<number | null>
@@ -605,4 +615,20 @@ export interface PandaApi {
     running(): Promise<string[]>
     onProgress(cb: (p: LaunchProgress) => void): () => void
   }
+}
+
+export interface SharePlayer {
+  uuid: string
+  username: string
+  online: boolean
+}
+
+export interface IncomingShare {
+  id: string
+  name: string
+  size: number
+  createdAt: string
+  /** Username of who shared it. */
+  from: string
+  url: string
 }
