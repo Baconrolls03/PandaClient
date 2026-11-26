@@ -1,0 +1,39 @@
+name: PandaClient mod
+
+on:
+  push:
+    paths: ['mod/**', '.github/workflows/mod.yml']
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '9.2.1'
+      - name: Build
+        id: build
+        continue-on-error: true
+        run: gradle -p mod build --no-daemon --stacktrace 2>&1 | tee build.log; exit ${PIPESTATUS[0]}
+      - name: Show compile errors
+        if: steps.build.outcome == 'failure'
+        run: grep -E "error:|warning: \[|FAILURE|What went wrong" -A3 build.log | head -150 || true
+      # Prints the public signatures of the Minecraft / Fabric API classes the mod uses (no source code),
+      # so the mod can be written against the exact 1.21.11 API.
+      - name: API signatures
+        if: always()
+        run: bash mod/tools/print-api.sh || true
+      - name: Fail if the build failed
+        if: steps.build.outcome == 'failure'
+        run: exit 1
+      - uses: actions/upload-artifact@v4
+        if: steps.build.outcome == 'success'
+        with:
+          name: pandaclient-mod
+          path: mod/build/libs/pandaclient-*.jar

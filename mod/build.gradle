@@ -1,0 +1,36 @@
+buildscript {
+    repositories {
+        maven { url = 'https://maven.fabricmc.net/' }
+        mavenCentral()
+        gradlePluginPortal()
+    }
+    dependencies {
+        // Latest Loom 1.x (dynamic so the build keeps working as Loom ships fixes).
+        classpath 'net.fabricmc:fabric-loom:1.+'
+    }
+}
+apply plugin: 'fabric-loom'
+
+version = project.mod_version
+group = 'com.pandaclient'
+base { archivesName = 'pandaclient' }
+
+repositories { mavenCentral() }
+
+dependencies {
+    minecraft "com.mojang:minecraft:${project.minecraft_version}"
+    // Mojang's official names: the same names Minecraft itself uses from 26.1 on.
+    mappings loom.officialMojangMappings()
+    modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
+    modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
+}
+
+processResources {
+    inputs.property 'version', project.version
+    filesMatching('fabric.mod.json') { expand 'version': project.version }
+}
+
+java {
+    toolchain.languageVersion = JavaLanguageVersion.of(21)
+}
+tasks.withType(JavaCompile).configureEach { it.options.release = 21 }

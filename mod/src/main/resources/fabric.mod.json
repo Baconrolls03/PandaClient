@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "id": "pandaclient",
+  "version": "${version}",
+  "name": "PandaClient",
+  "description": "PandaClient's PvP mod: Right Shift menu, movable HUD mods, zoom, freelook, toggle sprint and PandaClient cosmetics.",
+  "authors": ["PandaClient"],
+  "license": "MIT",
+  "icon": "assets/pandaclient/icon.png",
+  "environment": "client",
+  "entrypoints": {
+    "client": ["com.pandaclient.mod.PandaClientMod"]
+  },
+  "mixins": [],
+  "depends": {
+    "fabricloader": ">=0.16.0",
+    "minecraft": "~1.21.11",
+    "fabric-api": "*",
+    "java": ">=21"
+  }
+}
