@@ -7,7 +7,8 @@ import { handleProtocol, registerSchemes } from './services/protocol'
 registerSchemes()
 
 function createWindow(): void {
-  const icon = join(app.getAppPath(), 'assets', 'logo.png')
+  // Your own logo.png wins; otherwise the bundled panda icon.
+  const icon = ['logo.png', 'icon.png'].map((f) => join(app.getAppPath(), 'assets', f)).find((p) => existsSync(p))
   const win = new BrowserWindow({
     width: 1120,
     height: 720,
@@ -17,7 +18,7 @@ function createWindow(): void {
     show: false,
     backgroundColor: '#0F141C',
     title: 'PandaClient',
-    ...(existsSync(icon) ? { icon } : {}),
+    ...(icon ? { icon } : {}),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       contextIsolation: true,

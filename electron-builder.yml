@@ -1,0 +1,32 @@
+appId: com.pandaclient.launcher
+productName: PandaClient
+copyright: PandaClient. Not affiliated with Mojang or Microsoft.
+directories:
+  output: release
+  buildResources: build
+files:
+  - out/**
+  - assets/**
+  - package.json
+asarUnpack: []
+icon: build/icon.png
+artifactName: ${productName}-Setup-${version}.${ext}
+
+win:
+  target:
+    - target: nsis
+      arch: [x64]
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: PandaClient
+
+mac:
+  target: dmg
+  category: public.app-category.games
+linux:
+  target: AppImage
+  category: Game
