@@ -21,7 +21,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 
 public final class PandaClientMod implements ClientModInitializer {
-    public static final String VERSION = "0.3.0";
+    public static final String VERSION = "0.4.0";
     private static CameraType cameraBeforeFreelook;
     private static boolean hitboxesApplied, menuWasDown, sprintWasDown, sneakWasDown, freelookWasDown;
     private static int prevSelfHurt;
@@ -39,11 +39,18 @@ public final class PandaClientMod implements ClientModInitializer {
         });
         // A "PandaClient" button on the title screen and the pause menu (Esc), so the menu is easy to find.
         net.fabricmc.fabric.api.client.screen.v1.ScreenEvents.AFTER_INIT.register((client, screen, w, h) -> {
-            if (!(screen instanceof net.minecraft.client.gui.screens.TitleScreen || screen instanceof net.minecraft.client.gui.screens.PauseScreen)) return;
-            // A small button in the top-left corner, out of the way of other mods' buttons (e.g. Mod Menu).
-            net.fabricmc.fabric.api.client.screen.v1.Screens.getButtons(screen).add(
-                net.minecraft.client.gui.components.Button.builder(net.minecraft.network.chat.Component.literal("PandaClient"),
-                    b -> client.setScreen(new MenuScreen(screen))).bounds(4, 4, 70, 16).build());
+            String cls = screen.getClass().getSimpleName().toLowerCase(java.util.Locale.ROOT);
+            boolean pause = screen instanceof net.minecraft.client.gui.screens.PauseScreen || cls.contains("pause") || cls.contains("gamemenu");
+            boolean title = screen instanceof net.minecraft.client.gui.screens.TitleScreen;
+            if (!pause && !title) return;
+            var buttons = net.fabricmc.fabric.api.client.screen.v1.Screens.getButtons(screen);
+            // Next to the top button of the menu (e.g. "Back to Game"), so it's easy to spot and never covered.
+            net.minecraft.client.gui.components.AbstractWidget top = null;
+            for (var b : buttons) if (b.getWidth() >= 150 && (top == null || b.getY() < top.getY())) top = b;
+            int bx = top != null ? top.getX() - 78 : 4, by = top != null ? top.getY() : 4;
+            if (bx < 2) { bx = 4; by = 4; }
+            buttons.add(net.minecraft.client.gui.components.Button.builder(net.minecraft.network.chat.Component.literal("PandaClient"),
+                b -> client.setScreen(new MenuScreen(screen))).bounds(bx, by, 74, 20).build());
         });
         Runtime.getRuntime().addShutdownHook(new Thread(Config::save, "PandaClient config save"));
         System.out.println("[PandaClient] " + VERSION + " loaded with " + Modules.all().size() + " mods");

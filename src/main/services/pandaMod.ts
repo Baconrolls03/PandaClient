@@ -15,7 +15,7 @@ const FABRIC_API_ID = 'P7dR8mSH'
 export function bundledJar(): string | null {
   const candidates = app.isPackaged
     ? [join(process.resourcesPath, 'mods', JAR)]
-    : [join(app.getAppPath(), 'build', 'mods', JAR), join(app.getAppPath(), 'mod', 'build', 'libs', 'pandaclient-0.3.0.jar')]
+    : [join(app.getAppPath(), 'build', 'mods', JAR), join(app.getAppPath(), 'mod', 'build', 'libs', 'pandaclient-0.4.0.jar')]
   return candidates.find((p) => existsSync(p)) ?? null
 }
 
