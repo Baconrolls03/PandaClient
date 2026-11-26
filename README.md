@@ -14,6 +14,7 @@ npm run dev        # Electron app with hot reload
 npm run dev:web    # UI only, in a browser, with mocked launcher APIs
 npm run typecheck
 npm test           # main-process services against a fake Modrinth server
+npm run test:live  # same services against the real Modrinth / Mojang / loader APIs (downloads real files)
 ```
 
 Minecraft game files are never bundled. They are always downloaded from Mojang at runtime.

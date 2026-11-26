@@ -34,7 +34,11 @@ export async function loaderVersions(loader: Loader, mc: string): Promise<Loader
     }
     case 'quilt': {
       const list = await getJson<{ loader: { version: string } }[]>(`${QUILT}/versions/loader/${encodeURIComponent(mc)}`)
-      return list.map((l) => ({ version: l.loader.version, stable: !/beta|alpha|pre|rc/i.test(l.loader.version) }))
+      // Quilt's meta isn't sorted newest-first.
+      return list
+        .map((l) => l.loader.version)
+        .sort(byVersionDesc)
+        .map((version) => ({ version, stable: !/beta|alpha|pre|rc/i.test(version) }))
     }
     case 'forge': {
       const xml = await getText(FORGE_MAVEN)

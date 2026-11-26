@@ -11,7 +11,8 @@
     "build": "electron-vite build",
     "preview": "electron-vite preview",
     "typecheck": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json",
-    "test": "tsx --tsconfig tests/tsconfig.json tests/services.test.mts"
+    "test": "tsx --tsconfig tests/tsconfig.json tests/services.test.mts",
+    "test:live": "tsx --tsconfig tests/tsconfig.json tests/live.test.mts"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.3.5",

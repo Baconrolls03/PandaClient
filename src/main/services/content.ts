@@ -190,8 +190,18 @@ export async function checkUpdates(id: string): Promise<ContentItem[]> {
         [inst.mcVersion]
       )
       for (const i of ofType) {
-        const l = latest[i.sha1]
-        if (l && l.id !== i.version!.id) cache.updates[i.sha1] = { versionId: l.id, number: l.version_number }
+        let l: MrVersion | undefined = latest[i.sha1]
+        if (!l || l.id === i.version!.id) continue
+        // Modrinth returns the newest version of any type. Stay on stable releases unless already on a beta/alpha.
+        if (l.version_type !== 'release') {
+          const current = (await mr.versionsByIds([i.version!.id]))[0]
+          if (current?.version_type === 'release') {
+            const all = (await mr.versions(i.project!.id, { loaders, gameVersions: [inst.mcVersion] })).sort(byNewest)
+            l = all.find((v) => v.version_type === 'release')
+            if (!l || l.id === current.id || l.date_published <= current.date_published) continue
+          }
+        }
+        cache.updates[i.sha1] = { versionId: l.id, number: l.version_number }
       }
     }
     await writeCache(id, cache)
