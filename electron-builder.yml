@@ -9,6 +9,11 @@ files:
   - assets/**
   - package.json
 asarUnpack: []
+# The PandaClient Fabric mod (built by CI into build/mods), added to 1.21.11 instances at launch.
+extraResources:
+  - from: build/mods
+    to: mods
+    filter: ['*.jar']
 icon: assets/icon.png
 artifactName: ${productName}-Setup-${version}.${ext}
 

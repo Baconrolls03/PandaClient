@@ -31,6 +31,7 @@ function defaults(): Settings {
     maxDownloads: 8,
     onLaunch: 'nothing',
     refocusOnExit: true,
+    pandaMod: true,
     selectedInstance: '',
     showSnapshots: false,
     theme: 'default',

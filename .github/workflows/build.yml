@@ -33,6 +33,21 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      # Build the PandaClient Fabric mod; the installer ships it and adds it to 1.21.11 instances.
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 25
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: current
+      - name: Build the PandaClient mod
+        shell: bash
+        run: |
+          gradle -p mod build --no-daemon -q
+          mkdir -p build/mods
+          cp "$(ls mod/build/libs/pandaclient-*.jar | grep -v sources | head -1)" build/mods/pandaclient.jar
+          ls -la build/mods
       - run: npx electron-vite build && npx electron-builder --win --publish never
       # Pushes to main publish a GitHub Release (once per version); the app's updater reads latest.yml from it.
       - name: Publish release

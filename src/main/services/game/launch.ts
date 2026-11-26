@@ -11,6 +11,7 @@ import { getSettings } from '../settings'
 import { type TaskHandle, startTask } from '../tasks'
 import { ensureRuntime } from './javaRuntime'
 import { assetsDir, install, librariesDir, rulesAllow, type Arg, type Installed } from './mojang'
+import { ensurePandaMod } from '../pandaMod'
 
 type Emit = (p: LaunchProgress) => void
 
@@ -144,6 +145,7 @@ export async function launchGame(id: string, emit: Emit, quickPlay?: QuickPlay):
     emit({ ...base, stage: 'preparing', progress: null, message: `Preparing ${inst.name}…` })
     const auth = await launchAuth()
     const installed = await install(inst.mcVersion, inst.loaderVersion, proxy)
+    await ensurePandaMod(inst, s.pandaMod !== false, (m) => progress(m, null, 'preparing'))
 
     const javaPath = inst.javaPath || s.javaPath
     const java = javaPath || (await ensureRuntime(installed.version.javaVersion?.component ?? 'jre-legacy', proxy))

@@ -171,6 +171,7 @@ export function createMock(): PandaApi {
     hooks: { preLaunch: '', wrapper: '', postExit: '' },
     onLaunch: 'nothing',
     refocusOnExit: true,
+    pandaMod: true,
     selectedInstance: '',
     showSnapshots: false,
     maxDownloads: 8,

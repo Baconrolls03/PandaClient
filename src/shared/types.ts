@@ -37,6 +37,8 @@ export interface Settings {
   /* Behaviour */
   onLaunch: 'nothing' | 'minimize' | 'close'
   refocusOnExit: boolean
+  /** Add the PandaClient mod (menu, HUD mods, PvP mods) to supported instances when they launch. */
+  pandaMod: boolean
   /** Instance shown in the play bar. */
   selectedInstance: string
   showSnapshots: boolean
