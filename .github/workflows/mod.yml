@@ -16,7 +16,13 @@ jobs:
           java-version: 21
       - uses: gradle/actions/setup-gradle@v4
         with:
-          gradle-version: '9.2.1'
+          gradle-version: current
+      - name: Fabric versions
+        run: |
+          curl -s https://maven.fabricmc.net/net/fabricmc/fabric-loom/maven-metadata.xml | grep -oE '<(latest|release)>[^<]+' || true
+          curl -s https://meta.fabricmc.net/v2/versions/loader/1.21.11 | head -c 300; echo
+          curl -s "https://api.modrinth.com/v2/project/fabric-api/version?game_versions=%5B%221.21.11%22%5D" | grep -oE '"version_number":"[^"]+"' | head -3
+          gradle --version | head -3
       - name: Build
         id: build
         continue-on-error: true
@@ -26,7 +32,7 @@ jobs:
       - name: Show compile errors
         if: steps.build.outcome == 'failure'
         run: |
-          grep -E "error:|FAILURE|What went wrong" -A3 build.log | head -200 || true
+          grep -E "error:|What went wrong" -A12 build.log | head -250 || true
       # Prints the public signatures of the Minecraft / Fabric API classes the mod uses (no source code),
       # so the mod can be written against the exact 1.21.11 API.
       - name: API signatures
