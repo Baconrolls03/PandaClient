@@ -296,6 +296,8 @@ export interface MrTeamMember {
 }
 
 export interface MrCategory {
+  /** SVG markup (may be empty). */
+  icon?: string
   name: string
   project_type: string
   header: string

@@ -7,6 +7,7 @@ import { compact, LOADER_NAMES, timeAgo, titleCase } from '@/lib/format'
 import { Badge, Button, Empty, InstanceIcon, ProjectIcon, Select, Spinner, Tabs } from '@/components/ui'
 import { Markdown } from '@/components/Markdown'
 import { Lightbox } from '@/components/Lightbox'
+import { CategoryIcon, useCategories } from '@/lib/tags'
 
 type Tab = 'description' | 'gallery' | 'versions'
 const HIDDEN = new Set(['fabric', 'forge', 'neoforge', 'quilt', 'iris', 'optifine', 'canvas', 'vanilla', 'minecraft', 'datapack'])
@@ -26,6 +27,7 @@ function SideCard({ title, children }: { title: string; children: React.ReactNod
 
 export function Project({ id, instanceId }: { id: string; instanceId?: string }) {
   const { instances, openModal, attempt } = useStore()
+  const categories = useCategories()
   const inst = instances.find((i) => i.id === instanceId)
   const [project, setProject] = useState<MrProject | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -118,7 +120,10 @@ export function Project({ id, instanceId }: { id: string; instanceId?: string })
             </div>
             <div className="mt-3 flex flex-wrap gap-1.5">
               {[...project.categories, ...(project.additional_categories ?? [])].filter((c) => !HIDDEN.has(c)).map((c) => (
-                <span key={c} className="rounded-md bg-bg px-2 py-0.5 text-xs text-muted">{titleCase(c)}</span>
+                <span key={c} className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-bg/60 px-2 py-0.5 text-xs text-muted">
+                  <CategoryIcon name={c} categories={categories} className="size-3" />
+                  {titleCase(c)}
+                </span>
               ))}
             </div>
           </div>

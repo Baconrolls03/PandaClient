@@ -1,4 +1,5 @@
 // In-browser stand-in for the Electron bridge (`npm run dev:web`). Sample data only.
+import { live, webModrinth } from './webModrinth'
 import type {
   ContentItem,
   Instance,
@@ -295,8 +296,15 @@ export function createMock(): PandaApi {
     },
     content: {
       list: async (id) => {
-        await wait(150)
-        return content.get(id) ?? []
+        const items = content.get(id) ?? []
+        // Swap the sample icons for the real ones from Modrinth when online.
+        const slugs = items.map((i) => i.project?.slug).filter(Boolean) as string[]
+        const real = await live(() => webModrinth.projects(slugs), async () => [])
+        const bySlug = new Map(real.map((p) => [p.slug, p]))
+        return items.map((i) => {
+          const p = i.project && bySlug.get(i.project.slug)
+          return p && i.project ? { ...i, project: { ...i.project, id: p.id, title: p.title, iconUrl: p.icon_url } } : i
+        })
       },
       checkUpdates: async (id) => {
         await wait(600)
@@ -305,7 +313,8 @@ export function createMock(): PandaApi {
         return list
       },
       install: async (id, projectId) => {
-        const h = hitBy(projectId)
+        const p = await live(() => webModrinth.project(projectId), async () => toProject(hitBy(projectId)))
+        const h = { slug: p.slug, title: p.title, project_id: p.id, icon_url: p.icon_url, project_type: p.project_type }
         await fakeTask(`Installing ${h.title}`, 6)
         const type = h.project_type === 'resourcepack' ? 'resourcepack' : h.project_type === 'shader' ? 'shader' : h.project_type === 'datapack' ? 'datapack' : 'mod'
         content.set(id, [...(content.get(id) ?? []), { file: `${h.slug}.jar`, type, enabled: true, size: 500_000, sha1: h.slug, project: { id: h.project_id, slug: h.slug, title: h.title, iconUrl: h.icon_url }, version: { id: 'v', number: '3.0.0' }, update: null }])
@@ -321,7 +330,13 @@ export function createMock(): PandaApi {
         await fakeTask(`Updating ${files.length} items`, 6)
         content.set(id, (content.get(id) ?? []).map((c) => (files.some((f) => f.file === c.file) && c.update ? { ...c, update: null, version: { id: 'new', number: c.update.number } } : c)))
       },
-      installedProjects: async (id) => (content.get(id) ?? []).map((c) => c.project?.id).filter(Boolean) as string[]
+      installedProjects: async (id) => {
+        // Resolve sample slugs to real Modrinth ids so "Installed" matches live search results.
+        const items = content.get(id) ?? []
+        const slugs = items.map((c) => c.project?.slug).filter(Boolean) as string[]
+        const real = await live(() => webModrinth.projects(slugs), async () => [])
+        return [...items.map((c) => c.project?.id), ...real.map((p) => p.id)].filter(Boolean) as string[]
+      }
     },
     worlds: {
       list: async () => [
@@ -378,7 +393,7 @@ export function createMock(): PandaApi {
         ].join('\n')
     },
     modrinth: {
-      search: async (q) => {
+      search: (q) => live(() => webModrinth.search(q), async () => {
         await wait(250)
         let hits = HITS.filter((h) => h.project_type === q.type)
         if (q.query) hits = hits.filter((h) => `${h.title} ${h.description}`.toLowerCase().includes(q.query.toLowerCase()))
@@ -387,20 +402,18 @@ export function createMock(): PandaApi {
         if (q.sort === 'downloads') hits = [...hits].sort((a, b) => b.downloads - a.downloads)
         if (q.sort === 'follows') hits = [...hits].sort((a, b) => b.follows - a.follows)
         return { hits: hits.slice(q.offset, q.offset + q.limit), offset: q.offset, limit: q.limit, total_hits: hits.length }
-      },
-      project: async (id) => {
-        await wait(200)
-        return toProject(hitBy(id))
-      },
-      versions: async (id) => versionsFor(hitBy(id)),
-      members: async () => [
+      }),
+      project: (id) => live(() => webModrinth.project(id), async () => toProject(hitBy(id))),
+      versions: (id, filter) => live(() => webModrinth.versions(id, filter), async () => versionsFor(hitBy(id))),
+      members: (id) => live(() => webModrinth.members(id), async () => [
         { role: 'Owner', user: { username: 'jellysquid3', avatar_url: icon('J', 140) } },
         { role: 'Developer', user: { username: 'IMS', avatar_url: icon('I', 260) } }
-      ],
-      categories: async () => CATEGORIES,
-      gameVersions: async () => MC.map((version) => ({ version, version_type: 'release', date: '', major: false })),
+      ]),
+      categories: () => live(() => webModrinth.categories(), async () => CATEGORIES),
+      gameVersions: () => live(() => webModrinth.gameVersions(), async () => MC.map((version) => ({ version, version_type: 'release', date: '', major: false }))),
       installModpack: async (id) => {
-        const h = hitBy(id)
+        const p = await live(() => webModrinth.project(id), async () => toProject(hitBy(id)))
+        const h = { ...(HITS.find((x) => x.slug === p.slug) ?? HITS[12]), title: p.title, slug: p.slug, project_id: p.id, icon_url: p.icon_url }
         await fakeTask(`Installing ${h.title}`, 15)
         const inst = mkInst(h.slug, h.title, '26.3', '0.20.1', 300, null, { projectId: h.project_id, versionId: 'v', title: h.title })
         inst.iconUrl = h.icon_url

@@ -7,27 +7,15 @@ import type {
   MrVersion,
   SearchQuery
 } from '@shared/types'
+import { MODRINTH_API, searchUrl, versionsUrl } from '@shared/modrinthQuery'
 import { getJson, postJson } from './http'
 
-export const API = process.env['PANDA_MODRINTH_API'] ?? 'https://api.modrinth.com/v2'
+export const API = process.env['PANDA_MODRINTH_API'] ?? MODRINTH_API
 
 const q = (v: unknown) => encodeURIComponent(JSON.stringify(v))
 
-export async function search(query: SearchQuery): Promise<MrSearchResult> {
-  const facets: string[][] = [[`project_type:${query.type}`]]
-  if (query.loaders.length) facets.push(query.loaders.map((l) => `categories:${l}`))
-  for (const c of query.categories) facets.push([`categories:${c}`])
-  if (query.gameVersions.length) facets.push(query.gameVersions.map((v) => `versions:${v}`))
-  if (query.environment === 'client') facets.push(['client_side:required', 'client_side:optional'])
-  if (query.environment === 'server') facets.push(['server_side:required', 'server_side:optional'])
-  const params = [
-    `query=${encodeURIComponent(query.query)}`,
-    `facets=${q(facets)}`,
-    `index=${query.sort}`,
-    `offset=${query.offset}`,
-    `limit=${Math.min(100, query.limit)}`
-  ]
-  return getJson<MrSearchResult>(`${API}/search?${params.join('&')}`)
+export function search(query: SearchQuery): Promise<MrSearchResult> {
+  return getJson<MrSearchResult>(searchUrl(API, query))
 }
 
 export const project = (idOrSlug: string) => getJson<MrProject>(`${API}/project/${encodeURIComponent(idOrSlug)}`)
@@ -40,10 +28,7 @@ export async function projects(ids: string[]): Promise<MrProject[]> {
 }
 
 export function versions(idOrSlug: string, filter: { loaders?: string[]; gameVersions?: string[] } = {}): Promise<MrVersion[]> {
-  const params: string[] = []
-  if (filter.loaders?.length) params.push(`loaders=${q(filter.loaders)}`)
-  if (filter.gameVersions?.length) params.push(`game_versions=${q(filter.gameVersions)}`)
-  return getJson<MrVersion[]>(`${API}/project/${encodeURIComponent(idOrSlug)}/version${params.length ? `?${params.join('&')}` : ''}`)
+  return getJson<MrVersion[]>(versionsUrl(API, idOrSlug, filter))
 }
 
 export const version = (id: string) => getJson<MrVersion>(`${API}/version/${encodeURIComponent(id)}`)

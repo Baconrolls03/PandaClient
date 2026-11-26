@@ -16,7 +16,7 @@ const query = (type: SearchQuery['type'], sort: SearchQuery['sort'], limit: numb
   type,
   sort,
   categories: [],
-  loaders: [],
+  loaders: type === 'mod' || type === 'modpack' ? ['fabric'] : [],
   gameVersions: [],
   environment: type === 'mod' ? 'client' : null,
   offset: 0,
@@ -147,7 +147,7 @@ export function Home() {
         </div>
       </Section>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.3fr_1fr]">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.3fr_1fr] [&>*]:min-w-0">
         <Section title="Trending mods" action={<SeeAll onClick={() => navigate({ name: 'discover', type: 'mod' })} />}>
           <div className="rounded-2xl border border-border bg-surface p-2 shadow-soft">
             {(mods ?? []).map((h) => (
