@@ -229,7 +229,7 @@ export function InstanceIcon({ url, preset, size = 48, className = '' }: { url: 
 
 export function ProjectIcon({ url, size = 48, className = '' }: { url: string | null | undefined; size?: number; className?: string }) {
   return url ? (
-    <img src={url} alt="" loading="lazy" className={`shrink-0 rounded-xl bg-raised object-cover ${className}`} style={{ width: size, height: size }} draggable={false} />
+    <img src={url} alt="" loading="lazy" className={`shrink-0 rounded-xl bg-raised object-cover ${className}`} style={{ width: size, height: size, minWidth: size, minHeight: size }} draggable={false} />
   ) : (
     <div className={`grid shrink-0 place-items-center rounded-xl bg-raised text-muted ${className}`} style={{ width: size, height: size }}>
       <svg viewBox="0 0 24 24" width={size * 0.45} height={size * 0.45} fill="none" stroke="currentColor" strokeWidth="1.8">

@@ -19,6 +19,7 @@ import { safeJoin } from './services/paths'
 import * as panda from './services/pandaApi'
 import * as mojangProfile from './services/mojangProfile'
 import * as importer from './services/importer'
+import * as updater from './services/updater'
 
 const SETTINGS_KEYS: (keyof Settings)[] = [
   'ramMb', 'javaPath', 'jvmArgs', 'window', 'hooks', 'gameDir', 'maxDownloads', 'onLaunch', 'refocusOnExit', 'selectedInstance',
@@ -49,6 +50,8 @@ export function registerIpc(win: BrowserWindow): void {
   tasks.onTasksChanged((list) => send('tasks:changed', list))
   panda.onOnlineChanged((n) => send('online:changed', n))
   panda.startHeartbeat()
+  updater.onUpdateChanged((s) => send('updater:changed', s))
+  updater.startUpdater()
 
   ipcMain.on('window:minimize', () => win.minimize())
   ipcMain.on('window:close', () => win.close())
@@ -145,6 +148,11 @@ export function registerIpc(win: BrowserWindow): void {
   ipcMain.handle('modrinth:categories', () => mr.categories())
   ipcMain.handle('modrinth:gameVersions', () => mr.gameVersions())
   ipcMain.handle('modrinth:installModpack', (_e, id: string, versionId?: string) => mrpack.installModpack(id, versionId))
+
+  // Self-update
+  ipcMain.handle('updater:state', () => updater.updateState())
+  ipcMain.handle('updater:check', () => updater.check())
+  ipcMain.handle('updater:install', () => updater.install())
 
   // Import from other launchers
   ipcMain.handle('importer:scan', () => importer.scanSources())

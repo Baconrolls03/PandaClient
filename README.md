@@ -11,10 +11,16 @@ A simple, clean, Fabric-only Minecraft: Java Edition launcher.
 
 ## Download (Windows)
 
-1. On GitHub, open **Actions** → **Build PandaClient** → the newest run with a green tick.
-2. Under **Artifacts**, download **PandaClient-Windows-Installer** and unzip it.
-3. Run `PandaClient-Setup-<version>.exe`. If Windows says "Windows protected your PC",
-   click **More info → Run anyway** (the installer isn't code-signed yet).
+Get the latest `PandaClient-Setup-<version>.exe` from **[Releases](https://github.com/Baconrolls03/PandaClient/releases/latest)** and run it.
+If Windows says "Windows protected your PC", click **More info → Run anyway** (the installer isn't code-signed yet).
+
+PandaClient updates itself: when a new version is out it downloads in the background and a
+**Restart to update** button appears in the title bar.
+
+### Releasing a new version
+
+Bump `version` in `package.json` and push to `main`. GitHub Actions builds the installer and
+publishes it as release `v<version>`; installed copies pick it up automatically.
 
 ## Run from source
 

@@ -114,16 +114,16 @@ export function ContentTab({ inst }: { inst: Instance }) {
           Add Fabric mods, resource packs, shaders and data packs.
         </Empty>
       ) : (
-        <div className="overflow-hidden rounded-2xl border border-border bg-surface shadow-soft">
-          <div className="grid grid-cols-[auto_1fr_140px_80px_auto] items-center gap-4 border-b border-border px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-muted">
-            <span className="w-11" />
-            <span>Name</span>
-            <span>Version</span>
-            <span className="text-right">Size</span>
-            <span className="w-[116px]" />
+        <div className="@container overflow-hidden rounded-2xl border border-border bg-surface shadow-soft">
+          <div className="flex items-center gap-4 border-b border-border px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-muted">
+            <span className="w-11 shrink-0" />
+            <span className="min-w-0 flex-1">Name</span>
+            <span className="hidden w-36 shrink-0 @md:block">Version</span>
+            <span className="hidden w-20 shrink-0 text-right @2xl:block">Size</span>
+            <span className="w-16 shrink-0" />
           </div>
           {shown.map((i) => (
-            <div key={`${i.type}/${i.file}`} className={`group grid grid-cols-[auto_1fr_140px_80px_auto] items-center gap-4 border-b border-border px-4 py-2.5 last:border-0 transition-colors hover:bg-raised ${i.enabled ? '' : 'opacity-55'}`}>
+            <div key={`${i.type}/${i.file}`} className={`group flex items-center gap-4 border-b border-border px-4 py-2.5 last:border-0 transition-colors hover:bg-raised ${i.enabled ? '' : 'opacity-55'}`}>
               <Toggle
                 label={i.enabled ? 'Disable' : 'Enable'}
                 checked={i.enabled}
@@ -133,30 +133,34 @@ export function ContentTab({ inst }: { inst: Instance }) {
                 }}
               />
               <button
-                className="flex min-w-0 items-center gap-3 text-left"
+                className="flex min-w-0 flex-1 items-center gap-3 text-left"
                 disabled={!i.project}
                 onClick={() => i.project && navigate({ name: 'project', id: i.project.slug, instanceId: inst.id })}
               >
                 <ProjectIcon url={i.project?.iconUrl} size={36} className="rounded-lg" />
-                <div className="min-w-0">
+                <div className="min-w-0 flex-1">
                   <div className="truncate text-sm font-medium">{i.project?.title ?? i.file.replace(/\.disabled$/, '')}</div>
-                  <div className="flex items-center gap-1.5 truncate text-xs text-muted">
-                    {filter === 'all' && <span>{TYPE_LABEL[i.type].replace(/s$/, '')} ·</span>}
+                  <div className="flex min-w-0 items-center gap-1.5 text-xs text-muted">
+                    {filter === 'all' && <span className="shrink-0">{TYPE_LABEL[i.type].replace(/s$/, '')} ·</span>}
                     <span className="truncate">{i.file}</span>
                   </div>
+                  {/* On narrow layouts the version moves under the name. */}
+                  <div className="truncate text-xs text-muted @md:hidden">{i.update ? <span className="text-blue">Update: {i.update.number}</span> : i.version?.number}</div>
                 </div>
               </button>
-              <div className="min-w-0">
+              <div className="hidden w-36 shrink-0 @md:block">
                 {i.update ? (
-                  <button onClick={() => updateItems([i])} className="flex items-center gap-1 truncate text-xs text-blue hover:underline" title={`Update to ${i.update.number}`}>
-                    <ArrowUpCircle size={13} /> {i.update.number}
+                  <button onClick={() => updateItems([i])} className="flex max-w-full items-center gap-1 text-xs text-blue hover:underline" title={`Update to ${i.update.number}`}>
+                    <ArrowUpCircle size={13} className="shrink-0" /> <span className="truncate">{i.update.number}</span>
                   </button>
                 ) : (
-                  <span className="block truncate text-xs text-muted">{i.version?.number ?? <Badge>Local file</Badge>}</span>
+                  <span className="block truncate text-xs text-muted" title={i.version?.number}>
+                    {i.version?.number ?? <Badge>Local file</Badge>}
+                  </span>
                 )}
               </div>
-              <span className="text-right text-xs tabular-nums text-muted">{bytes(i.size)}</span>
-              <div className="flex w-[116px] justify-end gap-1">
+              <span className="hidden w-20 shrink-0 text-right text-xs tabular-nums text-muted @2xl:block">{bytes(i.size)}</span>
+              <div className="flex w-16 shrink-0 justify-end">
                 <ConfirmIconButton
                   label="Remove"
                   onConfirm={async () => {

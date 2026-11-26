@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer } from 'electron'
-import type { LaunchProgress, PandaApi, Task } from '@shared/types'
+import type { LaunchProgress, PandaApi, Task, UpdateState } from '@shared/types'
 
 const invoke = ipcRenderer.invoke.bind(ipcRenderer)
 function subscribe<T>(channel: string, cb: (payload: T) => void): () => void {
@@ -82,6 +82,12 @@ const api: PandaApi = {
     categories: () => invoke('modrinth:categories'),
     gameVersions: () => invoke('modrinth:gameVersions'),
     installModpack: (id, versionId) => invoke('modrinth:installModpack', id, versionId)
+  },
+  updater: {
+    state: () => invoke('updater:state'),
+    check: () => invoke('updater:check'),
+    install: () => invoke('updater:install'),
+    onChanged: (cb) => subscribe<UpdateState>('updater:changed', cb)
   },
   importer: {
     scan: () => invoke('importer:scan'),

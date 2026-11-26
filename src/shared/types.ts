@@ -427,6 +427,20 @@ export interface MojangProfile {
   capes: MojangCape[]
 }
 
+/* ───────────── Self-update ───────────── */
+
+export interface UpdateState {
+  status: 'idle' | 'checking' | 'none' | 'downloading' | 'ready' | 'error' | 'unsupported'
+  /** Version running now. */
+  current: string
+  /** Version being downloaded / ready to install. */
+  version?: string
+  progress?: number
+  notes?: string
+  error?: string
+  checkedAt?: number
+}
+
 /* ───────────── Importing from other launchers ───────────── */
 
 export type LauncherId = 'minecraft' | 'modrinth' | 'curseforge' | 'prism' | 'lunar' | 'feather' | 'dawn' | 'folder'
@@ -539,6 +553,13 @@ export interface PandaApi {
     categories(): Promise<MrCategory[]>
     gameVersions(): Promise<MrGameVersion[]>
     installModpack(projectId: string, versionId?: string): Promise<Instance>
+  }
+  updater: {
+    state(): Promise<UpdateState>
+    check(): Promise<UpdateState>
+    /** Restart into the downloaded update. */
+    install(): Promise<void>
+    onChanged(cb: (s: UpdateState) => void): () => void
   }
   importer: {
     /** Look for other launchers' instances on this computer. */

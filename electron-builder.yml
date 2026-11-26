@@ -30,3 +30,10 @@ mac:
 linux:
   target: AppImage
   category: Game
+
+# Releases on GitHub feed the in-app updater (electron-updater reads latest.yml from the release).
+publish:
+  provider: github
+  owner: Baconrolls03
+  repo: PandaClient
+  releaseType: release

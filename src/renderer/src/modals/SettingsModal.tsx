@@ -12,6 +12,7 @@ import {
   Monitor,
   Paintbrush,
   Plus,
+  RefreshCw,
   RotateCcw,
   Search,
   SlidersHorizontal,
@@ -27,6 +28,7 @@ import { useStore, type SettingsSection } from '@/lib/store'
 import { MicrosoftMark, SkinHead } from '@/components/AccountCard'
 import { Logo } from '@/components/Logo'
 import { Button, TextField, Toggle } from '@/components/ui'
+import { useUpdateState } from '@/components/UpdatePill'
 
 const NAV: { group: string; items: { id: SettingsSection; label: string; icon: LucideIcon }[] }[] = [
   { group: 'Display', items: [{ id: 'appearance', label: 'Appearance', icon: Paintbrush }, { id: 'behavior', label: 'Behavior', icon: SlidersHorizontal }] },
@@ -390,6 +392,41 @@ function Resources({ s, update }: { s: Settings; update: (p: Partial<Settings>) 
   )
 }
 
+function UpdateBox() {
+  const s = useUpdateState()
+  const [checking, setChecking] = useState(false)
+  if (!s) return null
+  const text =
+    s.status === 'unsupported'
+      ? 'Updates work in the installed app.'
+      : s.status === 'checking'
+        ? 'Checking for updates…'
+        : s.status === 'downloading'
+          ? `Downloading ${s.version}… ${Math.round((s.progress ?? 0) * 100)}%`
+          : s.status === 'ready'
+            ? `Version ${s.version} is ready to install.`
+            : s.status === 'error'
+              ? `Couldn't check for updates (${s.error}).`
+              : s.status === 'none'
+                ? "You're on the latest version."
+                : 'PandaClient checks for updates automatically.'
+  return (
+    <div className="mt-5 flex w-full max-w-md items-center gap-3 rounded-xl border border-border bg-bg/50 p-3 text-left">
+      <RefreshCw size={18} className={`shrink-0 text-mint ${s.status === 'checking' || checking ? 'animate-spin' : ''}`} />
+      <span className="flex-1 text-[13px]">{text}</span>
+      {s.status === 'ready' ? (
+        <Button size="sm" variant="primary" onClick={() => api.updater.install()}>Restart</Button>
+      ) : (
+        s.status !== 'unsupported' && (
+          <Button size="sm" disabled={s.status === 'downloading'} onClick={async () => { setChecking(true); await api.updater.check(); setChecking(false) }}>
+            Check now
+          </Button>
+        )
+      )}
+    </div>
+  )
+}
+
 function About() {
   const [info, setInfo] = useState<SystemInfo | null>(null)
   useEffect(() => {
@@ -401,6 +438,7 @@ function About() {
       <h3 className="mt-4 text-xl font-bold">PandaClient</h3>
       <p className="mt-1 text-sm text-muted">Version {info?.appVersion ?? '…'} · {info?.platform ?? ''}</p>
       <p className="mt-4 max-w-sm text-[13px] text-muted">A simple, Fabric-only Minecraft launcher. Minecraft files are always downloaded from Mojang. Not affiliated with Mojang or Microsoft.</p>
+      <UpdateBox />
       <div className="mt-5 flex gap-2">
         <Button onClick={() => api.system.openExternal('https://github.com/Baconrolls03/PandaClient')}><Code2 size={15} /> Source code</Button>
         <Button variant="ghost" onClick={() => api.system.openExternal('https://modrinth.com')}><Monitor size={15} /> Modrinth</Button>

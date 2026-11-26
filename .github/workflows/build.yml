@@ -24,6 +24,8 @@ jobs:
   windows:
     needs: test
     runs-on: windows-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -31,7 +33,24 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - run: npm run dist:win
+      # Pushes to main publish a GitHub Release (once per version); the app's updater picks it up.
+      - name: Decide whether to publish a release
+        id: release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          version=$(node -p "require('./package.json').version")
+          if [ "${{ github.ref }}" = "refs/heads/main" ] && ! gh release view "v$version" > /dev/null 2>&1; then
+            echo "publish=always" >> "$GITHUB_OUTPUT"
+            echo "Publishing PandaClient v$version"
+          else
+            echo "publish=never" >> "$GITHUB_OUTPUT"
+            echo "Not publishing (branch build, or v$version already released)"
+          fi
+      - run: npx electron-vite build && npx electron-builder --win --publish ${{ steps.release.outputs.publish }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - uses: actions/upload-artifact@v4
         with:
           name: PandaClient-Windows-Installer

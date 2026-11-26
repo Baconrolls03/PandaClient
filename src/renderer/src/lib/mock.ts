@@ -448,6 +448,13 @@ export function createMock(): PandaApi {
         return inst
       }
     },
+    updater: {
+      // Browser preview: pretend an update has finished downloading so the button can be seen.
+      state: async () => ({ status: 'ready', current: '0.3.0', version: '0.3.1', progress: 1 }),
+      check: async () => ({ status: 'ready', current: '0.3.0', version: '0.3.1', progress: 1 }),
+      install: async () => void alert('In the desktop app this restarts into the new version.'),
+      onChanged: () => () => {}
+    },
     importer: {
       // Browser preview: example sources (the desktop app scans your real folders).
       scan: async () => {

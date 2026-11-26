@@ -59,7 +59,7 @@ export function Instance({ id, tab = 'content' }: { id: string; tab?: InstanceTa
   const banner = bg ? `linear-gradient(135deg, ${bg.from}, ${bg.to})` : 'linear-gradient(135deg, color-mix(in srgb, var(--color-mint) 55%, var(--color-surface)), var(--color-surface))'
 
   return (
-    <div className="mx-auto grid max-w-7xl grid-cols-[300px_1fr] gap-6 p-8">
+    <div className="mx-auto grid max-w-7xl grid-cols-[260px_minmax(0,1fr)] gap-6 p-8 xl:grid-cols-[300px_minmax(0,1fr)]">
       {/* Left: identity + actions */}
       <aside className="flex flex-col gap-4 self-start">
         <div className="overflow-hidden rounded-2xl border border-border bg-surface shadow-soft">
