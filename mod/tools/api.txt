@@ -58,3 +58,15 @@
 5|net.minecraft.client.player.KeyboardInput|p|tick|class
 5|net.minecraft.client.renderer.LevelRenderer|p|Outline|class
 5|net.minecraft.client.KeyboardHandler|p|keyPress|class
+6|net.minecraft.world.entity.player.PlayerSkin|-|.
+6|net.minecraft.core.ClientAsset|-|.
+6|net.minecraft.core.ClientAsset$Texture|-|.
+6|net.minecraft.core.ClientAsset$ResourceTexture|-|.
+6|net.minecraft.client.multiplayer.PlayerInfo|p|getSkin|skinLookup|class
+6|net.minecraft.client.player.AbstractClientPlayer|p|getSkin|getPlayerInfo|class
+6|net.minecraft.client.renderer.texture.DynamicTexture|-|DynamicTexture\(|upload|class
+6|com.mojang.blaze3d.platform.NativeImage|-|NativeImage\(int, int, boolean\)|setPixel|class
+6|net.minecraft.client.renderer.texture.TextureManager|-|register|release|class
+6|net.minecraft.client.renderer.texture.OverlayTexture|p|.
+6|net.minecraft.client.renderer.entity.LivingEntityRenderer|p|getOverlayCoords|class
+6|net.minecraft.client.renderer.entity.state.LivingEntityRenderState|-|hasRedOverlay|class

@@ -5,7 +5,7 @@ export PANDACLIENT_CI=1
 mkdir -p shots
 ( xvfb-run -a -s "-screen 0 1280x720x24" gradle -p mod runClient --no-daemon > game.log 2>&1; echo "exit $?" >> game.log ) &
 for name in menu settings hud; do
-  for i in $(seq 1 900); do grep -q "\[PandaClient CI\] $name" game.log && break; sleep 1; done
+  for i in $(seq 1 240); do grep -q "\[PandaClient CI\] $name" game.log && break; sleep 1; done
   sleep 3
   DISPLAY=$(ps aux | grep -oE 'Xvfb :[0-9]+' | head -1 | cut -d' ' -f2) import -window root -resize 640x360 -quality 60 "shots/$name.jpg" 2>/dev/null || echo "no screenshot for $name"
 done

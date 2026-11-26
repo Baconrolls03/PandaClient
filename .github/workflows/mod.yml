@@ -25,11 +25,12 @@ jobs:
           gradle -p mod build --no-daemon 2>&1 | tee build.log
       - name: Run the game (smoke test)
         if: steps.build.outcome == 'success'
-        timeout-minutes: 20
+        timeout-minutes: 15
         run: |
           sudo apt-get install -y -qq xvfb imagemagick mesa-utils libgl1-mesa-dri > /dev/null
           bash mod/tools/smoke.sh
-          grep -E "PandaClient|Mixin|mixin|Exception|Error|Crash|exit " game.log | grep -v "DEBUG" | head -80 || true
+          grep -E "PandaClient|Mixin|mixin|Exception|Error|Crash|exit |Loading Minecraft|Backend library|OpenGL" game.log | grep -v "DEBUG" | head -80 || true
+          echo "----- last lines"; tail -30 game.log
           for f in shots/*.jpg; do echo "===== $f"; base64 -w 0 "$f"; echo; done
           grep -q "\[PandaClient CI\] mixins OK" game.log
       - name: Summary
