@@ -123,7 +123,7 @@ export function InstallModal({ projectId, title, projectType }: { projectId: str
             const done = installed[inst.id]
             return (
               <div key={inst.id} className={`flex items-center gap-3 rounded-xl p-2 transition-colors hover:bg-raised ${c.ok ? '' : 'opacity-50'}`}>
-                <InstanceIcon url={inst.iconUrl} size={40} />
+                <InstanceIcon url={inst.iconUrl} preset={inst.iconPreset} size={40} />
                 <div className="min-w-0 flex-1">
                   <div className="truncate text-sm font-medium">{inst.name}</div>
                   <div className="flex items-center gap-2 text-xs text-muted">

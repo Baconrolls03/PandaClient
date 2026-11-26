@@ -28,7 +28,7 @@ export function InstanceSettingsTab({ inst, onDelete }: { inst: Instance; onDele
     <div className="flex max-w-3xl flex-col gap-6">
       <Card title="General">
         <div className="flex items-center gap-4">
-          <InstanceIcon url={inst.iconUrl} size={64} />
+          <InstanceIcon url={inst.iconUrl} preset={inst.iconPreset} size={64} />
           <div className="flex flex-col gap-2">
             <div className="flex gap-2">
               <Button

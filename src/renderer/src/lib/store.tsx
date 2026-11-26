@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
-import type { Instance, LaunchProgress, ProjectType, Settings, Task } from '@shared/types'
+import type { Account, Instance, LaunchProgress, ProjectType, QuickPlay, Settings, Task } from '@shared/types'
 import { api } from './api'
 import { errorMessage } from './format'
 
@@ -36,7 +36,13 @@ interface Store {
   dismissToast: (id: number) => void
   /** Run an action and show its error as a toast. */
   attempt: <T>(fn: () => Promise<T>, success?: string) => Promise<T | undefined>
-  launch: (id: string) => void
+  launch: (id: string, quickPlay?: QuickPlay) => void
+  stop: (id: string) => void
+  running: Set<string>
+  accounts: Account[]
+  activeAccount: Account | null
+  setAccounts: (a: Account[]) => void
+  signIn: () => Promise<Account | undefined>
   modal: ModalState
   openModal: (m: ModalState) => void
   closeModal: () => void
@@ -46,6 +52,9 @@ export type ModalState =
   | null
   | { kind: 'create-instance' }
   | { kind: 'install'; projectId: string; title: string; projectType: string }
+  | { kind: 'settings'; section?: SettingsSection }
+
+export type SettingsSection = 'appearance' | 'behavior' | 'accounts' | 'java' | 'window' | 'hooks' | 'resources' | 'about'
 
 const Ctx = createContext<Store | null>(null)
 
@@ -63,6 +72,8 @@ export function StoreProvider({ settings: initial, children }: { settings: Setti
   const [history, setHistory] = useState<Route[]>([{ name: 'home' }])
   const [toasts, setToasts] = useState<Toast[]>([])
   const [modal, setModal] = useState<ModalState>(null)
+  const [running, setRunning] = useState<Set<string>>(new Set())
+  const [accounts, setAccounts] = useState<Account[]>([])
   const toastId = useRef(0)
 
   const update = useCallback((patch: Partial<Settings>) => {
@@ -75,7 +86,19 @@ export function StoreProvider({ settings: initial, children }: { settings: Setti
   useEffect(() => {
     refreshInstances()
     api.tasks.list().then(setTasks)
-    const offs = [api.instances.onChanged(refreshInstances), api.tasks.onChanged(setTasks), api.game.onProgress(setProgress)]
+    api.auth.list().then(setAccounts).catch(() => {})
+    api.game.running().then((ids) => setRunning(new Set(ids))).catch(() => {})
+    const onProgress = (p: LaunchProgress) => {
+      setProgress(p)
+      if (!p.instanceId) return
+      setRunning((r) => {
+        const next = new Set(r)
+        if (p.stage === 'running') next.add(p.instanceId!)
+        if (p.stage === 'idle' || p.stage === 'error') next.delete(p.instanceId!)
+        return next
+      })
+    }
+    const offs = [api.instances.onChanged(refreshInstances), api.tasks.onChanged(setTasks), api.game.onProgress(onProgress)]
     return () => offs.forEach((off) => off())
   }, [refreshInstances])
 
@@ -109,13 +132,38 @@ export function StoreProvider({ settings: initial, children }: { settings: Setti
     [instances, settings.selectedInstance]
   )
 
+  const activeAccount = accounts.find((a) => a.active) ?? null
+
+  const signIn = useCallback(async () => {
+    try {
+      const acc = await api.auth.login()
+      setAccounts(await api.auth.list())
+      toast(`Signed in as ${acc.username}`, 'success')
+      return acc
+    } catch (e) {
+      toast(errorMessage(e), 'error')
+      return undefined
+    }
+  }, [toast])
+
   const launch = useCallback(
-    (id: string) => {
+    async (id: string, quickPlay?: QuickPlay) => {
       if (settings.selectedInstance !== id) update({ selectedInstance: id })
-      api.game.launch(id).catch((e) => toast(errorMessage(e), 'error'))
+      // No account yet: sign in first, then carry on launching.
+      if (!accounts.some((a) => a.active)) {
+        toast('Sign in with your Microsoft account to play.')
+        if (!(await signIn())) return
+      }
+      api.game.launch(id, quickPlay).catch((e) => toast(errorMessage(e), 'error'))
     },
-    [settings.selectedInstance, update, toast]
+    [settings.selectedInstance, update, toast, accounts, signIn]
   )
+  const stop = useCallback((id: string) => void api.game.stop(id), [])
+
+  // Surface launch failures as toasts too.
+  useEffect(() => {
+    if (progress.stage === 'error' && progress.message) toast(progress.message, 'error')
+  }, [progress, toast])
 
   const value: Store = {
     settings,
@@ -134,6 +182,12 @@ export function StoreProvider({ settings: initial, children }: { settings: Setti
     dismissToast,
     attempt,
     launch,
+    stop,
+    running,
+    accounts,
+    activeAccount,
+    setAccounts,
+    signIn,
     modal,
     openModal: setModal,
     closeModal: () => setModal(null)

@@ -139,7 +139,7 @@ export function Project({ id, instanceId }: { id: string; instanceId?: string })
             )}
             {inst && !isPack && (
               <span className="flex items-center gap-1.5 text-xs text-muted">
-                into <InstanceIcon url={inst.iconUrl} size={16} className="rounded" /> {inst.name}
+                into <InstanceIcon url={inst.iconUrl} preset={inst.iconPreset} size={16} className="rounded" /> {inst.name}
               </span>
             )}
           </div>

@@ -28,7 +28,9 @@ async function hydrate(id: string, stored: Stored): Promise<Instance> {
   } catch {
     /* no icon */
   }
-  return { ...stored, id, iconUrl, path: dir }
+  // Fill in fields added after the instance was created.
+  const defaults: Pick<Instance, 'iconPreset' | 'window' | 'hooks' | 'playtimeSec'> = { iconPreset: null, window: null, hooks: null, playtimeSec: 0 }
+  return { ...defaults, ...(stored as Partial<Stored>), ...stored, id, iconUrl, path: dir }
 }
 
 export async function getInstance(id: string): Promise<Instance> {
@@ -90,9 +92,13 @@ export async function createInstance(input: Omit<CreateInstanceInput, 'performan
     created: new Date().toISOString(),
     lastPlayed: null,
     iconUrl: null,
+    iconPreset: input.iconPreset ?? null,
     ramMb: null,
     javaPath: null,
     jvmArgs: '',
+    window: null,
+    hooks: null,
+    playtimeSec: 0,
     modpack: input.modpack ?? null,
     path: dir
   })
@@ -100,7 +106,7 @@ export async function createInstance(input: Omit<CreateInstanceInput, 'performan
 
 export async function updateInstance(id: string, patch: Partial<Stored>): Promise<Instance> {
   const inst = await getInstance(id)
-  const allowed: (keyof Stored)[] = ['name', 'ramMb', 'javaPath', 'jvmArgs', 'lastPlayed', 'loaderVersion']
+  const allowed: (keyof Stored)[] = ['name', 'ramMb', 'javaPath', 'jvmArgs', 'lastPlayed', 'loaderVersion', 'window', 'hooks', 'iconPreset', 'playtimeSec']
   const clean: Partial<Stored> = {}
   for (const k of allowed) if (k in patch) (clean as Record<string, unknown>)[k] = patch[k]
   if (typeof clean.name === 'string') clean.name = clean.name.trim() || inst.name

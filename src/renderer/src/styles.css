@@ -18,7 +18,9 @@
 
   --shadow-soft: 0 8px 24px -12px rgb(0 0 0 / 0.55), 0 2px 6px -2px rgb(0 0 0 / 0.35);
   --shadow-lift: 0 18px 40px -16px rgb(0 0 0 / 0.65), 0 4px 10px -4px rgb(0 0 0 / 0.4);
-  --shadow-mint: 0 12px 36px -10px rgb(110 224 143 / 0.55);
+  --shadow-mint: 0 12px 36px -10px color-mix(in srgb, var(--color-mint) 55%, transparent);
+  --shadow-mint-strong: 0 16px 44px -10px color-mix(in srgb, var(--color-mint) 70%, transparent);
+  --color-border-strong: #33404f;
 
   --animate-indeterminate: indeterminate 1.3s ease-in-out infinite;
   --animate-pop: pop 160ms ease-out;
@@ -31,6 +33,39 @@
     from { opacity: 0; transform: translateY(-4px) scale(0.98); }
     to { opacity: 1; transform: none; }
   }
+}
+
+/* ── Themes. "default" is the @theme palette above; the accent (--color-mint) is set from settings. ── */
+:root[data-theme='light'] {
+  --color-bg: #eef1f5;
+  --color-surface: #ffffff;
+  --color-raised: #e8ecf1;
+  --color-border: #d8dee6;
+  --color-border-strong: #c3ccd7;
+  --color-text: #121922;
+  --color-muted: #5b6878;
+  --shadow-soft: 0 6px 18px -10px rgb(16 24 40 / 0.18), 0 1px 3px rgb(16 24 40 / 0.08);
+  --shadow-lift: 0 16px 36px -16px rgb(16 24 40 / 0.28), 0 3px 8px -3px rgb(16 24 40 / 0.12);
+}
+:root[data-theme='oled'] {
+  --color-bg: #000000;
+  --color-surface: #0a0d11;
+  --color-raised: #141920;
+  --color-border: #1e252e;
+  --color-border-strong: #2b3440;
+}
+:root[data-effects='off'] [class*='blur-3xl'],
+:root[data-effects='off'] [class*='blur-xl'] {
+  display: none;
+}
+:root[data-effects='off'] * {
+  backdrop-filter: none !important;
+}
+:root[data-motion='reduce'] *,
+:root[data-motion='reduce'] *::before,
+:root[data-motion='reduce'] *::after {
+  animation-duration: 0.01ms !important;
+  transition-duration: 0.01ms !important;
 }
 
 @layer base {
@@ -78,7 +113,7 @@
   border: 3px solid transparent;
   background-clip: content-box;
 }
-::-webkit-scrollbar-thumb:hover { background-color: #33404f; }
+::-webkit-scrollbar-thumb:hover { background-color: var(--color-border-strong); }
 
 /* RAM slider */
 input[type='range'].panda-range {

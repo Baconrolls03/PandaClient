@@ -47,3 +47,11 @@ export function errorMessage(e: unknown): string {
   const msg = e instanceof Error ? e.message : String(e)
   return msg.replace(/^Error invoking remote method '[^']+': (Error: )?/, '')
 }
+
+/** 3h 12m / 45m / 30s */
+export function playtime(sec: number): string {
+  if (sec < 60) return `${sec}s`
+  const h = Math.floor(sec / 3600)
+  const m = Math.floor((sec % 3600) / 60)
+  return h ? `${h}h ${m}m` : `${m}m`
+}

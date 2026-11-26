@@ -10,10 +10,10 @@ export function InstanceCard({ inst }: { inst: Instance }) {
   return (
     <div
       onClick={() => navigate({ name: 'instance', id: inst.id })}
-      className="group relative cursor-pointer rounded-2xl border border-border bg-surface p-4 shadow-soft transition-all duration-150 hover:-translate-y-0.5 hover:border-[#33404f] hover:bg-raised hover:shadow-lift"
+      className="group relative cursor-pointer rounded-2xl border border-border bg-surface p-4 shadow-soft transition-all duration-150 hover:-translate-y-0.5 hover:border-border-strong hover:bg-raised hover:shadow-lift"
     >
       <div className="relative w-fit">
-        <InstanceIcon url={inst.iconUrl} size={64} />
+        <InstanceIcon url={inst.iconUrl} preset={inst.iconPreset} size={64} />
         <button
           aria-label={`Play ${inst.name}`}
           onClick={(e) => {

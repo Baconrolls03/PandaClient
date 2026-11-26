@@ -140,7 +140,7 @@ export function Settings() {
             <div className="text-sm font-medium">Close launcher when the game starts</div>
             <div className="mt-0.5 text-[13px] text-muted">Frees up memory while you play.</div>
           </div>
-          <Toggle label="Close launcher on launch" checked={settings.closeOnLaunch} onChange={(v) => update({ closeOnLaunch: v })} />
+          <Toggle label="Close launcher on launch" checked={settings.onLaunch === 'close'} onChange={(v) => update({ onLaunch: v ? 'close' : 'nothing' })} />
         </div>
       </Card>
 

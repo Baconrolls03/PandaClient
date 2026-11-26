@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Loader2, MoreHorizontal, Search, X } from 'lucide-react'
+import type { IconPreset } from '@shared/types'
+import { PresetIcon } from '@/lib/icons'
 import { Logo } from './Logo'
 
 export function Card({ title, description, children, action }: { title?: string; description?: string; children: ReactNode; action?: ReactNode }) {
@@ -21,7 +23,7 @@ export function Card({ title, description, children, action }: { title?: string;
 
 type Variant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'blue'
 const VARIANTS: Record<Variant, string> = {
-  primary: 'bg-mint text-ink hover:bg-[#7ff09f] shadow-[0_6px_20px_-8px_rgb(110_224_143/0.6)]',
+  primary: 'bg-mint text-ink hover:brightness-110 shadow-mint',
   secondary: 'bg-raised text-text hover:bg-border',
   ghost: 'text-muted hover:bg-raised hover:text-text',
   danger: 'bg-danger/12 text-danger hover:bg-danger hover:text-white',
@@ -213,13 +215,14 @@ export function Empty({ icon, title, children, action }: { icon: ReactNode; titl
   )
 }
 
-/** Instance icon: custom image, or the panda on a tinted tile. */
-export function InstanceIcon({ url, size = 48, className = '' }: { url: string | null; size?: number; className?: string }) {
-  return url ? (
-    <img src={url} alt="" width={size} height={size} className={`shrink-0 rounded-xl object-cover ${className}`} style={{ width: size, height: size }} draggable={false} />
-  ) : (
-    <div className={`grid shrink-0 place-items-center rounded-xl bg-raised ${className}`} style={{ width: size, height: size }}>
-      <Logo size={Math.round(size * 0.62)} />
+/** Instance icon: uploaded image, else a preset (gradient + symbol), else the panda badge. */
+export function InstanceIcon({ url, preset, size = 48, className = '' }: { url: string | null; preset?: IconPreset | null; size?: number; className?: string }) {
+  if (url)
+    return <img src={url} alt="" width={size} height={size} className={`shrink-0 rounded-xl object-cover ${className}`} style={{ width: size, height: size }} draggable={false} />
+  if (preset) return <PresetIcon preset={preset} size={size} className={className} />
+  return (
+    <div className={`shrink-0 overflow-hidden rounded-xl ${className}`} style={{ width: size, height: size }}>
+      <Logo size={size} />
     </div>
   )
 }
@@ -240,6 +243,8 @@ export function LoaderBadge({ version }: { version?: string | null }) {
   return <Badge tone="mint">Fabric{version ? ` ${version}` : ''}</Badge>
 }
 
+const modalStack: symbol[] = []
+
 export function Modal({
   title,
   onClose,
@@ -256,10 +261,17 @@ export function Modal({
   /** Let dropdowns inside spill out of the dialog (for short dialogs that never need to scroll). */
   allowOverflow?: boolean
 }) {
+  // Only the top-most dialog reacts to Escape.
+  const id = useRef(Symbol('modal'))
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose()
+    const me = id.current
+    modalStack.push(me)
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && modalStack[modalStack.length - 1] === me && onClose()
     window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
+    return () => {
+      window.removeEventListener('keydown', onKey)
+      modalStack.splice(modalStack.indexOf(me), 1)
+    }
   }, [onClose])
   return (
     <div className="fixed inset-0 z-50 grid place-items-center bg-black/60 p-6 backdrop-blur-sm" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>

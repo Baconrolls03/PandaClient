@@ -41,7 +41,7 @@ export function Instance({ id, tab = 'content' }: { id: string; tab?: InstanceTa
       <section className="relative overflow-hidden rounded-3xl border border-border bg-surface p-6 shadow-soft">
         <div className="pointer-events-none absolute -right-20 -top-24 size-72 rounded-full bg-mint/8 blur-3xl" />
         <div className="relative flex flex-wrap items-center gap-5">
-          <InstanceIcon url={inst.iconUrl} size={80} className="rounded-2xl shadow-lift" />
+          <InstanceIcon url={inst.iconUrl} preset={inst.iconPreset} size={80} className="rounded-2xl shadow-lift" />
           <div className="min-w-0 flex-1">
             <h1 className="truncate text-2xl font-bold tracking-tight">{inst.name}</h1>
             <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-muted">
@@ -80,7 +80,7 @@ export function Instance({ id, tab = 'content' }: { id: string; tab?: InstanceTa
                 }
               ]}
             />
-            <PlayButton size="md" busy={busy} onClick={() => launch(inst.id)} />
+            <PlayButton size="md" instanceId={inst.id} />
           </div>
         </div>
       </section>

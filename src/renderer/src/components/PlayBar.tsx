@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Check, ChevronUp, Download, Plus } from 'lucide-react'
 import { useStore } from '@/lib/store'
-import { LOADER_NAMES, timeAgo } from '@/lib/format'
+import { LOADER_NAMES, playtime, timeAgo } from '@/lib/format'
 import { InstanceIcon } from './ui'
 import { PlayButton } from './PlayButton'
 import { TasksPanel } from './TasksPanel'
@@ -19,13 +19,13 @@ function useOutside(open: boolean, close: () => void) {
 
 /** Feather-style bar pinned to the bottom of every page: instance, activity, Play. */
 export function PlayBar() {
-  const { selected, instances, update, launch, progress, tasks, openModal, navigate } = useStore()
+  const { selected, instances, update, progress, tasks, openModal, navigate, running: runningGames, settings } = useStore()
   const [pickerOpen, setPickerOpen] = useState(false)
   const [tasksOpen, setTasksOpen] = useState(false)
   const pickerRef = useOutside(pickerOpen, () => setPickerOpen(false))
   const tasksRef = useOutside(tasksOpen, () => setTasksOpen(false))
 
-  const launching = progress.stage !== 'idle' && progress.stage !== 'error'
+  const launching = progress.stage !== 'idle' && progress.stage !== 'error' && progress.stage !== 'running'
   const running = tasks.filter((t) => t.status === 'running')
   const pct = launching ? progress.progress : running.length ? running.reduce((s, t) => s + (t.progress ?? 0), 0) / running.length : null
 
@@ -39,7 +39,7 @@ export function PlayBar() {
         >
           {selected ? (
             <>
-              <InstanceIcon url={selected.iconUrl} size={44} />
+              <InstanceIcon url={selected.iconUrl} preset={selected.iconPreset} size={44} />
               <div className="min-w-0 flex-1">
                 <div className="truncate text-sm font-semibold">{selected.name}</div>
                 <div className="truncate text-xs text-muted">
@@ -72,7 +72,7 @@ export function PlayBar() {
                   }}
                   className="flex w-full items-center gap-3 rounded-xl p-2 text-left transition-colors hover:bg-raised"
                 >
-                  <InstanceIcon url={inst.iconUrl} size={36} />
+                  <InstanceIcon url={inst.iconUrl} preset={inst.iconPreset} size={36} />
                   <div className="min-w-0 flex-1">
                     <div className="truncate text-sm font-medium">{inst.name}</div>
                     <div className="truncate text-xs text-muted">
@@ -117,9 +117,14 @@ export function PlayBar() {
           </div>
         ) : progress.stage === 'error' ? (
           <p className="truncate text-sm text-danger">{progress.message}</p>
+        ) : selected && runningGames.has(selected.id) ? (
+          <p className="flex items-center gap-2 text-sm font-medium text-mint">
+            <span className="size-2 animate-pulse rounded-full bg-mint" /> {selected.name} is running
+          </p>
         ) : selected ? (
           <button onClick={() => navigate({ name: 'instance', id: selected.id })} className="text-left text-sm text-muted transition-colors hover:text-text">
             {selected.lastPlayed ? `Last played ${timeAgo(selected.lastPlayed)}` : 'Ready for its first launch'}
+            {settings.showPlayTime && selected.playtimeSec > 0 && ` · ${playtime(selected.playtimeSec)} played`}
           </button>
         ) : null}
       </div>
@@ -138,7 +143,7 @@ export function PlayBar() {
         </button>
         {tasksOpen && <TasksPanel />}
       </div>
-      <PlayButton busy={launching} disabled={!selected} onClick={() => selected && launch(selected.id)} />
+      <PlayButton instanceId={selected?.id ?? null} />
     </div>
   )
 }

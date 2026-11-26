@@ -237,7 +237,7 @@ export function Discover({ type, instanceId }: { type: ProjectType; instanceId?:
             <button aria-label="Back" onClick={back} className="grid size-10 place-items-center rounded-xl bg-surface text-muted transition-colors hover:bg-raised hover:text-text">
               <ArrowLeft size={18} />
             </button>
-            <InstanceIcon url={inst.iconUrl} size={48} />
+            <InstanceIcon url={inst.iconUrl} preset={inst.iconPreset} size={48} />
             <div className="min-w-0">
               <h1 className="truncate text-xl font-bold tracking-tight">{inst.name}</h1>
               <p className="flex items-center gap-2 text-sm text-muted">

@@ -33,7 +33,7 @@ export function DeleteInstanceModal({ inst, onClose }: { inst: Instance; onClose
       }
     >
       <div className="flex items-center gap-4">
-        <InstanceIcon url={inst.iconUrl} size={56} />
+        <InstanceIcon url={inst.iconUrl} preset={inst.iconPreset} size={56} />
         <p className="text-sm text-muted">
           <span className="font-semibold text-text">{inst.name}</span> and everything in it (mods, worlds, screenshots) will be moved to the Recycle Bin.
         </p>

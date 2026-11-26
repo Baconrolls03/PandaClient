@@ -23,7 +23,8 @@ const api: PandaApi = {
     info: () => invoke('system:info'),
     detectJava: () => invoke('system:detectJava'),
     openPath: (p) => invoke('system:openPath', p),
-    openExternal: (url) => invoke('system:openExternal', url)
+    openExternal: (url) => invoke('system:openExternal', url),
+    clearCache: () => invoke('system:clearCache')
   },
   versions: {
     list: () => invoke('versions:list'),
@@ -88,12 +89,15 @@ const api: PandaApi = {
     onChanged: (cb) => subscribe<Task[]>('tasks:changed', cb)
   },
   auth: {
-    current: () => invoke('auth:current'),
+    list: () => invoke('auth:list'),
     login: () => invoke('auth:login'),
-    logout: () => invoke('auth:logout')
+    logout: (uuid) => invoke('auth:logout', uuid),
+    setActive: (uuid) => invoke('auth:setActive', uuid)
   },
   game: {
-    launch: (id) => invoke('game:launch', id),
+    launch: (id, quickPlay) => invoke('game:launch', id, quickPlay),
+    stop: (id) => invoke('game:stop', id),
+    running: () => invoke('game:running'),
     onProgress: (cb) => subscribe<LaunchProgress>('game:progress', cb)
   }
 }

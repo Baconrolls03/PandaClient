@@ -1,6 +1,7 @@
 // In-browser stand-in for the Electron bridge (`npm run dev:web`). Sample data only.
 import { live, webModrinth } from './webModrinth'
 import type {
+  Account,
   ContentItem,
   Instance,
   LaunchProgress,
@@ -161,10 +162,23 @@ export function createMock(): PandaApi {
     ramMb: 4096,
     javaPath: '',
     gameDir: 'C:\\Users\\you\\AppData\\Roaming\\.pandaclient',
-    closeOnLaunch: false,
+    jvmArgs: '',
+    window: { fullscreen: false, width: 854, height: 480 },
+    hooks: { preLaunch: '', wrapper: '', postExit: '' },
+    onLaunch: 'nothing',
+    refocusOnExit: true,
     selectedInstance: '',
     showSnapshots: false,
-    maxDownloads: 8
+    maxDownloads: 8,
+    theme: 'default',
+    accent: '#6EE08F',
+    uiScale: 100,
+    effects: true,
+    reduceMotion: false,
+    compactLibrary: false,
+    showPlayTime: true,
+    sidebarRecents: true,
+    homeSections: { popularModpacks: true, trendingMods: true, news: true }
   }
   const now = Date.now()
   const mkInst = (id: string, name: string, mc: string, lv: string | null, hue: number | null, played: number | null, modpack: Instance['modpack'] = null): Instance => ({
@@ -175,10 +189,14 @@ export function createMock(): PandaApi {
     loaderVersion: lv,
     created: new Date(now - 30 * 86400000).toISOString(),
     lastPlayed: played == null ? null : new Date(now - played).toISOString(),
-    iconUrl: hue == null ? null : icon(name[0], hue),
+    iconUrl: null,
+    iconPreset: hue == null ? null : { bg: ['mint', 'sky', 'sunset', 'grape', 'rose'][Math.round(hue / 75) % 5], symbol: ['pickaxe', 'gem', 'sword', 'castle', 'flame'][Math.round(hue / 75) % 5] },
     ramMb: null,
     javaPath: null,
     jvmArgs: '',
+    window: null,
+    hooks: null,
+    playtimeSec: played == null ? 0 : 3 * 3600 + 1200,
     modpack,
     path: `${settings.gameDir}\\instances\\${id}`
   })
@@ -228,6 +246,7 @@ export function createMock(): PandaApi {
     emitTasks()
   }
 
+  let accounts: Account[] = []
   const progressListeners = new Set<(p: LaunchProgress) => void>()
   const emit = (p: LaunchProgress) => progressListeners.forEach((l) => l(p))
   const find = (id: string) => instances.find((i) => i.id === id)!
@@ -252,7 +271,8 @@ export function createMock(): PandaApi {
         { path: 'C:\\Program Files\\Java\\jre1.8.0_421\\bin\\javaw.exe', version: '1.8.0_421', major: 8, source: 'system' }
       ],
       openPath: async () => {},
-      openExternal: async (url) => void window.open(url, '_blank')
+      openExternal: async (url) => void window.open(url, '_blank'),
+      clearCache: async () => 'Cleared the version list cache and the Modrinth lookup cache (preview).'
     },
     versions: {
       list: async () => ({ versions: versionList, latestRelease: MC[0], offline: false }),
@@ -432,13 +452,19 @@ export function createMock(): PandaApi {
       onChanged: (cb) => (taskListeners.add(cb), () => taskListeners.delete(cb))
     },
     auth: {
-      current: async () => null,
+      // Browser preview: a pretend account (real sign-in only exists in the Electron app).
+      list: async () => accounts,
       login: async () => {
-        throw new Error('Microsoft login arrives in a later build step.')
+        const acc = { uuid: '069a79f4-44e9-4726-a5be-fca90e38aaf5', username: 'PandaPlayer', active: true }
+        accounts = [...accounts.map((a) => ({ ...a, active: false })), acc]
+        return acc
       },
-      logout: async () => {}
+      logout: async (uuid) => (accounts = accounts.filter((a) => a.uuid !== uuid)),
+      setActive: async (uuid) => (accounts = accounts.map((a) => ({ ...a, active: a.uuid === uuid })))
     },
     game: {
+      stop: async (id) => emit({ instanceId: id, stage: 'idle', progress: null, message: '' }),
+      running: async () => [],
       launch: async (id) => {
         const inst = find(id)
         emit({ instanceId: id, stage: 'preparing', progress: null, message: `Preparing ${inst.name}…` })

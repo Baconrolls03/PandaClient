@@ -1,17 +1,14 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="PandaClient">
-  <!-- Ears -->
-  <circle cx="28" cy="30" r="17" fill="#3DBE6A"/>
-  <circle cx="100" cy="30" r="17" fill="#3DBE6A"/>
-  <!-- Head -->
-  <ellipse cx="64" cy="70" rx="52" ry="47" fill="#6EE08F"/>
-  <!-- Eye patches -->
-  <ellipse cx="42" cy="66" rx="13" ry="17" transform="rotate(38 42 66)" fill="#1A222D"/>
-  <ellipse cx="86" cy="66" rx="13" ry="17" transform="rotate(-38 86 66)" fill="#1A222D"/>
-  <!-- Eyes -->
-  <circle cx="44" cy="63" r="4.5" fill="#E6EDF3"/>
-  <circle cx="84" cy="63" r="4.5" fill="#E6EDF3"/>
-  <!-- Nose -->
-  <ellipse cx="64" cy="84" rx="7" ry="5" fill="#1A222D"/>
-  <!-- Smile -->
-  <path d="M55 93 Q64 101 73 93" fill="none" stroke="#1A222D" stroke-width="4" stroke-linecap="round"/>
+<svg role="img" aria-label="PandaClient" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+  <defs><clipPath id="pc-clip"><rect width="128" height="128" rx="38"/></clipPath></defs>
+  <g clip-path="url(#pc-clip)">
+    <rect width="128" height="128" fill="#6EE08F"/>
+    <circle cx="13" cy="13" r="27" fill="#141B24"/>
+    <circle cx="115" cy="13" r="27" fill="#141B24"/>
+  </g>
+  <path d="M27.5 62.5c3.5-11 15.5-16.5 22.5-11.5s5 18-2 26.5S30.5 87 27.8 79.5c-1.6-4.5-1.7-11.4-.3-17z" fill="#141B24"/>
+  <path d="M100.5 62.5c-3.5-11-15.5-16.5-22.5-11.5s-5 18 2 26.5 17.5 9.5 20.2 2c1.6-4.5 1.7-11.4.3-17z" fill="#141B24"/>
+  <circle cx="42" cy="63" r="5.5" fill="#6EE08F"/>
+  <circle cx="86" cy="63" r="5.5" fill="#6EE08F"/>
+  <path d="M55.5 88.5c0-3.3 3.8-5.5 8.5-5.5s8.5 2.2 8.5 5.5c0 3.6-4.4 7.5-8.5 7.5s-8.5-3.9-8.5-7.5z" fill="#141B24"/>
+  <path d="M57 101.5c2.6 2.4 4.9 2.4 7-.3 2.1 2.7 4.4 2.7 7 .3" fill="none" stroke="#141B24" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>

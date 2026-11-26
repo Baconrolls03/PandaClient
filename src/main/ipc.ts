@@ -1,6 +1,8 @@
 import { app, BrowserWindow, dialog, ipcMain, shell } from 'electron'
 import { totalmem } from 'node:os'
-import type { CreateInstanceInput, Settings, SystemInfo } from '@shared/types'
+import type { CreateInstanceInput, QuickPlay, Settings, SystemInfo } from '@shared/types'
+import { rm } from 'node:fs/promises'
+import { join } from 'node:path'
 import { getSettings, updateSettings } from './services/settings'
 import { listVersions } from './services/versions'
 import { fabricVersions, latestStableFabric } from './services/loaders'
@@ -11,11 +13,14 @@ import * as files from './services/instanceFiles'
 import * as mrpack from './services/mrpack'
 import * as mr from './services/modrinth'
 import * as tasks from './services/tasks'
-import * as auth from './services/auth'
-import * as launcher from './services/launcher'
+import * as accounts from './services/accounts'
+import { launchGame, runningInstances, stopGame } from './services/game/launch'
 import { safeJoin } from './services/paths'
 
-const SETTINGS_KEYS: (keyof Settings)[] = ['ramMb', 'javaPath', 'gameDir', 'closeOnLaunch', 'selectedInstance', 'showSnapshots', 'maxDownloads']
+const SETTINGS_KEYS: (keyof Settings)[] = [
+  'ramMb', 'javaPath', 'jvmArgs', 'window', 'hooks', 'gameDir', 'maxDownloads', 'onLaunch', 'refocusOnExit', 'selectedInstance',
+  'showSnapshots', 'theme', 'accent', 'uiScale', 'effects', 'reduceMotion', 'compactLibrary', 'showPlayTime', 'sidebarRecents', 'homeSections'
+]
 
 const FILE_FILTERS: Record<string, Electron.FileFilter[]> = {
   java: process.platform === 'win32' ? [{ name: 'Java', extensions: ['exe'] }] : [],
@@ -71,6 +76,15 @@ export function registerIpc(win: BrowserWindow): void {
   })
   ipcMain.handle('system:openExternal', async (_e, url: string) => {
     if (/^https:\/\//i.test(url)) await shell.openExternal(url)
+  })
+  ipcMain.handle('system:clearCache', async () => {
+    let n = 0
+    await rm(join(app.getPath('userData'), 'versions-cache.json'), { force: true })
+    for (const inst of await instances.listInstances()) {
+      await rm(join(inst.path, '.panda', 'content.json'), { force: true })
+      n++
+    }
+    return `Cleared the version list cache and the Modrinth lookup cache for ${n} instance${n === 1 ? '' : 's'}.`
   })
 
   // Versions
@@ -130,22 +144,20 @@ export function registerIpc(win: BrowserWindow): void {
   ipcMain.handle('tasks:list', () => tasks.listTasks())
   ipcMain.handle('tasks:dismiss', (_e, id: string) => tasks.dismissTask(id))
 
-  // Auth (step 2)
-  ipcMain.handle('auth:current', () => auth.currentAccount())
-  ipcMain.handle('auth:login', () => auth.login())
-  ipcMain.handle('auth:logout', () => auth.logout())
+  // Microsoft accounts
+  ipcMain.handle('auth:list', () => accounts.listAccounts())
+  ipcMain.handle('auth:login', () => accounts.login())
+  ipcMain.handle('auth:logout', (_e, uuid: string) => accounts.logout(uuid))
+  ipcMain.handle('auth:setActive', (_e, uuid: string) => accounts.setActive(uuid))
 
   // Launch
-  const running = new Set<string>()
-  ipcMain.handle('game:launch', async (_e, id: string) => {
-    if (running.has(id)) return
-    running.add(id)
+  ipcMain.handle('game:launch', async (_e, id: string, quickPlay?: QuickPlay) => {
     try {
-      await launcher.launch(id, (p) => send('game:progress', p))
+      await launchGame(id, (p) => send('game:progress', p), quickPlay)
     } catch (e) {
       send('game:progress', { instanceId: id, stage: 'error', progress: null, message: e instanceof Error ? e.message : String(e) })
-    } finally {
-      running.delete(id)
     }
   })
+  ipcMain.handle('game:stop', (_e, id: string) => stopGame(id))
+  ipcMain.handle('game:running', () => runningInstances())
 }

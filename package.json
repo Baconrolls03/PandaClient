@@ -14,7 +14,9 @@
     "test": "tsx --tsconfig tests/tsconfig.json tests/services.test.mts",
     "test:live": "tsx --tsconfig tests/tsconfig.json tests/live.test.mts",
     "dist": "electron-vite build && electron-builder --publish never",
-    "dist:win": "electron-vite build && electron-builder --win --publish never"
+    "dist:win": "electron-vite build && electron-builder --win --publish never",
+    "test:launch": "tsx --tsconfig tests/tsconfig.json tests/launch.test.mts",
+    "test:real": "tsx --tsconfig tests/tsconfig.json tests/real-command.check.mts"
   },
   "devDependencies": {
     "@fontsource-variable/inter": "^5.3.0",
@@ -37,7 +39,8 @@
     "vite": "^8.4.0"
   },
   "dependencies": {
-    "fflate": "^0.8.3"
+    "fflate": "^0.8.3",
+    "msmc": "^5.0.5"
   },
   "author": "PandaClient"
 }

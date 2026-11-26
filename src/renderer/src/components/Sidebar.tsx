@@ -57,7 +57,7 @@ export function Sidebar() {
                 onClick={() => navigate({ name: 'instance', id: inst.id })}
                 className={`flex items-center gap-3 rounded-xl px-2 py-1.5 text-left transition-colors ${active ? 'bg-raised' : 'hover:bg-surface'}`}
               >
-                <InstanceIcon url={inst.iconUrl} size={30} className="rounded-lg" />
+                <InstanceIcon url={inst.iconUrl} preset={inst.iconPreset} size={30} className="rounded-lg" />
                 <div className="min-w-0">
                   <div className="truncate text-[13px] font-medium">{inst.name}</div>
                   <div className="truncate text-[11px] text-muted">

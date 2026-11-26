@@ -64,7 +64,7 @@ export function ProjectCard({
   return (
     <div
       onClick={onOpen}
-      className="group grid cursor-pointer grid-cols-[88px_1fr_auto] gap-x-5 rounded-2xl border border-border bg-surface p-4 shadow-soft transition-all duration-150 hover:-translate-y-0.5 hover:border-[#33404f] hover:bg-raised hover:shadow-lift"
+      className="group grid cursor-pointer grid-cols-[88px_1fr_auto] gap-x-5 rounded-2xl border border-border bg-surface p-4 shadow-soft transition-all duration-150 hover:-translate-y-0.5 hover:border-border-strong hover:bg-raised hover:shadow-lift"
     >
       <ProjectIcon url={hit.icon_url} size={88} className="row-span-2 rounded-2xl" />
       <div className="min-w-0">
@@ -113,7 +113,7 @@ export function ProjectTile({ hit, onOpen }: { hit: MrSearchHit; onOpen: () => v
   return (
     <button
       onClick={onOpen}
-      className="group flex w-full flex-col overflow-hidden rounded-2xl border border-border bg-surface text-left shadow-soft transition-all duration-150 hover:-translate-y-0.5 hover:border-[#33404f] hover:shadow-lift"
+      className="group flex w-full flex-col overflow-hidden rounded-2xl border border-border bg-surface text-left shadow-soft transition-all duration-150 hover:-translate-y-0.5 hover:border-border-strong hover:shadow-lift"
     >
       <div className="relative h-24 w-full overflow-hidden bg-raised">
         {hit.featured_gallery ? (

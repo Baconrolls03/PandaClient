@@ -84,7 +84,7 @@ export function Home() {
             <>
               <p className="mb-4 text-sm font-medium text-mint">{selected.lastPlayed ? 'Continue playing' : 'Ready to play'}</p>
               <div className="flex items-center gap-5">
-                <InstanceIcon url={selected.iconUrl} size={84} className="rounded-2xl shadow-lift" />
+                <InstanceIcon url={selected.iconUrl} preset={selected.iconPreset} size={84} className="rounded-2xl shadow-lift" />
                 <div className="min-w-0">
                   <h1 className="truncate text-3xl font-bold tracking-tight">{selected.name}</h1>
                   <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-muted">
@@ -96,7 +96,7 @@ export function Home() {
                 </div>
               </div>
               <div className="mt-8 flex flex-wrap items-center gap-3">
-                <PlayButton busy={busy} onClick={() => launch(selected.id)} />
+                <PlayButton instanceId={selected.id} />
                 <Button size="lg" variant="secondary" onClick={() => navigate({ name: 'instance', id: selected.id })}>
                   Manage
                 </Button>

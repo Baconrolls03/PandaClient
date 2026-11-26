@@ -2,19 +2,61 @@
 
 /* ───────────── Settings & system ───────────── */
 
+export type ThemeId = 'default' | 'light' | 'oled' | 'system'
+
+export interface WindowSettings {
+  fullscreen: boolean
+  width: number
+  height: number
+}
+
+export interface LaunchHooks {
+  /** Runs (and is waited for) before the game starts. */
+  preLaunch: string
+  /** Wraps the java command, e.g. `gamemoderun` or `prime-run`. */
+  wrapper: string
+  /** Runs after the game exits. */
+  postExit: string
+}
+
 export interface Settings {
+  /* Instance defaults */
   /** Default max memory for instances, in MB. */
   ramMb: number
-  /** Absolute path to a java / javaw executable. Empty = auto. */
+  /** Absolute path to a java / javaw executable. Empty = download the right Java from Mojang. */
   javaPath: string
+  jvmArgs: string
+  window: WindowSettings
+  hooks: LaunchHooks
+
+  /* System */
   /** Root folder for Minecraft files and instances. */
   gameDir: string
-  closeOnLaunch: boolean
+  maxDownloads: number
+
+  /* Behaviour */
+  onLaunch: 'nothing' | 'minimize' | 'close'
+  refocusOnExit: boolean
   /** Instance shown in the play bar. */
   selectedInstance: string
   showSnapshots: boolean
-  maxDownloads: number
+
+  /* Appearance */
+  theme: ThemeId
+  /** Accent colour (hex). PandaClient mint by default. */
+  accent: string
+  /** Interface zoom in percent. */
+  uiScale: number
+  /** Blur and glow effects. */
+  effects: boolean
+  reduceMotion: boolean
+  compactLibrary: boolean
+  showPlayTime: boolean
+  sidebarRecents: boolean
+  homeSections: { popularModpacks: boolean; trendingMods: boolean; news: boolean }
 }
+
+export const DEFAULT_ACCENT = '#6EE08F'
 
 export interface SystemInfo {
   platform: 'win32' | 'darwin' | 'linux' | 'web' | (string & {})
@@ -32,6 +74,7 @@ export interface JavaInstall {
 export interface Account {
   uuid: string
   username: string
+  active: boolean
 }
 
 /* ───────────── Versions & loaders ───────────── */
@@ -69,20 +112,34 @@ export interface Instance {
   loaderVersion: string | null
   created: string
   lastPlayed: string | null
-  /** panda:// URL of the icon, filled in by the main process. */
+  /** panda:// URL of an uploaded icon, filled in by the main process. */
   iconUrl: string | null
+  /** Built-in icon (background + symbol), used when there's no uploaded icon. */
+  iconPreset: IconPreset | null
   /** Per-instance overrides; null = use global setting. */
   ramMb: number | null
   javaPath: string | null
   jvmArgs: string
+  window: WindowSettings | null
+  hooks: LaunchHooks | null
+  /** Total seconds played. */
+  playtimeSec: number
   /** Set when the instance came from a Modrinth modpack. */
   modpack: { projectId: string; versionId: string; title: string } | null
   /** Folder on disk. */
   path: string
 }
 
+export interface IconPreset {
+  /** Background id from ICON_BACKGROUNDS. */
+  bg: string
+  /** Symbol id from the renderer's icon set. */
+  symbol: string
+}
+
 export interface CreateInstanceInput {
   name: string
+  iconPreset?: IconPreset | null
   mcVersion: string
   /** Fabric loader version; null = latest stable. */
   loaderVersion: string | null
@@ -171,6 +228,11 @@ export interface LaunchProgress {
   progress: number | null
   message: string
   instanceId?: string
+}
+
+export interface QuickPlay {
+  world?: string
+  server?: string
 }
 
 /* ───────────── Modrinth ───────────── */
@@ -328,6 +390,8 @@ export interface PandaApi {
     detectJava(): Promise<JavaInstall[]>
     openPath(path: string): Promise<void>
     openExternal(url: string): Promise<void>
+    /** Delete cached downloads that can be fetched again (version JSON cache, Modrinth lookup cache). Returns a summary. */
+    clearCache(): Promise<string>
   }
   versions: {
     list(): Promise<VersionList>
@@ -336,7 +400,7 @@ export interface PandaApi {
   instances: {
     list(): Promise<Instance[]>
     create(input: CreateInstanceInput): Promise<Instance>
-    update(id: string, patch: Partial<Pick<Instance, 'name' | 'ramMb' | 'javaPath' | 'jvmArgs'>>): Promise<Instance>
+    update(id: string, patch: Partial<Pick<Instance, 'name' | 'ramMb' | 'javaPath' | 'jvmArgs' | 'window' | 'hooks' | 'iconPreset'>>): Promise<Instance>
     setIcon(id: string, file: string | null): Promise<Instance>
     duplicate(id: string): Promise<Instance>
     remove(id: string): Promise<void>
@@ -392,12 +456,15 @@ export interface PandaApi {
     onChanged(cb: (tasks: Task[]) => void): () => void
   }
   auth: {
-    current(): Promise<Account | null>
+    list(): Promise<Account[]>
     login(): Promise<Account>
-    logout(): Promise<void>
+    logout(uuid: string): Promise<Account[]>
+    setActive(uuid: string): Promise<Account[]>
   }
   game: {
-    launch(instanceId: string): Promise<void>
+    launch(instanceId: string, quickPlay?: QuickPlay): Promise<void>
+    stop(instanceId: string): Promise<void>
+    running(): Promise<string[]>
     onProgress(cb: (p: LaunchProgress) => void): () => void
   }
 }
