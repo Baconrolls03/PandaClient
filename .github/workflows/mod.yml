@@ -25,20 +25,23 @@ jobs:
           gradle -p mod build --no-daemon 2>&1 | tee build.log
       - name: Run the game (smoke test)
         if: steps.build.outcome == 'success'
-        timeout-minutes: 15
+        timeout-minutes: 20
         run: |
           sudo apt-get install -y -qq xvfb imagemagick mesa-utils libgl1-mesa-dri > /dev/null
           bash mod/tools/smoke.sh
-          grep -E "PandaClient|Mixin|mixin|Exception|Error|Crash|exit |Loading Minecraft|Backend library|OpenGL" game.log | grep -v "DEBUG" | head -80 || true
-          echo "----- last lines"; tail -30 game.log
-          for f in shots/*.jpg; do echo "===== $f"; base64 -w 0 "$f"; echo; done
+          for f in game.log world.log; do
+            echo "===== $f"
+            grep -E "PandaClient|Mixin apply|mixin audit|Exception|Crash|crash|exit |Caused by|at com\.pandaclient" $f | grep -vE "DEBUG|Force-loading|flite|Narrator|OpenAL|Realms|SignedJWT" | head -60 || true
+          done
+          for f in shots/*.jpg; do [ -f "$f" ] && { echo "===== SHOT $f"; base64 -w 0 "$f"; echo; }; done
           grep -q "\[PandaClient CI\] mixins OK" game.log
+          grep -q "\[PandaClient CI\] mixins OK" world.log
+          ! grep -q "Exception in\|---- Minecraft Crash Report" game.log world.log
       - name: Summary
         if: always()
         run: |
           echo "----- versions"
           gradle --version | grep -E "^Gradle" || true
-          curl -s https://maven.fabricmc.net/net/fabricmc/fabric-loom/maven-metadata.xml | grep -oE '<version>1\.1[0-9][^<]*' | grep -v SNAPSHOT | tr '\n' ' ' || true; echo
           curl -s https://meta.fabricmc.net/v2/versions/loader/1.21.11 | grep -oE '"version":"[^"]+"' | head -2 || true
           curl -s "https://api.modrinth.com/v2/project/fabric-api/version?game_versions=%5B%221.21.11%22%5D" | grep -oE '"version_number":"[^"]+"' | head -2 || true
           echo "----- errors"

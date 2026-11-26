@@ -83,13 +83,13 @@ public final class PandaClientMod implements ClientModInitializer {
 
         // Zoom
         var zoom = Modules.ZOOM;
-        boolean zoomHeld = inGame && Keys.ZOOM.isDown();
+        boolean zoomHeld = (inGame && Keys.ZOOM.isDown()) || com.pandaclient.mod.util.CiCheck.forceZoom;
         if (!zoomHeld) zoom.scrollFactor = 1;
         zoom.held = zoomHeld;
 
         // Freelook: hold (or toggle) to orbit the camera in third person.
         var fl = Modules.FREELOOK;
-        boolean flDown = inGame && Keys.FREELOOK.isDown();
+        boolean flDown = (inGame && Keys.FREELOOK.isDown()) || com.pandaclient.mod.util.CiCheck.forceFreelook;
         boolean want = fl.active;
         if (!fl.enabled()) want = false;
         else if (fl.hold.on()) want = flDown;
