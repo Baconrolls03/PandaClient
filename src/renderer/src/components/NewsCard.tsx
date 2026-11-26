@@ -2,6 +2,17 @@ import { Sparkles } from 'lucide-react'
 
 const entries = [
   {
+    version: '0.3.0',
+    date: 'Nov 2026',
+    title: 'Play, sign in, wardrobe',
+    items: [
+      'Real launching: Minecraft, Fabric and the right Java are downloaded from Mojang for you',
+      'Microsoft sign-in with multiple accounts',
+      'Wardrobe: PandaClient cosmetics, your real skin and Mojang capes',
+      'Themes, accent colours, instance icons and a new Settings window'
+    ]
+  },
+  {
     version: '0.2.0',
     date: 'Nov 2026',
     title: 'Library & Discover',

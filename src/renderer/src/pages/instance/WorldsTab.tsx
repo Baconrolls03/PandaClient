@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { FolderOpen, Globe, Plus, Server, Trash2 } from 'lucide-react'
+import { FolderOpen, Globe, Play, Plus, Server, Trash2 } from 'lucide-react'
 import type { Instance, ServerEntry, WorldInfo } from '@shared/types'
 import { api } from '@/lib/api'
 import { useStore } from '@/lib/store'
@@ -7,7 +7,8 @@ import { timeAgo } from '@/lib/format'
 import { Badge, Button, ConfirmIconButton, Empty, IconButton, Spinner, TextField } from '@/components/ui'
 
 export function WorldsTab({ inst }: { inst: Instance }) {
-  const { attempt } = useStore()
+  const { attempt, launch, running } = useStore()
+  const isRunning = running.has(inst.id)
   const [worlds, setWorlds] = useState<WorldInfo[] | null>(null)
   const [servers, setServers] = useState<ServerEntry[] | null>(null)
   const [name, setName] = useState('')
@@ -65,6 +66,9 @@ export function WorldsTab({ inst }: { inst: Instance }) {
                     <span>Played {timeAgo(w.lastPlayed)}</span>
                   </div>
                 </div>
+                <Button size="sm" variant="primary" disabled={isRunning} onClick={() => launch(inst.id, { world: w.folder })} title="Launch straight into this world">
+                  <Play size={13} fill="currentColor" /> Play
+                </Button>
                 <IconButton label="Open folder" onClick={() => api.instances.openFolder(inst.id, `saves/${w.folder}`)}>
                   <FolderOpen size={15} />
                 </IconButton>
@@ -124,6 +128,9 @@ export function WorldsTab({ inst }: { inst: Instance }) {
                   <div className="truncate text-sm font-semibold">{s.name}</div>
                   <div className="truncate font-mono text-xs text-muted">{s.ip}</div>
                 </div>
+                <Button size="sm" variant="primary" disabled={isRunning} onClick={() => launch(inst.id, { server: s.ip })} title="Launch and join this server">
+                  <Play size={13} fill="currentColor" /> Join
+                </Button>
                 <ConfirmIconButton
                   label="Remove server"
                   onConfirm={async () => {

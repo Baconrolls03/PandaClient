@@ -1,14 +1,15 @@
 import { useMemo, useState } from 'react'
-import { FileUp, Library as LibraryIcon, Plus } from 'lucide-react'
+import { FileUp, LayoutGrid, Library as LibraryIcon, List, Plus } from 'lucide-react'
 import { api } from '@/lib/api'
 import { useStore } from '@/lib/store'
 import { InstanceCard } from '@/components/InstanceCard'
-import { Button, Empty, SearchField, Select } from '@/components/ui'
+import { Button, Empty, InstanceIcon, SearchField, Select } from '@/components/ui'
+import { playtime, timeAgo } from '@/lib/format'
 
 type Sort = 'played' | 'name' | 'created' | 'version'
 
 export function Library() {
-  const { instances, openModal, attempt, navigate } = useStore()
+  const { instances, openModal, attempt, navigate, settings, update, launch, running } = useStore()
   const [q, setQ] = useState('')
   const [sort, setSort] = useState<Sort>('played')
 
@@ -49,10 +50,17 @@ export function Library() {
       {instances.length > 0 && (
         <div className="flex flex-wrap items-center gap-3">
           <SearchField value={q} onChange={setQ} placeholder="Search instances" className="w-72" />
+          <div className="ml-auto flex gap-1 rounded-xl border border-border bg-surface p-1">
+            <button aria-label="Grid" onClick={() => update({ compactLibrary: false })} className={`grid size-8 place-items-center rounded-lg ${settings.compactLibrary ? 'text-muted' : 'bg-raised text-text'}`}>
+              <LayoutGrid size={15} />
+            </button>
+            <button aria-label="List" onClick={() => update({ compactLibrary: true })} className={`grid size-8 place-items-center rounded-lg ${settings.compactLibrary ? 'bg-raised text-text' : 'text-muted'}`}>
+              <List size={15} />
+            </button>
+          </div>
           <Select
             value={sort}
             onChange={setSort}
-            className="ml-auto"
             options={[
               { value: 'played', label: 'Last played' },
               { value: 'name', label: 'Name' },
@@ -79,11 +87,34 @@ export function Library() {
           Create one for any Minecraft version Fabric supports, or install a Fabric modpack from Modrinth.
         </Empty>
       ) : (
-        <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-          {list.map((inst) => (
-            <InstanceCard key={inst.id} inst={inst} />
-          ))}
-        </div>
+        settings.compactLibrary ? (
+          <div className="overflow-hidden rounded-2xl border border-border bg-surface shadow-soft">
+            {list.map((inst) => (
+              <div key={inst.id} onClick={() => navigate({ name: 'instance', id: inst.id })} className="flex cursor-pointer items-center gap-4 border-b border-border px-4 py-2.5 transition-colors last:border-0 hover:bg-raised">
+                <InstanceIcon url={inst.iconUrl} preset={inst.iconPreset} size={36} className="rounded-lg" />
+                <div className="min-w-0 flex-1">
+                  <div className="truncate text-sm font-semibold">{inst.name}</div>
+                  <div className="text-xs text-muted">Fabric {inst.mcVersion}</div>
+                </div>
+                {settings.showPlayTime && <span className="w-20 text-right text-xs text-muted">{inst.playtimeSec ? playtime(inst.playtimeSec) : '–'}</span>}
+                <span className="w-28 text-right text-xs text-muted">{inst.lastPlayed ? timeAgo(inst.lastPlayed) : 'Never played'}</span>
+                <Button
+                  size="sm"
+                  variant={running.has(inst.id) ? 'danger' : 'primary'}
+                  onClick={() => (running.has(inst.id) ? api.game.stop(inst.id) : launch(inst.id))}
+                >
+                  {running.has(inst.id) ? 'Stop' : 'Play'}
+                </Button>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+            {list.map((inst) => (
+              <InstanceCard key={inst.id} inst={inst} />
+            ))}
+          </div>
+        )
       )}
     </div>
   )

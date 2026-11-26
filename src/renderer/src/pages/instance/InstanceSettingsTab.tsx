@@ -6,7 +6,7 @@ import { useStore } from '@/lib/store'
 import { gb } from '@/lib/format'
 import { Button, Card, InstanceIcon, TextField, Toggle } from '@/components/ui'
 
-export function InstanceSettingsTab({ inst, onDelete }: { inst: Instance; onDelete: () => void }) {
+export function InstanceSettingsTab({ inst, onDelete, onEditIcon }: { inst: Instance; onDelete: () => void; onEditIcon: () => void }) {
   const { settings, attempt } = useStore()
   const [name, setName] = useState(inst.name)
   const [jvmArgs, setJvmArgs] = useState(inst.jvmArgs)
@@ -29,24 +29,9 @@ export function InstanceSettingsTab({ inst, onDelete }: { inst: Instance; onDele
       <Card title="General">
         <div className="flex items-center gap-4">
           <InstanceIcon url={inst.iconUrl} preset={inst.iconPreset} size={64} />
-          <div className="flex flex-col gap-2">
-            <div className="flex gap-2">
-              <Button
-                size="sm"
-                onClick={async () => {
-                  const f = await api.settings.pickFile('image')
-                  if (f) attempt(() => api.instances.setIcon(inst.id, f))
-                }}
-              >
-                <ImagePlus size={14} /> Change icon
-              </Button>
-              {inst.iconUrl && (
-                <Button size="sm" variant="ghost" onClick={() => attempt(() => api.instances.setIcon(inst.id, null))}>
-                  Remove
-                </Button>
-              )}
-            </div>
-          </div>
+          <Button size="sm" onClick={onEditIcon}>
+            <ImagePlus size={14} /> Customise icon
+          </Button>
         </div>
         <label className="mb-1.5 mt-5 block text-xs font-medium text-muted">Name</label>
         <TextField value={name} onChange={setName} className="w-full" onEnter={() => save({ name })} />
@@ -106,6 +91,54 @@ export function InstanceSettingsTab({ inst, onDelete }: { inst: Instance; onDele
             </Button>
           </div>
         )}
+      </Card>
+
+      <Card
+        title="Game window"
+        description="Override the default window size for this instance."
+        action={<Toggle label="Custom window" checked={inst.window != null} onChange={(v) => save({ window: v ? { ...settings.window } : null })} />}
+      >
+        {(() => {
+          const w = inst.window ?? settings.window
+          const set = (p: Partial<typeof w>) => save({ window: { ...w, ...p } })
+          return (
+            <div className={`flex flex-wrap items-center gap-4 ${inst.window ? '' : 'pointer-events-none opacity-40'}`}>
+              <label className="flex items-center gap-2 text-sm">
+                <Toggle label="Fullscreen" checked={w.fullscreen} onChange={(v) => set({ fullscreen: v })} /> Fullscreen
+              </label>
+              <input type="number" value={w.width} disabled={w.fullscreen} onChange={(e) => set({ width: Number(e.target.value) })} className="h-10 w-24 rounded-xl border border-border bg-bg px-3 text-sm outline-none disabled:opacity-40" />
+              <span className="text-muted">×</span>
+              <input type="number" value={w.height} disabled={w.fullscreen} onChange={(e) => set({ height: Number(e.target.value) })} className="h-10 w-24 rounded-xl border border-border bg-bg px-3 text-sm outline-none disabled:opacity-40" />
+            </div>
+          )
+        })()}
+      </Card>
+
+      <Card
+        title="Launch hooks"
+        description="Override the default commands for this instance."
+        action={<Toggle label="Custom hooks" checked={inst.hooks != null} onChange={(v) => save({ hooks: v ? { ...settings.hooks } : null })} />}
+      >
+        <div className={`flex flex-col gap-3 ${inst.hooks ? '' : 'pointer-events-none opacity-40'}`}>
+          {(
+            [
+              ['preLaunch', 'Before launch'],
+              ['wrapper', 'Wrapper'],
+              ['postExit', 'After exit']
+            ] as const
+          ).map(([k, label]) => (
+            <label key={k} className="block">
+              <span className="mb-1 block text-xs font-medium text-muted">{label}</span>
+              <TextField
+                value={(inst.hooks ?? settings.hooks)[k]}
+                onChange={(v) => save({ hooks: { ...(inst.hooks ?? settings.hooks), [k]: v } })}
+                mono
+                className="w-full"
+                placeholder="None"
+              />
+            </label>
+          ))}
+        </div>
       </Card>
 
       <Card title="Danger zone">

@@ -4,6 +4,8 @@ import type { LoaderVersion, VersionList } from '@shared/types'
 import { api } from '@/lib/api'
 import { useStore } from '@/lib/store'
 import { Button, InstanceIcon, Modal, Select, TextField, Toggle } from '@/components/ui'
+import { PresetIcon, randomPreset } from '@/lib/icons'
+import { IconEditor, type IconChoice } from './IconEditor'
 import { VersionSelect } from '@/components/VersionSelect'
 
 export function CreateInstanceModal() {
@@ -14,7 +16,8 @@ export function CreateInstanceModal() {
   const [loaderVersions, setLoaderVersions] = useState<LoaderVersion[] | null>(null)
   const [loaderVersion, setLoaderVersion] = useState('')
   const [perfPack, setPerfPack] = useState(true)
-  const [iconFile, setIconFile] = useState<string | null>(null)
+  const [icon, setIcon] = useState<IconChoice>(() => ({ kind: 'preset', preset: randomPreset() }))
+  const [editingIcon, setEditingIcon] = useState(false)
   const [busy, setBusy] = useState(false)
 
   useEffect(() => {
@@ -50,7 +53,8 @@ export function CreateInstanceModal() {
         mcVersion: mc,
         loaderVersion: loaderVersion || null,
         performancePack: perfPack,
-        iconFile
+        iconPreset: icon.kind === 'preset' ? icon.preset : null,
+        iconFile: icon.kind === 'file' ? icon.file : null
       })
     )
     setBusy(false)
@@ -92,14 +96,14 @@ export function CreateInstanceModal() {
     >
       <div className="flex flex-col gap-6">
         <div className="flex items-center gap-4">
-          <button
-            onClick={async () => setIconFile((await api.settings.pickFile('image')) ?? iconFile)}
-            className="group relative"
-            title={iconFile ?? 'Choose icon'}
-          >
-            <InstanceIcon url={null} size={64} className={iconFile ? 'ring-2 ring-mint' : ''} />
+          <button onClick={() => setEditingIcon(true)} className="group relative" title="Customise icon">
+            {icon.kind === 'preset' ? (
+              <PresetIcon preset={icon.preset} size={64} />
+            ) : (
+              <InstanceIcon url={null} size={64} className={icon.kind === 'file' ? 'ring-2 ring-mint' : ''} />
+            )}
             <span className="absolute inset-0 grid place-items-center rounded-xl bg-black/50 opacity-0 transition-opacity group-hover:opacity-100">
-              <ImagePlus size={20} />
+              <ImagePlus size={20} color="#fff" />
             </span>
           </button>
           <div className="flex-1">
@@ -156,6 +160,16 @@ export function CreateInstanceModal() {
           </div>
         )}
       </div>
+      {editingIcon && (
+        <IconEditor
+          initial={icon}
+          onClose={() => setEditingIcon(false)}
+          onSave={(c) => {
+            setIcon(c)
+            setEditingIcon(false)
+          }}
+        />
+      )}
     </Modal>
   )
 }

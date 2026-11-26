@@ -1,11 +1,11 @@
 import { Play } from 'lucide-react'
 import type { Instance } from '@shared/types'
-import { LOADER_NAMES, timeAgo } from '@/lib/format'
+import { LOADER_NAMES, playtime, timeAgo } from '@/lib/format'
 import { useStore } from '@/lib/store'
 import { InstanceIcon } from './ui'
 
 export function InstanceCard({ inst }: { inst: Instance }) {
-  const { navigate, launch, progress } = useStore()
+  const { navigate, launch, progress, settings } = useStore()
   const busy = progress.instanceId === inst.id && progress.stage !== 'idle' && progress.stage !== 'error'
   return (
     <div
@@ -31,7 +31,10 @@ export function InstanceCard({ inst }: { inst: Instance }) {
       <p className="mt-0.5 truncate text-xs text-muted">
         {LOADER_NAMES[inst.loader]} {inst.mcVersion}
       </p>
-      <p className="mt-2 truncate text-[11px] text-muted/80">{inst.lastPlayed ? `Played ${timeAgo(inst.lastPlayed)}` : 'Never played'}</p>
+      <p className="mt-2 truncate text-[11px] text-muted/80">
+        {inst.lastPlayed ? `Played ${timeAgo(inst.lastPlayed)}` : 'Never played'}
+        {settings.showPlayTime && inst.playtimeSec > 0 && ` · ${playtime(inst.playtimeSec)}`}
+      </p>
     </div>
   )
 }
