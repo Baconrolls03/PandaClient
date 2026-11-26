@@ -62,6 +62,8 @@ public final class PandaClientMod implements ClientModInitializer {
         com.pandaclient.mod.util.CiCheck.tick(mc);
         Config.tick();
         Combat.tick();
+        if (mc.level == null) Config.writePresence(null);
+        else if (mc.level.getGameTime() % 100 == 0) Config.writePresence(mc.getCurrentServer() != null ? mc.getCurrentServer().ip : "Singleplayer");
         com.pandaclient.mod.util.HitColorTexture.tick();
         // Hitboxes: follow the switch (F3+B still works on its own).
         if (mc.debugEntries != null && Modules.HITBOXES.enabled() != hitboxesApplied) {
@@ -77,6 +79,7 @@ public final class PandaClientMod implements ClientModInitializer {
             if (mc.level != null && mc.level.getGameTime() % 40 == 0) {
                 java.util.List<java.util.UUID> ids = new java.util.ArrayList<>();
                 for (var p : mc.level.players()) ids.add(p.getUUID());
+                if (mc.getConnection() != null) for (var info : mc.getConnection().getOnlinePlayers()) ids.add(info.getProfile().id());
                 com.pandaclient.mod.cosmetics.CosmeticsApi.request(ids);
             }
         }

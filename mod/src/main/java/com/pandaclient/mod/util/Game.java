@@ -106,6 +106,13 @@ public final class Game {
         return l.toArray(new Stack[0]);
     }
 
+    public static int count(Item item) {
+        int n = 0;
+        var inv = mc().player.getInventory();
+        for (int i = 0; i < inv.getContainerSize(); i++) { ItemStack s = inv.getItem(i); if (s.is(item)) n += s.getCount(); }
+        return n;
+    }
+
     private static final String[] ROMAN = {"", " II", " III", " IV", " V", " VI", " VII", " VIII", " IX", " X"};
 
     public static List<Effect> effects() {

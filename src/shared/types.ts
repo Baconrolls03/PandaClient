@@ -230,6 +230,17 @@ export interface LaunchProgress {
   progress: number | null
   message: string
   instanceId?: string
+  /** Filled in when the game crashed. */
+  crash?: CrashReport
+}
+
+export interface CrashReport {
+  summary: string
+  /** Mods that look responsible (can be disabled from the crash dialog). */
+  mods: { id: string; name: string; file: string }[]
+  /** Crash report file, if Minecraft wrote one. */
+  file?: string
+  excerpt: string
 }
 
 export interface QuickPlay {

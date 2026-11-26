@@ -17,6 +17,7 @@ import { InstallModal } from '@/modals/InstallModal'
 import { SettingsModal } from '@/modals/SettingsModal'
 import { ImportModal } from '@/modals/ImportModal'
 import { IncomingShares } from '@/components/IncomingShares'
+import { CrashHelper } from '@/components/CrashHelper'
 import { useAppearance } from '@/lib/appearance'
 
 function Shell() {
@@ -45,6 +46,7 @@ function Shell() {
       {modal?.kind === 'settings' && <SettingsModal section={modal.section} />}
       {modal?.kind === 'import' && <ImportModal />}
       <IncomingShares />
+      <CrashHelper />
       <Toasts />
     </div>
   )

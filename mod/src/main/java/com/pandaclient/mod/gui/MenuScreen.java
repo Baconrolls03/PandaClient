@@ -175,6 +175,7 @@ public final class MenuScreen extends Screen {
         String keyLabel = waitingKey == Keys.MENU ? "Press a key..." : "Menu: " + Keys.name(Keys.MENU);
         Widgets.button(d, x + 6, bottom - 40, bw, 18, Widgets.ellipsize(keyLabel, bw - 6), Widgets.in(mx, my, x + 6, bottom - 40, bw, 18), false);
         Widgets.button(d, x + 6, bottom - 62, bw, 18, "Accent: " + Modules.THEME.get(), Widgets.in(mx, my, x + 6, bottom - 62, bw, 18), false);
+        Widgets.button(d, x + 6, bottom - 84, bw, 18, Widgets.ellipsize("Profile: " + Config.profile, bw - 6), Widgets.in(mx, my, x + 6, bottom - 84, bw, 18), false);
     }
 
     private int cols() { return contentW() >= 280 ? 2 : 1; }
@@ -362,6 +363,11 @@ public final class MenuScreen extends Screen {
         if (Widgets.in(mx, my, px + 6, bottom - 18, bw, 18)) { minecraft.setScreen(new HudEditorScreen(this)); return true; }
         if (Widgets.in(mx, my, px + 6, bottom - 40, bw, 18)) { waitingKey = Keys.MENU; return true; }
         if (Widgets.in(mx, my, px + 6, bottom - 62, bw, 18)) { Modules.THEME.cycle(button == 1 ? -1 : 1); Config.markDirty(); return true; }
+        if (Widgets.in(mx, my, px + 6, bottom - 84, bw, 18)) {
+            int i = java.util.Arrays.asList(Config.PROFILES).indexOf(Config.profile);
+            Config.switchProfile(Config.PROFILES[Math.floorMod(i + (button == 1 ? -1 : 1), Config.PROFILES.length)]);
+            return true;
+        }
         if (!Widgets.in(mx, my, contentX(), contentY(), contentW(), contentH())) return super.mouseClicked(e, doubleClick);
         return open == null ? clickGrid(mx, my, button) : clickSettings(mx, my, button);
     }

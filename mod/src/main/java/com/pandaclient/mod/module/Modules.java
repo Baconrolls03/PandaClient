@@ -31,12 +31,19 @@ public final class Modules {
     public static final TargetHud TARGET = new TargetHud();
     public static final SaturationHud SATURATION = new SaturationHud();
     public static final DayHud DAY = new DayHud();
+    public static final TotemHud TOTEMS = new TotemHud();
+    public static final ArrowHud ARROWS = new ArrowHud();
+    public static final BowChargeHud BOW = new BowChargeHud();
 
     public static final ToggleSprint TOGGLE_SPRINT = new ToggleSprint();
     public static final Zoom ZOOM = new Zoom();
     public static final Freelook FREELOOK = new Freelook();
     public static final NoHurtCam NO_HURT_CAM = new NoHurtCam();
     public static final Hitboxes HITBOXES = new Hitboxes();
+    public static final HitSounds HIT_SOUNDS = new HitSounds();
+    public static final HitParticles PARTICLES = new HitParticles();
+    public static final AutoGG AUTO_GG = new AutoGG();
+    public static final PandaBadge BADGE = new PandaBadge();
     public static final CustomTitleScreen TITLE_SCREEN = new CustomTitleScreen();
     public static final Fullbright FULLBRIGHT = new Fullbright();
     public static final Crosshair CROSSHAIR = new Crosshair();
@@ -49,10 +56,10 @@ public final class Modules {
     public static final Cosmetics COSMETICS = new Cosmetics();
 
     private static final List<Module> ALL = Collections.unmodifiableList(new ArrayList<>(List.of(
-        FPS, CPS, KEYSTROKES, ARMOR, POTIONS, COORDS, DIRECTION, PING, SERVER, CLOCK, MEMORY, REACH, COMBO, SPEED, ITEMS, TARGET, SATURATION, DAY,
-        TOGGLE_SPRINT, ZOOM, FREELOOK, NO_HURT_CAM, HITBOXES,
-        FULLBRIGHT, CROSSHAIR, BLOCK_OUTLINE, HIT_COLOR, LOW_FIRE, TIME, WEATHER,
-        CHAT_TIMESTAMPS, COSMETICS, TITLE_SCREEN)));
+        FPS, CPS, KEYSTROKES, ARMOR, POTIONS, COORDS, DIRECTION, PING, SERVER, CLOCK, MEMORY, REACH, COMBO, SPEED, ITEMS, TARGET, SATURATION, DAY, TOTEMS, ARROWS, BOW,
+        TOGGLE_SPRINT, ZOOM, FREELOOK, NO_HURT_CAM, HITBOXES, HIT_SOUNDS,
+        FULLBRIGHT, CROSSHAIR, BLOCK_OUTLINE, HIT_COLOR, PARTICLES, LOW_FIRE, TIME, WEATHER,
+        CHAT_TIMESTAMPS, AUTO_GG, BADGE, COSMETICS, TITLE_SCREEN)));
 
     public static List<Module> all() { return ALL; }
 

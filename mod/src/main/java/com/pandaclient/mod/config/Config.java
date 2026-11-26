@@ -39,6 +39,17 @@ public final class Config {
         if (!Files.exists(FILE)) return;
         try {
             JsonObject root = JsonParser.parseString(Files.readString(FILE, StandardCharsets.UTF_8)).getAsJsonObject();
+            if (root.has("profile")) profile = root.get("profile").getAsString();
+            apply(root, false);
+        } catch (Exception e) {
+            System.err.println("[PandaClient] Could not read " + FILE + ": " + e);
+        }
+    }
+
+    /** Apply a saved setup. {@code full} = reset first so missing values go back to defaults. */
+    private static void apply(JsonObject root, boolean full) {
+        if (full) resetAll();
+        {
             if (root.has("theme")) Modules.THEME.load(root.get("theme"));
             JsonObject mods = root.has("mods") ? root.getAsJsonObject("mods") : new JsonObject();
             for (Module m : Modules.all()) {
@@ -51,13 +62,84 @@ public final class Config {
                 }
                 if (m instanceof HudModule h && o.has("hud")) h.loadPosition(o.getAsJsonObject("hud"));
             }
-        } catch (Exception e) {
-            System.err.println("[PandaClient] Could not read " + FILE + ": " + e);
         }
     }
 
+    private static String presence = "";
+    /** Tell the launcher which server you're on (friends can see it and join). */
+    public static void writePresence(String server) {
+        String s = server == null ? "" : server;
+        if (s.equals(presence)) return;
+        presence = s;
+        JsonObject o = new JsonObject();
+        o.addProperty("server", s);
+        o.addProperty("updated", System.currentTimeMillis());
+        write(FILE.resolveSibling("pandaclient-presence.json"), o);
+    }
+
+    /** Name of the active layout profile. */
+    public static String profile = "Default";
+    public static final String[] PROFILES = {"Default", "PvP", "Survival", "Recording"};
+
     public static void save() {
         dirtyAt = -1;
+        JsonObject root = toJson();
+        root.addProperty("profile", profile);
+        write(FILE, root);
+    }
+
+    private static void write(Path file, JsonObject root) {
+        try {
+            Files.createDirectories(file.getParent());
+            Path tmp = file.resolveSibling(file.getFileName() + ".tmp");
+            Files.writeString(tmp, GSON.toJson(root), StandardCharsets.UTF_8);
+            Files.move(tmp, file, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+        } catch (Exception e) {
+            System.err.println("[PandaClient] Could not save " + file + ": " + e);
+        }
+    }
+
+    private static Path profileFile(String name) { return FILE.resolveSibling("pandaclient-profile-" + name.toLowerCase(java.util.Locale.ROOT) + ".json"); }
+
+    /** Switch layout profile: keep the current setup in its slot, load the other (a new slot starts as a copy). */
+    public static void switchProfile(String name) {
+        if (name.equals(profile)) return;
+        write(profileFile(profile), toJson());
+        Path next = profileFile(name);
+        if (Files.exists(next)) {
+            try { apply(JsonParser.parseString(Files.readString(next, StandardCharsets.UTF_8)).getAsJsonObject(), true); } catch (Exception ignored) {}
+        }
+        profile = name;
+        save();
+    }
+
+    /** Everything back to how PandaClient starts out (modules, settings and HUD positions). */
+    public static void resetAll() {
+        for (Module m : Modules.all()) {
+            m.setEnabled(m.enabledByDefault);
+            for (Setting<?> set : m.settings) { set.reset(); if (set instanceof Setting.Color c) c.chroma = false; }
+            if (m instanceof HudModule h) h.resetPosition();
+        }
+        markDirty();
+    }
+
+    /** The whole setup as a short text you can paste to a friend. */
+    public static String exportString() {
+        byte[] raw = toJson().toString().getBytes(StandardCharsets.UTF_8);
+        return "PANDA1:" + java.util.Base64.getEncoder().encodeToString(raw);
+    }
+    public static boolean importString(String s) {
+        try {
+            s = s.trim();
+            if (!s.startsWith("PANDA1:")) return false;
+            String json = new String(java.util.Base64.getDecoder().decode(s.substring(7)), StandardCharsets.UTF_8);
+            apply(JsonParser.parseString(json).getAsJsonObject(), true);
+            markDirty();
+            return true;
+        } catch (Exception e) { return false; }
+    }
+
+    public static JsonObject toJson() {
         JsonObject root = new JsonObject();
         root.addProperty("version", 1);
         root.add("theme", Modules.THEME.save());
@@ -72,13 +154,6 @@ public final class Config {
             mods.add(m.id, o);
         }
         root.add("mods", mods);
-        try {
-            Files.createDirectories(FILE.getParent());
-            Path tmp = FILE.resolveSibling(FILE.getFileName() + ".tmp");
-            Files.writeString(tmp, GSON.toJson(root), StandardCharsets.UTF_8);
-            Files.move(tmp, FILE, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
-        } catch (Exception e) {
-            System.err.println("[PandaClient] Could not save " + FILE + ": " + e);
-        }
+        return root;
     }
 }

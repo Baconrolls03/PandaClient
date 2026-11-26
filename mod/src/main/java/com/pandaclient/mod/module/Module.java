@@ -10,11 +10,13 @@ public abstract class Module {
     public final String description;
     public final Category category;
     private boolean enabled;
+    public final boolean enabledByDefault;
     public final List<Setting<?>> settings = new ArrayList<>();
 
     protected Module(String id, String name, String description, Category category, boolean enabledByDefault) {
         this.id = id; this.name = name; this.description = description; this.category = category;
         this.enabled = enabledByDefault;
+        this.enabledByDefault = enabledByDefault;
     }
 
     protected <S extends Setting<?>> S add(S s) { settings.add(s); return s; }

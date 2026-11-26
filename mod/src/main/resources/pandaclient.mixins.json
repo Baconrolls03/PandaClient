@@ -19,6 +19,7 @@
     "MultiPlayerGameModeMixin",
     "OptionInstanceMixin",
     "OverlayTextureMixin",
+    "PlayerTabOverlayMixin",
     "ScreenEffectRendererMixin"
   ],
   "injectors": { "defaultRequire": 1 }

@@ -12,6 +12,7 @@ import { type TaskHandle, startTask } from '../tasks'
 import { ensureRuntime } from './javaRuntime'
 import { assetsDir, install, librariesDir, rulesAllow, type Arg, type Installed } from './mojang'
 import { ensurePandaMod } from '../pandaMod'
+import { diagnose } from '../crashDoctor'
 
 type Emit = (p: LaunchProgress) => void
 
@@ -211,11 +212,13 @@ export async function launchGame(id: string, emit: Emit, quickPlay?: QuickPlay):
         win.focus()
       }
       const crashed = code !== 0 && signal !== 'SIGTERM' && code !== null
+      const crash = crashed ? await diagnose(inst, started).catch(() => undefined) : undefined
       emit({
         ...base,
         stage: crashed ? 'error' : 'idle',
         progress: null,
-        message: crashed ? `Minecraft closed with error code ${code}. Check the Logs tab.` : ''
+        message: crashed ? (crash?.summary ?? `Minecraft closed with error code ${code}. Check the Logs tab.`) : '',
+        crash
       })
     })
   } catch (e) {

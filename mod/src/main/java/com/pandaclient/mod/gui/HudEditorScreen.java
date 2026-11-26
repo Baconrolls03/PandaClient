@@ -26,6 +26,8 @@ public final class HudEditorScreen extends Screen {
     private double resizeStartScale;
     private int resizeX, resizeY;
     private static final int HANDLE = 5;
+    private String note = "";
+    private long noteAt;
 
     /** The little square at an element's bottom-right corner: drag it to resize. */
     private boolean onHandle(HudModule m, double mx, double my) {
@@ -103,8 +105,14 @@ public final class HudEditorScreen extends Screen {
             }
         }
 
+        // toolbar
+        String[] tools = {"Reset all", "Copy layout", "Paste layout"};
+        int tx = width / 2 - 123;
+        for (int i = 0; i < tools.length; i++) Widgets.button(d, tx + i * 84, 4, 78, 16, tools[i], Widgets.in(mx, my, tx + i * 84, 4, 78, 16), false);
+        if (System.currentTimeMillis() - noteAt < 2500) d.centered(note, width / 2, 24, Theme.accent(), true);
+
         // help bar
-        String help = "Drag to move  •  Drag the corner (or scroll) to resize  •  Right-click for settings  •  Esc to go back";
+        String help = "Drag to move  •  Drag the corner to resize  •  Right-click: settings  •  Middle-click: reset  •  Esc: back";
         int hw = Draw.textWidth(help) + 16;
         int hx = (width - hw) / 2, hy = height - 22;
         if (hw > width - 8) { help = "Drag • Scroll to resize • Right-click: settings"; hw = Draw.textWidth(help) + 16; hx = (width - hw) / 2; }
@@ -120,6 +128,21 @@ public final class HudEditorScreen extends Screen {
     @Override
     public boolean mouseClicked(MouseButtonEvent e, boolean doubleClick) {
         double mx = e.x(), my = e.y();
+        int tx = width / 2 - 123;
+        for (int i = 0; i < 3; i++) {
+            if (!Widgets.in(mx, my, tx + i * 84, 4, 78, 16)) continue;
+            switch (i) {
+                case 0 -> { for (HudModule h : Modules.hud()) h.resetPosition(); Config.markDirty(); note = "Layout reset"; }
+                case 1 -> { minecraft.keyboardHandler.setClipboard(Config.exportString()); note = "Copied! Paste it to a friend"; }
+                default -> note = Config.importString(minecraft.keyboardHandler.getClipboard()) ? "Layout pasted" : "No PandaClient layout on the clipboard";
+            }
+            noteAt = System.currentTimeMillis();
+            return true;
+        }
+        if (e.button() == 2) { // middle click: reset that element
+            HudModule h = at(mx, my);
+            if (h != null) { h.resetPosition(); Config.markDirty(); return true; }
+        }
         for (HudModule h : shown()) {
             if (e.button() == 0 && onHandle(h, mx, my)) {
                 resizing = h; resizeStartW = Math.max(8, h.scaledW()); resizeStartScale = h.scale.get();

@@ -12,6 +12,7 @@ import com.pandaclient.mod.module.Setting;
  */
 public abstract class HudModule extends Module {
     public double fx, fy;
+    private final double defFx, defFy;
     public final Setting.Num scale = add(new Setting.Num("scale", "Scale", 1.0, 0.3, 3.0, 0.05));
 
     /** True while the HUD editor is open (elements show sample data). */
@@ -22,7 +23,7 @@ public abstract class HudModule extends Module {
     }
     protected HudModule(String id, String name, String description, Category category, boolean on, double fx, double fy) {
         super(id, name, description, category, on);
-        this.fx = fx; this.fy = fy;
+        this.fx = fx; this.fy = fy; this.defFx = fx; this.defFy = fy;
     }
 
     /** Whether there is anything to draw right now (outside the editor). */
@@ -56,6 +57,9 @@ public abstract class HudModule extends Module {
         render(d, preview);
         d.pop();
     }
+
+    /** Back to where this element starts out, at normal size. */
+    public void resetPosition() { fx = defFx; fy = defFy; scale.reset(); }
 
     public JsonObject savePosition() {
         JsonObject o = new JsonObject(); o.addProperty("x", fx); o.addProperty("y", fy); return o;

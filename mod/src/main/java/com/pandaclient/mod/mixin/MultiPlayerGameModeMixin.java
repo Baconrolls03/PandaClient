@@ -21,5 +21,7 @@ public abstract class MultiPlayerGameModeMixin {
             ? player.getEyePosition().distanceTo(hit.getLocation())
             : player.getEyePosition().distanceTo(target.position());
         Combat.attacked(target.getId(), reach);
+        com.pandaclient.mod.module.Modules.HIT_SOUNDS.play();
+        com.pandaclient.mod.module.Modules.PARTICLES.spawn(target);
     }
 }
