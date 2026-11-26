@@ -34,11 +34,19 @@ public final class PandaClientMod implements ClientModInitializer {
         ClientTickEvents.END_CLIENT_TICK.register(PandaClientMod::tick);
         // A "PandaClient" button on the title screen and the pause menu (Esc), so the menu is easy to find.
         net.fabricmc.fabric.api.client.screen.v1.ScreenEvents.AFTER_INIT.register((client, screen, w, h) -> {
-            if (screen instanceof net.minecraft.client.gui.screens.TitleScreen || screen instanceof net.minecraft.client.gui.screens.PauseScreen) {
-                net.fabricmc.fabric.api.client.screen.v1.Screens.getButtons(screen).add(
-                    net.minecraft.client.gui.components.Button.builder(net.minecraft.network.chat.Component.literal("PandaClient"),
-                        b -> client.setScreen(new MenuScreen(screen))).bounds(6, 6, 90, 20).build());
+            if (!(screen instanceof net.minecraft.client.gui.screens.TitleScreen || screen instanceof net.minecraft.client.gui.screens.PauseScreen)) return;
+            var buttons = net.fabricmc.fabric.api.client.screen.v1.Screens.getButtons(screen);
+            // Like Lunar: a full-width button in the menu's column, under the last button.
+            int bottom = -1, left = w / 2 - 102, width = 204;
+            for (var b : buttons) {
+                if (b.getWidth() >= 150 && b.getY() + b.getHeight() > bottom) {
+                    bottom = b.getY() + b.getHeight(); left = b.getX(); width = b.getWidth();
+                }
             }
+            int y = bottom < 0 ? h / 4 + 48 : bottom + 4;
+            if (y + 20 > h - 4) y = 6;
+            buttons.add(net.minecraft.client.gui.components.Button.builder(net.minecraft.network.chat.Component.literal("PandaClient Mods"),
+                b -> client.setScreen(new MenuScreen(screen))).bounds(left, y, width, 20).build());
         });
         Runtime.getRuntime().addShutdownHook(new Thread(Config::save, "PandaClient config save"));
         System.out.println("[PandaClient] " + VERSION + " loaded with " + Modules.all().size() + " mods");
