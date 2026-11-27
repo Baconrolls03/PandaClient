@@ -50,7 +50,11 @@ public final class CiCheck {
             }
             case 24 -> log("party: " + com.pandaclient.mod.util.Party.members().size() + " members");
             case 40 -> log("shot lobby");
-            case 76 -> { mc.setScreen(new MenuScreen(null)); log("shot menu"); }
+            case 72 -> {
+                if (mc.screen instanceof com.pandaclient.mod.gui.PandaTitleScreen p) p.ciPose();
+                log("shot lobby-throw");
+            }
+            case 104 -> { mc.setScreen(new MenuScreen(null)); log("shot menu"); }
             case 140 -> { mc.setScreen(MenuScreen.openAt(null, Modules.KEYSTROKES)); log("shot settings"); }
             case 240 -> { mc.setScreen(new HudEditorScreen(null)); log("shot hud"); }
             case 300 -> {
@@ -119,8 +123,9 @@ public final class CiCheck {
                 for (var w : net.fabricmc.fabric.api.client.screen.v1.Screens.getButtons(mc.screen)) b.append('[').append(w.getMessage().getString()).append(" @").append(w.getX()).append(',').append(w.getY()).append("] ");
                 log("pause menu (" + mc.screen.getClass().getSimpleName() + ") buttons: " + b + " primary=" + (com.pandaclient.mod.gui.PauseLayout.primary != null ? com.pandaclient.mod.gui.PauseLayout.primary.getMessage().getString() : "none"));
             }
-            case 515 -> { mc.setScreen(null); log("freelook restored camera=" + mc.options.getCameraType()); }
-            case 535 -> finish(mc);
+            case 500 -> { mc.setScreen(new com.pandaclient.mod.gui.PandaTitleScreen()); log("lobby panorama captured: " + com.pandaclient.mod.util.LobbyPanorama.available()); log("shot lobby-world"); }
+            case 545 -> { mc.setScreen(null); log("freelook restored camera=" + mc.options.getCameraType()); }
+            case 565 -> finish(mc);
             default -> {}
         }
     }

@@ -55,7 +55,7 @@ public final class PandaClientMod implements ClientModInitializer {
             // PandaClient pause menu: player on the left, the menu as a list on the right.
             if (screen instanceof net.minecraft.client.gui.screens.PauseScreen ps && ps.showsPauseMenu()
                     && Modules.TITLE_SCREEN.enabled() && Modules.TITLE_SCREEN.pauseMenu.on()) {
-                if (Modules.TITLE_SCREEN.lobbyFromWorld.on()) com.pandaclient.mod.util.LobbySnapshot.capture(client);
+                if (Modules.TITLE_SCREEN.lobbyFromWorld.on()) com.pandaclient.mod.util.LobbyPanorama.capture(client);
                 try {
                     com.pandaclient.mod.gui.PauseLayout.apply(buttons, panda, w, h);
                     net.fabricmc.fabric.api.client.screen.v1.ScreenEvents.beforeRender(screen).register((s2, g, mx, my, delta) ->

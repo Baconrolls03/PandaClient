@@ -32,7 +32,7 @@ done
 echo "=== 1. title screen"
 MC_ARG=${SMOKE_MC:+-Pmc=$SMOKE_MC}
 ( gradle -p mod runClient $MC_ARG --no-daemon > game.log 2>&1; echo "exit $?" >> game.log ) &
-shoot game.log lobby menu settings hud welcome
+shoot game.log lobby lobby-throw menu settings hud welcome
 wait_exit game.log
 
 [ -n "${SMOKE_TITLE_ONLY:-}" ] && exit 0
@@ -45,6 +45,6 @@ for i in $(seq 1 300); do grep -q "Done (" server.log && break; grep -q "^exit "
 grep -E "Done \(|ERROR|Exception" server.log | head -5
 export PANDACLIENT_CI_WORLD=1
 ( gradle -p mod runClient --no-daemon --args="--username PandaTester --quickPlayMultiplayer localhost:25565" > world.log 2>&1; echo "exit $?" >> world.log ) &
-shoot world.log ingame zoom freelook crosshair-settings hud-world pause
+shoot world.log ingame zoom freelook crosshair-settings hud-world pause lobby-world
 wait_exit world.log
 pkill -f "net.fabricmc.devlaunchinjector" 2>/dev/null; pkill -f runServer 2>/dev/null; true

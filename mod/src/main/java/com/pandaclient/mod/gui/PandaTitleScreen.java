@@ -30,9 +30,7 @@ public final class PandaTitleScreen extends Screen {
 
     @Override public boolean shouldCloseOnEsc() { return false; }
 
-    private net.minecraft.client.gui.components.AbstractWidget player;
-    @Override protected void init() { player = null; mates.clear(); }
-    private final java.util.Map<java.util.UUID, net.minecraft.client.gui.components.AbstractWidget> mates = new java.util.HashMap<>();
+    @Override protected void init() {}
 
     @Override public boolean isPauseScreen() { return false; }
 
@@ -52,6 +50,24 @@ public final class PandaTitleScreen extends Screen {
         mouseX += ((mx / (float) Math.max(1, width)) - mouseX) * 0.06f;
         mouseY += ((my / (float) Math.max(1, height)) - mouseY) * 0.06f;
 
+        if (card()) {
+            // A real 3D world behind you: the place you last paused in (six pictures all around, like Minecraft's
+            // own title panorama), slowly turning and following the mouse; Minecraft's panorama until then.
+            float yaw = t * 2.4f + (mouseX - 0.5f) * 34f, pitch = 5f + (mouseY - 0.5f) * 10f;
+            boolean own = Modules.TITLE_SCREEN.lobbyFromWorld.on() && com.pandaclient.mod.util.LobbyPanorama.render(minecraft, pitch, yaw);
+            if (!own) renderPanorama(g, delta);
+            renderBlurredBackground(g);
+            // a gentle grade so the cards read: darker at the top and bottom
+            for (int i = 0; i < 10; i++) {
+                int a1 = 60 - i * 6, h1 = height * i / 40, h2 = height * (i + 1) / 40;
+                d.rect(0, h1, width, h2, Draw.alpha(0xFF070A10, a1));
+                d.rect(0, height - h2, width, height - h1, Draw.alpha(0xFF070A10, a1 + 20));
+            }
+            drawShadow(g);
+            float fadeIn = Math.min(1f, t / 0.8f);
+            if (fadeIn < 1) d.rect(0, 0, width, height, Draw.alpha(0xFF000000, (int) ((1 - fadeIn) * 255)));
+            return;
+        }
         // artwork: cover the screen, slow "breathing" zoom, parallax towards the mouse
         // Where you left off (snapshot from your last world or server), else the painted valley.
         int[] snap = Modules.TITLE_SCREEN.lobbyFromWorld.on() ? com.pandaclient.mod.util.LobbySnapshot.texture(minecraft) : null;
@@ -162,7 +178,7 @@ public final class PandaTitleScreen extends Screen {
         }
 
         }
-        if (card()) { placePlayer(); lobby(g, mx, my, ease); return; }
+        if (card()) { drawBodies(g, mx, my); lobby(g, mx, my, ease); return; }
         // footer
         int mods = FabricLoader.getInstance().getAllMods().size();
         int fa = (int) (170 * ease);
@@ -250,151 +266,203 @@ public final class PandaTitleScreen extends Screen {
         return new float[]{cx - w / 2, feet - h, w, h};
     }
 
-    // ---------------------------------------------------------------- pick up and throw characters
+    // ---------------------------------------------------------------- characters you can pick up and throw
 
-    /** Lift (canvas units, negative = up) and vertical speed of each character you've thrown. */
-    private final java.util.Map<Object, float[]> lift = new java.util.HashMap<>();
-    private Object held;
-    private long lastDragAt, lastPhysics;
-    private float dragSpeed;
-    private static final Object YOU = new Object();
+    /** One character standing in the lobby, with simple physics (canvas units, y down). */
+    private static final class Body {
+        final String key; final java.util.UUID id; final String name; final boolean leader, online;
+        float homeX, feet, height;
+        float dx, dy, vx, vy;          // offset from home and speed
+        float ang, angV;               // swing: feet to the right is positive
+        float held, walk, face;        // 0..1 amounts, facing (degrees)
+        boolean grabbed, grounded = true;
+        float lastAx, lastVx;
+        Body(String key, java.util.UUID id, String name, boolean leader, boolean online) { this.key = key; this.id = id; this.name = name; this.leader = leader; this.online = online; }
+        float cx() { return homeX + dx; }
+        float cy() { return feet - height / 2 + dy; }
+        float neckX() { return cx(); }
+        float neckY() { return cy() - height * 0.25f; }
+    }
 
-    private float liftOf(Object who) { float[] s = lift.get(who); return s == null ? 0 : s[0]; }
+    private final java.util.Map<String, Body> bodies = new java.util.LinkedHashMap<>();
+    private Body grabbed;
+    private long lastPhysics;
+    private float mouseCX, mouseCY;
+    private boolean ciFrozen;
+    private static final float G = 2600;
 
-    /** Gravity and a little bounce for characters you let go of. */
+    /** Everyone standing in the lobby: you, then your party. */
+    private java.util.List<Body> bodies() {
+        java.util.List<Body> out = new java.util.ArrayList<>();
+        if (!Modules.TITLE_SCREEN.lobbyPlayer.on()) return out;
+        float[] b = playerBox();
+        Body you = bodies.computeIfAbsent("you", k -> new Body("you", null, name(), true, true));
+        you.homeX = b[0] + b[2] / 2; you.feet = b[1] + b[3]; you.height = b[3];
+        out.add(you);
+        var list = mateList();
+        for (int i = 0; i < list.size(); i++) {
+            var m = list.get(i);
+            float[] mb = mateBox(i);
+            Body body = bodies.computeIfAbsent(m.uuid().toString(), k -> new Body(k, m.uuid(), m.name(), m.leader(), m.online()));
+            body.homeX = mb[0] + mb[2] / 2; body.feet = mb[1] + mb[3]; body.height = mb[3];
+            out.add(body);
+        }
+        return out;
+    }
+
     private void physics() {
         long now = System.currentTimeMillis();
-        float dt = lastPhysics == 0 ? 0 : Math.min(0.05f, (now - lastPhysics) / 1000f);
+        float dt = lastPhysics == 0 ? 0 : Math.min(1f / 30, (now - lastPhysics) / 1000f);
         lastPhysics = now;
-        for (var it = lift.entrySet().iterator(); it.hasNext(); ) {
-            var e = it.next();
-            if (e.getKey() == held) continue;
-            float[] st = e.getValue();
-            st[1] += 2600 * dt;
-            st[0] += st[1] * dt;
-            if (st[0] >= 0) {
-                st[0] = 0;
-                if (Math.abs(st[1]) > 160) st[1] = -st[1] * 0.42f; else it.remove();
+        if (dt <= 0 || ciFrozen) return;
+        for (Body b : bodies()) {
+            if (b == grabbed) {
+                // the neck follows the cursor; the body hangs and swings like a pendulum
+                float tx = mouseCX, ty = mouseCY;
+                float nx = b.neckX() + (tx - b.neckX()) * (1 - (float) Math.exp(-dt * 26));
+                float ny = b.neckY() + (ty - b.neckY()) * (1 - (float) Math.exp(-dt * 26));
+                float nvx = (nx - b.neckX()) / dt, nvy = (ny - b.neckY()) / dt;
+                float ax = (nvx - b.vx) / dt;
+                b.lastAx = b.lastAx * 0.6f + ax * 0.4f;
+                b.vx = nvx; b.vy = nvy;
+                b.dx = nx - b.homeX;
+                b.dy = ny + b.height * 0.25f - (b.feet - b.height / 2);
+                float len = b.height * 0.55f;
+                float alpha = -(G / len) * (float) Math.sin(b.ang) - (b.lastAx / len) * (float) Math.cos(b.ang) - 3.2f * b.angV;
+                b.angV += alpha * dt;
+                b.ang = Math.max(-1.4f, Math.min(1.4f, b.ang + b.angV * dt));
+                b.held += (1 - b.held) * Math.min(1, dt * 10);
+                b.walk += (0 - b.walk) * Math.min(1, dt * 8);
+                b.grounded = false;
+            } else {
+                b.held += (0 - b.held) * Math.min(1, dt * 6);
+                if (!b.grounded) {
+                    b.vy += G * dt;
+                    b.dx += b.vx * dt;
+                    b.dy += b.vy * dt;
+                    b.angV *= (float) Math.exp(-dt * 1.2f);
+                    b.ang += b.angV * dt;
+                    if (b.dy >= 0) {
+                        b.dy = 0;
+                        if (b.vy > 340) { b.vy = -b.vy * 0.33f; b.vx *= 0.7f; b.angV += b.vx * 0.004f; }
+                        else { b.vy = 0; b.grounded = true; }
+                    }
+                } else {
+                    // back on the ground: straighten up, then walk home
+                    b.angV += (-b.ang * 70 - b.angV * 10) * dt;
+                    b.ang += b.angV * dt;
+                    b.vx *= (float) Math.exp(-dt * 8);
+                    b.dx += b.vx * dt;
+                    if (Math.abs(b.dx) > 4 && Math.abs(b.ang) < 0.25f) {
+                        float walkV = Math.max(-150, Math.min(150, -b.dx * 2.4f));
+                        b.dx += walkV * dt;
+                        b.walk += (1 - b.walk) * Math.min(1, dt * 8);
+                        b.face += ((walkV > 0 ? 70 : -70) - b.face) * Math.min(1, dt * 8);
+                    } else {
+                        b.walk += (0 - b.walk) * Math.min(1, dt * 6);
+                        b.face += (0 - b.face) * Math.min(1, dt * 5);
+                    }
+                }
             }
+            // stay on screen
+            float minX = 40 - b.homeX, maxX = vw - 40 - b.homeX;
+            if (b.dx < minX) { b.dx = minX; b.vx = Math.abs(b.vx) * 0.4f; }
+            if (b.dx > maxX) { b.dx = maxX; b.vx = -Math.abs(b.vx) * 0.4f; }
+            b.dy = Math.max(b.dy, -(b.feet - b.height - 40));
         }
     }
 
-    private Object characterAt(double mx, double my) {
-        if (player != null && player.isMouseOver(mx * k, my * k)) return YOU;
-        for (var e : mates.entrySet()) if (e.getValue().isMouseOver(mx * k, my * k)) return e.getKey();
+    private Body bodyAt(double mx, double my) {
+        java.util.List<Body> list = bodies();
+        for (int i = list.size() - 1; i >= 0; i--) {
+            Body b = list.get(i);
+            float hw = b.height * 0.26f;
+            if (mx >= b.cx() - hw && mx <= b.cx() + hw && my >= b.cy() - b.height / 2 && my <= b.cy() + b.height / 2) return b;
+        }
         return null;
     }
 
     @Override
     public boolean mouseDragged(MouseButtonEvent e, double dx, double dy) {
-        if (held != null) {
-            float[] st = lift.computeIfAbsent(held, x -> new float[2]);
-            float d = (float) (dy / k);
-            st[0] = Math.max(-vh * 0.55f, Math.min(0, st[0] + d));
-            long now = System.currentTimeMillis();
-            float dtv = Math.max(0.008f, (now - lastDragAt) / 1000f);
-            dragSpeed = dragSpeed * 0.4f + (d / dtv) * 0.6f;
-            lastDragAt = now;
-        }
+        if (grabbed != null) { mouseCX = (float) (e.x() / k); mouseCY = (float) (e.y() / k); return true; }
         return super.mouseDragged(e, dx, dy);
     }
 
     @Override
     public boolean mouseReleased(MouseButtonEvent e) {
-        if (held != null) {
-            float[] st = lift.get(held);
-            if (st != null) st[1] = Math.max(-2200, Math.min(2200, System.currentTimeMillis() - lastDragAt < 80 ? dragSpeed : 0));
-            held = null;
-            dragSpeed = 0;
+        if (grabbed != null) {
+            grabbed.vx = Math.max(-1800, Math.min(1800, grabbed.vx));
+            grabbed.vy = Math.max(-2200, Math.min(1800, grabbed.vy));
+            grabbed.grounded = false;
+            grabbed = null;
+            return true;
         }
         return super.mouseReleased(e);
     }
 
-    private void placeMates() {
-        var list = mateList();
-        java.util.Set<java.util.UUID> keep = new java.util.HashSet<>();
-        for (var m : list) keep.add(m.uuid());
-        mates.entrySet().removeIf(e -> {
-            if (keep.contains(e.getKey())) return false;
-            removeWidget(e.getValue());
-            return true;
-        });
-        for (int i = 0; i < list.size(); i++) {
-            var m = list.get(i);
-            float[] b = mateBox(i);
-            var w = mates.get(m.uuid());
-            if (w == null) {
-                w = LobbyPlayer.createFor(minecraft, m.uuid(), m.name(), Math.round(b[2] * k), Math.round(b[3] * k));
-                if (w == null) continue;
-                mates.put(m.uuid(), w);
-                addRenderableWidget(w);
-            }
-            w.setX(Math.round(b[0] * k));
-            w.setY(Math.round((b[1] + liftOf(m.uuid())) * k));
-        }
-    }
-
-    private void placePlayer() {
-        if (card() && Modules.TITLE_SCREEN.lobbyPlayer.on() && t() >= 0.4f) {
-            zoom();
-            physics();
-            placeMates();
-            if (player != null) player.setY(Math.round((playerBox()[1] + liftOf(YOU)) * k));
-        }
-        if (!card() || !Modules.TITLE_SCREEN.lobbyPlayer.on() || t() < 0.4f || player != null) return;
+    /** CI: freeze you in mid-air, swinging, so the screenshot shows the held pose. */
+    public void ciPose() {
         zoom();
-        float[] b = playerBox();
-        player = LobbyPlayer.create(minecraft, Math.round(b[2] * k), Math.round(b[3] * k));
-        if (player == null) return;
-        player.setX(Math.round(b[0] * k));
-        player.setY(Math.round(b[1] * k));
-        addRenderableWidget(player);
+        for (Body b : bodies()) if (b.id == null) { b.dy = -150; b.ang = 0.55f; b.held = 1; b.grounded = false; }
+        ciFrozen = true;
     }
 
-    /** Soft shadow under the character's feet (drawn before the character). */
+    /** Draws everyone (before the cards and nametags). */
+    private void drawBodies(GuiGraphics g, int mouseX, int mouseY) {
+        if (!card() || t() < 0.4f) return;
+        zoom();
+        mouseCX = grabbed != null ? mouseCX : mouseX / k;
+        mouseCY = grabbed != null ? mouseCY : mouseY / k;
+        physics();
+        float time = t();
+        for (Body b : bodies()) {
+            float box = b.height * 1.7f;
+            int x0 = Math.round((b.cx() - box / 2) * k), y0 = Math.round((b.cy() - box / 2) * k);
+            int x1 = Math.round((b.cx() + box / 2) * k), y1 = Math.round((b.cy() + box / 2) * k);
+            float look = Math.max(-0.6f, Math.min(0.6f, (mouseX / k - b.cx()) / vw * 1.8f));
+            float pitch = Math.max(-0.45f, Math.min(0.5f, (mouseY / k - (b.cy() - b.height * 0.4f)) / vh * 1.4f));
+            float yaw = b.face - 12 + (mouseX / k / vw - 0.5f) * 16;
+            LobbyPlayer.draw(minecraft, g, b.key, b.id, b.name, x0, y0, x1, y1, b.height * k, yaw,
+                new LobbyPlayer.Pose(b.ang, b.held, b.walk, time + b.key.hashCode() % 7, b.held > 0.5f ? 0 : look, b.held > 0.5f ? 0.25f : pitch));
+        }
+    }
+
+    /** Soft shadows under everyone's feet (drawn before the characters). */
     private void drawShadow(GuiGraphics g) {
         if (!Modules.TITLE_SCREEN.lobbyPlayer.on()) return;
         zoom();
         Draw sd = new Draw(g);
         sd.push(); sd.scale(k); sd.zoom = k;
-        float[] b = playerBox();
-        float cx = b[0] + b[2] / 2, cy = b[1] + b[3] - 4;
-        float sh = 1f / (1f - liftOf(YOU) / 260f);
-        for (int i = 0; i < 5; i++) {
-            float rx = (34 - i * 5) * sh, ry = (8 - i * 1.2f) * sh;
-            sd.rounded(cx - rx, cy - ry, cx + rx, cy + ry, ry, Draw.alpha(0xFF000000, Math.round(26 * sh)));
-        }
-        for (int j = 0; j < mateList().size(); j++) {
-            float[] mb = mateBox(j);
-            float mx = mb[0] + mb[2] / 2, my = mb[1] + mb[3] - 4;
+        for (Body b : bodies()) {
+            float cx = b.cx(), cy = b.feet - 4;
+            float sh = 1f / (1f - b.dy / 260f);
+            float size = b.height / 190f;
             for (int i = 0; i < 5; i++) {
-                float rx = 31 - i * 4.6f, ry = 7.4f - i * 1.1f;
-                sd.rounded(mx - rx, my - ry, mx + rx, my + ry, ry, 0x17000000);
+                float rx = (34 - i * 5) * sh * size, ry = (8 - i * 1.2f) * sh * size;
+                sd.rounded(cx - rx, cy - ry, cx + rx, cy + ry, ry, Draw.alpha(0xFF000000, Math.round(26 * sh)));
             }
         }
         sd.pop();
     }
 
     private void drawNametag() {
-        if (!Modules.TITLE_SCREEN.lobbyPlayer.on()) return;
-        var list = mateList();
-        for (int i = 0; i < list.size(); i++) {
-            var m = list.get(i);
-            if (!mates.containsKey(m.uuid())) continue;
-            float[] mb = mateBox(i);
-            float w = tw(m.name(), 11, true) + (m.leader() ? 18 : 0) + 16, cx = mb[0] + mb[2] / 2, y = mb[1] - 24 + liftOf(m.uuid());
-            d.rounded(cx - w / 2, y, cx + w / 2, y + 19, 5, col(0xC70B0E16), col(0x26FFFFFF));
-            txt(m.name(), cx - w / 2 + 8, y + 9.5f, 11, m.online() ? 0xFFFFFFFF : 0xFFA3AAB6, true);
-            if (m.leader()) d.icon(Draw.I_CROWN, cx + w / 2 - 14, y + 9.5f, 10, col(0xFFF5C451));
+        for (Body b : bodies()) {
+            // above the head, following the swing
+            float headX = b.neckX() - (float) Math.sin(b.ang) * b.height * 0.25f;
+            float headY = b.neckY() - (float) Math.cos(b.ang) * b.height * 0.25f;
+            boolean you = b.id == null;
+            float w = you ? tw(b.name, 12, true) + tw("You", 10, false) + 22 : tw(b.name, 11, true) + (b.leader ? 18 : 0) + 16;
+            float h = you ? 21 : 19, y = headY - h - 6;
+            d.rounded(headX - w / 2, y, headX + w / 2, y + h, 5, col(you ? 0xD90B0E16 : 0xC70B0E16), col(you ? Draw.alpha(Theme.accent(), 170) : 0x26FFFFFF));
+            if (you) {
+                float x = headX - w / 2 + 8;
+                txt(b.name, x, y + h / 2, 12, 0xFFFFFFFF, true);
+                txt("You", x + tw(b.name, 12, true) + 6, y + h / 2, 10, Theme.accent(), false);
+            } else {
+                txt(b.name, headX - w / 2 + 8, y + h / 2, 11, b.online ? 0xFFFFFFFF : 0xFFA3AAB6, true);
+                if (b.leader) d.icon(Draw.I_CROWN, headX + w / 2 - 14, y + h / 2, 10, col(0xFFF5C451));
+            }
         }
-        float[] b = playerBox();
-        String n = name();
-        float w = tw(n, 12, true) + tw("You", 10, false) + 22;
-        float cx = b[0] + b[2] / 2, y = b[1] - 26 + liftOf(YOU);
-        d.rounded(cx - w / 2, y, cx + w / 2, y + 21, 5, col(0xD90B0E16), col(Draw.alpha(Theme.accent(), 170)));
-        float x = cx - w / 2 + 8;
-        txt(n, x, y + 10.5f, 12, 0xFFFFFFFF, true);
-        txt("You", x + tw(n, 12, true) + 6, y + 10.5f, 10, Theme.accent(), false);
     }
 
     // ---------------------------------------------------------------- top bar
@@ -721,9 +789,12 @@ public final class PandaTitleScreen extends Screen {
         if (card()) {
             if (e.button() == 0) {
                 zoom();
-                held = characterAt(e.x() / k, e.y() / k);
-                lastDragAt = System.currentTimeMillis();
-                if (held != null) lift.computeIfAbsent(held, x -> new float[2])[1] = 0;
+                grabbed = bodyAt(e.x() / k, e.y() / k);
+                if (grabbed != null) {
+                    mouseCX = (float) (e.x() / k); mouseCY = (float) (e.y() / k);
+                    grabbed.grounded = false;
+                    return true;
+                }
             }
             return super.mouseClicked(e, doubleClick);
         }
