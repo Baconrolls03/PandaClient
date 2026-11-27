@@ -151,3 +151,13 @@
 12|net.minecraft.client.gui.screens.advancements.AdvancementsScreen|-|AdvancementsScreen\(
 12|net.minecraft.client.gui.screens.ShareToLanScreen|-|ShareToLanScreen\(
 12|net.minecraft.client.gui.GuiGraphics|-|enableScissor|disableScissor|drawString\(|fillGradient
+13|net.minecraft.client.Screenshot|-|takeScreenshot|grab
+13|FIND:PlayerSkinWidget|-|.
+13|net.minecraft.client.gui.components.PlayerSkinWidget|p|PlayerSkinWidget\(|render|mouse|class
+13|net.minecraft.client.resources.SkinManager|-|get|lookup|getInsecureSkin|class
+13|net.minecraft.client.Minecraft|-|getMainRenderTarget|getEntityModels|getGameProfile|getSkinManager|getUser
+13|net.minecraft.client.renderer.texture.DynamicTexture|-|DynamicTexture\(
+13|com.mojang.blaze3d.platform.NativeImage|-|read\(|writeToFile|getWidth|getHeight
+13|net.minecraft.client.renderer.texture.TextureManager|-|register|release
+13|net.minecraft.client.gui.screens.worldselection.SelectWorldScreen|-|SelectWorldScreen\(
+13|net.minecraft.world.level.storage.LevelSummary|-|getLevelName|getLevelId|getLastPlayed|class
