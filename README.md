@@ -8,7 +8,8 @@ A fast, clean Minecraft: Java Edition launcher and PvP client for Fabric.
   installed and kept up to date for you, and Java is started with smooth-FPS settings
 - **Profiles:** separate setups with their own mods and worlds; move your mods to a new Minecraft version in one click
 - **Mods from Modrinth:** browse and install mods, modpacks, resource packs and shaders
-- **Friends:** see what server friends are on, join them, send party invites and share profiles
+- **Friends and parties:** see what server friends are on and join them; party up so your friends stand next to you in the in-game lobby; share profiles
+- **In-game lobby:** OneClient-style main menu with your character (pick it up and throw it), your party, a server and world card, FPS and smooth Poppins text; matching pause menu and first-time setup
 - **Crash finder:** works out which mod is crashing the game, and fixes duplicate mods automatically
 - **Cloud sync:** your HUD layout and in-game settings follow you to any PC
 - Minecraft files always come from Mojang, and your Microsoft password and Minecraft token are never sent to PandaClient
