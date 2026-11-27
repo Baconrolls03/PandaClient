@@ -50,7 +50,7 @@ jobs:
         run: |
           mkdir -p build/mods
           # One jar per supported Minecraft version (see mod/versions/)
-          for mc in 1.21.11 1.21.10 1.21.9 1.21.8; do
+          for mc in 1.21.11 1.21.10 1.21.9 1.21.8 1.21.7 1.21.6; do
             rm -rf mod/build/libs
             gradle -p mod build -Pmc=$mc --no-daemon -q
             cp "$(ls mod/build/libs/pandaclient-*.jar | grep -v sources | head -1)" "build/mods/pandaclient-$mc.jar"
