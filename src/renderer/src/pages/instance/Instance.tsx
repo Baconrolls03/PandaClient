@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
-import { CalendarDays, Clock, Copy, FileArchive, FileText, Folder, FolderOpen, Globe, History, Image, Package, ScrollText, Settings2, Trash2 } from 'lucide-react'
+import { CalendarDays, Clock, Copy, FileArchive, FileText, Folder, FolderOpen, Globe, History, Image, Package, ScrollText, Search, Settings2, Trash2 } from 'lucide-react'
 import { api } from '@/lib/api'
 import { useStore, type InstanceTab } from '@/lib/store'
 import { ExportModal } from '@/modals/ExportModal'
+import { CrashFinderModal } from '@/modals/CrashFinderModal'
 import { playtime, timeAgo } from '@/lib/format'
 import { backgroundOf } from '@/lib/icons'
 import { applyIconChoice, choiceOf } from '@/lib/iconChoice'
@@ -40,6 +41,7 @@ function Stat({ icon, label, value }: { icon: React.ReactNode; label: string; va
 
 export function Instance({ id, tab = 'content' }: { id: string; tab?: InstanceTab }) {
   const { instances, navigate, attempt, toast, running } = useStore()
+  const [finding, setFinding] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [exporting, setExporting] = useState(false)
   const [editingIcon, setEditingIcon] = useState(false)
@@ -115,6 +117,10 @@ export function Instance({ id, tab = 'content' }: { id: string; tab?: InstanceTa
                 <Trash2 size={14} /> Delete
               </Button>
             </div>
+            <Button variant="ghost" size="sm" className="mt-2 w-full" onClick={() => setFinding(true)}>
+              <Search size={14} /> Find a broken mod
+            </Button>
+            {finding && <CrashFinderModal inst={inst} onClose={() => setFinding(false)} />}
           </div>
         </div>
         <div className="flex flex-col gap-3 rounded-2xl border border-border bg-surface p-5 shadow-soft">

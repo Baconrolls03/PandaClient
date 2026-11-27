@@ -41,6 +41,9 @@ function defaults(): Settings {
     reduceMotion: false,
     compactLibrary: false,
     showPlayTime: true,
+    onboarded: false,
+    showAdvanced: false,
+    cloudSync: true,
     sidebarRecents: true,
     homeSections: { popularModpacks: true, trendingMods: true, news: true }
   }

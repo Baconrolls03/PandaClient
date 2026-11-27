@@ -1,3 +1,6 @@
+/** Minecraft versions the PandaClient mod is built for, newest first. */
+export const PANDA_VERSIONS = ['1.21.11', '1.21.10', '1.21.9', '1.21.8']
+
 // Ready-made sets of mods for a new profile, on top of PandaClient and its built-in mods.
 export type BundleId = 'pvp' | 'performance' | 'survival' | 'recording' | 'none'
 

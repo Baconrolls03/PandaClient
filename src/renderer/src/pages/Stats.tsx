@@ -32,9 +32,8 @@ export function Stats() {
   const max = Math.max(1, ...s.week.map((d) => d.sec))
   const weekTotal = s.week.reduce((n, d) => n + d.sec, 0)
   return (
-    <div className="mx-auto max-w-3xl p-8">
-      <h1 className="text-2xl font-bold">Stats</h1>
-      <p className="mt-1 text-sm text-muted">How much you play, and your streak of days in a row.</p>
+    <div className="mx-auto max-w-6xl px-8 pb-8 pt-4">
+      <p className="text-sm text-muted">How much you play, and your streak of days in a row.</p>
 
       <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Tile

@@ -1,11 +1,11 @@
 // PandaClient's bundled mods: popular client-side mods installed in every supported instance and
 // switched on or off from the in-game PandaClient menu (Mods tab).
 import { existsSync } from 'node:fs'
-import { mkdir, readFile, writeFile } from 'node:fs/promises'
+import { mkdir, readFile, stat, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { nativeImage } from 'electron'
 import type { Instance } from '@shared/types'
-import { installMany, listContent, toggleContent } from './content'
+import { checkUpdates, installMany, listContent, toggleContent, updateContent } from './content'
 import { modIndex } from './crashDoctor'
 import { getSettings } from './settings'
 import { supportsPandaMod } from './pandaMod'
@@ -57,6 +57,23 @@ export async function ensureBundledMods(inst: Instance, log: (msg: string) => vo
   for (const b of BUNDLED) {
     const it = bySlug(b.slug)
     if (it && it.enabled === off.has(b.slug)) await toggleContent(inst.id, it.file, 'mod').catch(() => {})
+  }
+  // Keep them up to date (once a day, stable releases only, for this exact Minecraft version).
+  const stamp = join(inst.path, 'pandaclient', 'bundled-updated')
+  try {
+    const last = existsSync(stamp) ? (await stat(stamp)).mtimeMs : 0
+    if (Date.now() - last > 86_400_000) {
+      const slugs = new Set(BUNDLED.map((b) => b.slug))
+      const outdated = (await checkUpdates(inst.id)).filter((i) => i.type === 'mod' && i.update && slugs.has(i.project?.slug ?? ''))
+      if (outdated.length) {
+        log(`Updating ${outdated.length} PandaClient mod${outdated.length === 1 ? '' : 's'}`)
+        await updateContent(inst.id, outdated.map((i) => ({ file: i.file, type: i.type })))
+      }
+      await mkdir(join(inst.path, 'pandaclient'), { recursive: true })
+      await writeFile(stamp, new Date().toISOString())
+    }
+  } catch {
+    /* offline: try again next launch */
   }
   items = (await listContent(inst.id)).filter((i) => i.type === 'mod')
 

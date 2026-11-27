@@ -41,3 +41,5 @@ helper.register(new com.pandaclient.mod.cosmetics.AccessoryLayer(pandaclient$par
 # 1.7 animations: items were drawn straight into buffers.
 import net.minecraft.client.renderer.SubmitNodeCollector; => import net.minecraft.client.renderer.MultiBufferSource;
 SubmitNodeCollector collector => MultiBufferSource collector
+InputConstants.getKey(e) => InputConstants.getKey(e.key(), e.scancode())
+Keys.MENU.matches(e) => Keys.MENU.matches(e.key(), e.scancode())

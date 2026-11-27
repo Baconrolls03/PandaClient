@@ -14,6 +14,8 @@ import { Wardrobe } from '@/pages/Wardrobe'
 import { Friends } from '@/pages/Friends'
 import { Servers } from '@/pages/Servers'
 import { Stats } from '@/pages/Stats'
+import { PlayTabs } from '@/components/PlayTabs'
+import { FirstRun } from '@/components/FirstRun'
 import { Instance } from '@/pages/instance/Instance'
 import { CreateInstanceModal } from '@/modals/CreateInstanceModal'
 import { InstallModal } from '@/modals/InstallModal'
@@ -36,6 +38,7 @@ function Shell() {
         <Sidebar />
         <div className="flex min-w-0 flex-1 flex-col">
           <main key={key} className="min-h-0 flex-1 animate-pop overflow-y-auto">
+            {(route.name === 'home' || route.name === 'servers' || route.name === 'stats') && <PlayTabs active={route.name} />}
             {route.name === 'home' && <Home />}
             {route.name === 'library' && <Library />}
             {route.name === 'instance' && <Instance id={route.id} tab={route.tab} />}
@@ -55,6 +58,7 @@ function Shell() {
       {modal?.kind === 'import' && <ImportModal />}
       <IncomingShares />
       <CrashHelper />
+      <FirstRun />
       <TransferReportPopup />
       <InvitePopup />
       <Toasts />

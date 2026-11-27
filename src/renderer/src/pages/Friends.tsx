@@ -52,8 +52,8 @@ export function Friends() {
   const head = (uuid: string) => `https://mc-heads.net/avatar/${uuid}/40`
 
   return (
-    <div className="mx-auto max-w-3xl p-8">
-      <h1 className="text-2xl font-bold">Friends</h1>
+    <div className="mx-auto max-w-4xl p-8">
+      <h1 className="text-2xl font-bold tracking-tight">Friends</h1>
       <p className="mt-1 text-sm text-muted">Add friends who use PandaClient. See what server they're on and join them in one click.</p>
 
       <div className="mt-6 flex gap-2">

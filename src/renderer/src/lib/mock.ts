@@ -182,6 +182,9 @@ export function createMock(): PandaApi {
     reduceMotion: false,
     compactLibrary: false,
     showPlayTime: true,
+    onboarded: true,
+    showAdvanced: false,
+    cloudSync: true,
     sidebarRecents: true,
     homeSections: { popularModpacks: true, trendingMods: true, news: true }
   }

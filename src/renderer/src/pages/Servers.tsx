@@ -32,9 +32,8 @@ export function Servers() {
     toast(`Joining ${address} with ${selected.name}`, 'success')
   }
   return (
-    <div className="mx-auto max-w-4xl p-8">
-      <h1 className="text-2xl font-bold">Servers</h1>
-      <p className="mt-1 text-sm text-muted">Popular PvP servers. Join starts {selected ? <b>{selected.name}</b> : 'your profile'} and connects straight away.</p>
+    <div className="mx-auto max-w-6xl px-8 pb-8 pt-4">
+      <p className="text-sm text-muted">Popular PvP servers. Join starts {selected ? <b>{selected.name}</b> : 'your profile'} and connects straight away.</p>
       <div className="mt-6 grid gap-3 @container sm:grid-cols-2">
         {SERVERS.map((s) => {
           const st = status[s.address]

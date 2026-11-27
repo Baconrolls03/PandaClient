@@ -3,11 +3,12 @@ import { copyFile, mkdir, readdir, rm } from 'node:fs/promises'
 import { join } from 'node:path'
 import { app } from 'electron'
 import type { Instance } from '@shared/types'
+import { PANDA_VERSIONS } from '@shared/bundles'
 import { installProject, listContent } from './content'
 import { download, sha1File } from './http'
 
 /** Minecraft versions the PandaClient mod is built for (one jar per version: resources/mods/pandaclient-<mc>.jar). */
-export const PANDA_MOD_VERSIONS = ['1.21.11', '1.21.10', '1.21.9']
+export const PANDA_MOD_VERSIONS = PANDA_VERSIONS
 const JAR = 'pandaclient.jar'
 const FABRIC_API_ID = 'P7dR8mSH'
 

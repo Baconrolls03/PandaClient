@@ -54,6 +54,12 @@ export interface Settings {
   reduceMotion: boolean
   compactLibrary: boolean
   showPlayTime: boolean
+  /** First-run setup finished (or skipped). */
+  onboarded: boolean
+  /** Show Java, JVM arguments and launch hooks. */
+  showAdvanced: boolean
+  /** Keep PandaClient settings (HUD layout, mods on/off) in the cloud. */
+  cloudSync: boolean
   sidebarRecents: boolean
   homeSections: { popularModpacks: boolean; trendingMods: boolean; news: boolean }
 }

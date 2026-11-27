@@ -7,7 +7,7 @@ import { gb } from '@/lib/format'
 import { Button, Card, InstanceIcon, TextField, Toggle } from '@/components/ui'
 
 export function InstanceSettingsTab({ inst, onDelete, onEditIcon }: { inst: Instance; onDelete: () => void; onEditIcon: () => void }) {
-  const { settings, attempt } = useStore()
+  const { settings, attempt, update } = useStore()
   const [name, setName] = useState(inst.name)
   const [jvmArgs, setJvmArgs] = useState(inst.jvmArgs)
   const [info, setInfo] = useState<SystemInfo | null>(null)
@@ -70,6 +70,15 @@ export function InstanceSettingsTab({ inst, onDelete, onEditIcon }: { inst: Inst
         </div>
       </Card>
 
+      {!settings.showAdvanced && (
+        <p className="text-[13px] text-muted">
+          Java, JVM arguments and launch hooks are hidden.{' '}
+          <button className="font-medium text-blue hover:underline" onClick={() => update({ showAdvanced: true })}>
+            Show advanced settings
+          </button>
+        </p>
+      )}
+      {settings.showAdvanced && (
       <Card title="Java" description="Leave empty to use the global setting.">
         <div className="flex gap-2">
           <TextField value={inst.javaPath ?? ''} onChange={(v) => save({ javaPath: v || null })} placeholder={settings.javaPath || 'Automatic'} mono className="flex-1" />
@@ -93,6 +102,8 @@ export function InstanceSettingsTab({ inst, onDelete, onEditIcon }: { inst: Inst
         )}
       </Card>
 
+      )}
+
       <Card
         title="Game window"
         description="Override the default window size for this profile."
@@ -114,6 +125,7 @@ export function InstanceSettingsTab({ inst, onDelete, onEditIcon }: { inst: Inst
         })()}
       </Card>
 
+      {settings.showAdvanced && (
       <Card
         title="Launch hooks"
         description="Override the default commands for this profile."
@@ -140,6 +152,8 @@ export function InstanceSettingsTab({ inst, onDelete, onEditIcon }: { inst: Inst
           ))}
         </div>
       </Card>
+
+      )}
 
       <Card title="Danger zone">
         <div className="flex items-center justify-between gap-4">

@@ -36,7 +36,7 @@ const NAV: { group: string; items: { id: SettingsSection; label: string; icon: L
   {
     group: 'Profile defaults',
     items: [
-      { id: 'java', label: 'Java and memory', icon: Coffee },
+      { id: 'java', label: 'Memory', icon: Coffee },
       { id: 'window', label: 'Window', icon: AppWindow },
       { id: 'hooks', label: 'Launch hooks', icon: Code2 }
     ]
@@ -219,6 +219,13 @@ function Behavior({ s, update }: { s: Settings; update: (p: Partial<Settings>) =
           <Toggle label={x.label} checked={s.homeSections[x.key]} onChange={(v) => update({ homeSections: { ...s.homeSections, [x.key]: v } })} />
         </Row>
       ))}
+      <Heading>PandaClient</Heading>
+      <Row title="Sync my PandaClient settings" text="Your HUD layout, mods on/off and in-game settings follow you to any PC you sign in on.">
+        <Toggle label="Cloud sync" checked={s.cloudSync} onChange={(v) => update({ cloudSync: v })} />
+      </Row>
+      <Row title="Show advanced settings" text="Java, JVM arguments and launch hooks. Most people never need these.">
+        <Toggle label="Advanced" checked={s.showAdvanced} onChange={(v) => update({ showAdvanced: v })} />
+      </Row>
       <Row title="Show snapshots" text="List snapshot versions when creating profiles.">
         <Toggle label="Snapshots" checked={s.showSnapshots} onChange={(v) => update({ showSnapshots: v })} />
       </Row>
@@ -281,6 +288,15 @@ function Java({ s, update }: { s: Settings; update: (p: Partial<Settings>) => vo
       <Row title="Maximum RAM" text={info ? `${gb(info.totalMemMb)} installed. 4 GB suits most Fabric setups.` : undefined}>
         <Slider min={1024} max={maxRam} step={512} value={Math.min(s.ramMb, maxRam)} onChange={(v) => update({ ramMb: v })} format={gb} />
       </Row>
+      {!s.showAdvanced && (
+        <p className="mt-6 text-[13px] text-muted">
+          PandaClient picks the right Java for you.{' '}
+          <button className="font-medium text-blue hover:underline" onClick={() => update({ showAdvanced: true })}>
+            Show advanced settings
+          </button>
+        </p>
+      )}
+      {s.showAdvanced && (<>
       <Heading sub="Leave empty and PandaClient downloads the exact Java each Minecraft version needs from Mojang.">Java</Heading>
       <div className="flex gap-2">
         <TextField value={s.javaPath} onChange={(v) => update({ javaPath: v })} placeholder="Automatic (recommended)" mono className="flex-1" />
@@ -316,6 +332,7 @@ function Java({ s, update }: { s: Settings; update: (p: Partial<Settings>) => vo
       )}
       <Heading sub="Added to every launch. Example: -XX:+UseZGC">Extra JVM arguments</Heading>
       <TextField value={s.jvmArgs} onChange={(v) => update({ jvmArgs: v })} placeholder="None" mono className="w-full" />
+      </>)}
     </>
   )
 }
@@ -480,7 +497,7 @@ export function SettingsModal({ section: initial = 'appearance' }: { section?: S
             {NAV.map((g) => (
               <div key={g.group} className="mt-3">
                 <div className="px-2 pb-1 text-[11px] font-semibold uppercase tracking-wider text-muted">{g.group}</div>
-                {g.items.map(({ id, label, icon: Icon }) => (
+                {g.items.filter((i) => i.id !== 'hooks' || settings.showAdvanced).map(({ id, label, icon: Icon }) => (
                   <button
                     key={id}
                     onClick={() => setSection(id)}
