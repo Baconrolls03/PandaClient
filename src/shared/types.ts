@@ -66,7 +66,9 @@ export interface Settings {
   homeSections: { popularModpacks: boolean; trendingMods: boolean; news: boolean }
 }
 
-export const DEFAULT_ACCENT = '#6EE08F'
+export const DEFAULT_ACCENT = '#4C6FFF'
+/** The accent before 0.15 (switched over to the new default on load). */
+export const OLD_DEFAULT_ACCENT = '#6EE08F'
 
 export interface SystemInfo {
   platform: 'win32' | 'darwin' | 'linux' | 'web' | (string & {})

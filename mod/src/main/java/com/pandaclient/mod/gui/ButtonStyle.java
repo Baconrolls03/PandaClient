@@ -12,7 +12,9 @@ public final class ButtonStyle {
     public static void draw(Draw d, int x, int y, int w, int h, Component message, boolean active, boolean hover, int kind) {
         if (kind == 1 && active) {
             d.round(x, y, x + w, y + h, hover ? Draw.lerpColor(Theme.accent(), 0xFFFFFFFF, 0.15f) : Theme.accent());
-            d.centered(Widgets.ellipsize(message.getString(), w - 8), x + w / 2, y + (h - 8) / 2, 0xFF0B0F16, false);
+            int ac = Theme.accent();
+            float lum = (0.299f * ((ac >> 16) & 255) + 0.587f * ((ac >> 8) & 255) + 0.114f * (ac & 255)) / 255f;
+            d.centered(Widgets.ellipsize(message.getString(), w - 8), x + w / 2, y + (h - 8) / 2, lum > 0.6f ? 0xFF0B0F16 : 0xFFFFFFFF, false);
             return;
         }
         int bg = !active ? 0x99121720 : hover ? 0xEE223044 : 0xD9161D29;

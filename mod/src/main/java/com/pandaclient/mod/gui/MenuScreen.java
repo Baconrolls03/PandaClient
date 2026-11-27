@@ -135,10 +135,16 @@ public final class MenuScreen extends Screen {
         }
     }
 
+    private static final net.minecraft.resources.Identifier PANDA_LOGO = net.minecraft.resources.Identifier.fromNamespaceAndPath("pandaclient", "textures/gui/panda_logo.png");
+
     private void drawHeader(Draw d, int mx, int my) {
         d.rect(px, py + HEADER - 1, px + pw, py + HEADER, Theme.BORDER);
-        int x = d.text("PANDA", px + 10, py + 9, Theme.accent(), true);
-        d.text("CLIENT", x + 1, py + 9, Theme.TEXT, true);
+        d.push();
+        d.translate(px + 8, py + 5);
+        d.scale(14f / 256f);
+        d.g.blit(net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED, PANDA_LOGO, 0, 0, 0f, 0f, 256, 256, 256, 256);
+        d.pop();
+        d.text("PANDACLIENT", px + 26, py + 9, Theme.TEXT, true);
 
         // search box
         int sw = Math.min(130, pw - 200), sx = px + pw - sw - 6, sy = py + 5;
@@ -182,38 +188,48 @@ public final class MenuScreen extends Screen {
     private int cols() { return contentW() >= 280 ? 2 : 1; }
     private static final int CARD_H = 26, GAP = 4;
 
+    private static final int TILE_H = 58;
+    private int tileCols() { return Math.max(2, (contentW() - 16) / 84); }
+
+    /** OneConfig-style mod cards: an item picture, the name on a bar that turns blue when the mod is on. */
     private void drawGrid(Draw d, int mx, int my) {
         if (category.equals("Mods")) { drawBundled(d, mx, my); return; }
         List<Module> mods = visibleModules();
-        int cols = cols(), cx = contentX() + 8, cw = (contentW() - 16 - GAP * (cols - 1)) / cols;
+        int cols = tileCols(), cx = contentX() + 8, cw = (contentW() - 16 - GAP * (cols - 1)) / cols;
         int y0 = contentY() + 8 - (int) Math.round(scroll);
         Module hovered = null;
         boolean inContent = Widgets.in(mx, my, contentX(), contentY(), contentW(), contentH());
         for (int i = 0; i < mods.size(); i++) {
             Module m = mods.get(i);
-            int x = cx + (i % cols) * (cw + GAP), y = y0 + (i / cols) * (CARD_H + GAP);
-            if (y > py + ph || y + CARD_H < contentY()) continue;
-            boolean hover = inContent && Widgets.in(mx, my, x, y, cw, CARD_H);
+            int x = cx + (i % cols) * (cw + GAP), y = y0 + (i / cols) * (TILE_H + GAP);
+            if (y > py + ph || y + TILE_H < contentY()) continue;
+            boolean hover = inContent && Widgets.in(mx, my, x, y, cw, TILE_H);
             float on = anim(m, m.enabled());
-            d.round(x, y, x + cw, y + CARD_H, hover ? Theme.RAISED : Theme.SURFACE);
-            if (on > 0) d.rect(x, y + 6, x + 2, y + CARD_H - 6, Draw.alpha(Theme.accent(), (int) (255 * on)));
-            d.text(Widgets.ellipsize(m.name, cw - 58), x + 8, y + 9, m.enabled() ? Theme.TEXT : Theme.MUTED, false);
-            Widgets.toggle(d, x + cw - 26, y + 8, m.enabled(), on);
+            d.round(x, y, x + cw, y + TILE_H, hover ? Theme.RAISED : Theme.SURFACE);
+            // picture
+            d.push();
+            d.translate(x + cw / 2f - 12, y + 9);
+            d.scale(1.5f);
+            d.g.renderItem(ModuleIcons.of(m.id), 0, 0);
+            d.pop();
+            // name bar
+            int by = y + TILE_H - 16;
+            int barCol = Draw.lerpColor(hover ? 0xFF2A3447 : 0xFF222B3A, Theme.accent(), on);
+            d.round(x + 4, by, x + cw - 4, by + 12, barCol);
+            d.centered(Widgets.ellipsize(m.name, cw - 12), x + cw / 2, by + 2, on > 0.5f ? 0xFFFFFFFF : Theme.MUTED, false);
             if (!m.settings.isEmpty()) {
-                boolean gh = Widgets.in(mx, my, x + cw - 44, y + 6, 14, 14);
-                d.round(x + cw - 44, y + 6, x + cw - 30, y + 20, gh ? Theme.HOVER : Theme.RAISED);
-                for (int k = 0; k < 3; k++) d.rect(x + cw - 41 + k * 3, y + 12, x + cw - 39 + k * 3, y + 14, Theme.TEXT);
+                boolean gh = Widgets.in(mx, my, x + cw - 15, y + 3, 12, 9);
+                for (int k = 0; k < 3; k++) d.rect(x + cw - 13 + k * 3, y + 7, x + cw - 11 + k * 3, y + 9, gh ? Theme.TEXT : Theme.MUTED);
             }
             if (hover) hovered = m;
         }
         if (hovered != null) {
-            // description of the hovered mod, in a small bar at the bottom of the panel
-            String desc = Widgets.ellipsize(hovered.description, pw - SIDEBAR - 16);
+            String desc = Widgets.ellipsize(hovered.description + "   (right-click: settings)", pw - SIDEBAR - 16);
             d.rect(contentX(), py + ph - 16, px + pw, py + ph, 0xF00F141C);
             d.text(desc, contentX() + 8, py + ph - 12, Theme.MUTED, false);
         }
         if (mods.isEmpty()) d.centered("No mods match \"" + search + "\"", contentX() + contentW() / 2, contentY() + 40, Theme.MUTED, false);
-        contentHeight = ((mods.size() + cols - 1) / cols) * (CARD_H + GAP) + 10;
+        contentHeight = ((mods.size() + cols - 1) / cols) * (TILE_H + GAP) + 10;
     }
 
     // ------------------------------------------------------------------ bundled mods (Sodium, Sounds...)
@@ -465,13 +481,13 @@ public final class MenuScreen extends Screen {
     private boolean clickGrid(double mx, double my, int button) {
         if (category.equals("Mods")) return clickBundled(mx, my);
         List<Module> mods = visibleModules();
-        int cols = cols(), cx = contentX() + 8, cw = (contentW() - 16 - GAP * (cols - 1)) / cols;
+        int cols = tileCols(), cx = contentX() + 8, cw = (contentW() - 16 - GAP * (cols - 1)) / cols;
         int y0 = contentY() + 8 - (int) Math.round(scroll);
         for (int i = 0; i < mods.size(); i++) {
             Module m = mods.get(i);
-            int x = cx + (i % cols) * (cw + GAP), y = y0 + (i / cols) * (CARD_H + GAP);
-            if (!Widgets.in(mx, my, x, y, cw, CARD_H)) continue;
-            boolean gear = !m.settings.isEmpty() && Widgets.in(mx, my, x + cw - 44, y + 6, 14, 14);
+            int x = cx + (i % cols) * (cw + GAP), y = y0 + (i / cols) * (TILE_H + GAP);
+            if (!Widgets.in(mx, my, x, y, cw, TILE_H)) continue;
+            boolean gear = !m.settings.isEmpty() && Widgets.in(mx, my, x + cw - 15, y + 3, 12, 9);
             if (gear || button == 1) openSettings(m);
             else { m.toggle(); Config.markDirty(); }
             return true;

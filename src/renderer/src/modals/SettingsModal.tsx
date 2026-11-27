@@ -494,10 +494,11 @@ export function SettingsModal({ section: initial = 'appearance' }: { section?: S
   }[section]
 
   return (
-    <div className="fixed inset-0 z-50 grid place-items-center bg-black/60 p-6 backdrop-blur-sm" onMouseDown={(e) => e.target === e.currentTarget && closeModal()}>
-      <div className="flex h-[min(680px,88vh)] w-full max-w-5xl animate-pop overflow-hidden rounded-2xl border border-border bg-surface shadow-lift">
-        <nav className="flex w-60 shrink-0 flex-col border-r border-border bg-bg/40">
-          <h2 className="px-5 pb-2 pt-5 text-lg font-bold">Settings</h2>
+    <div className="fixed inset-x-0 bottom-0 top-14 z-40 flex bg-bg">
+      <div className="mx-auto flex h-full w-full max-w-6xl animate-pop overflow-hidden">
+        <nav className="flex w-64 shrink-0 flex-col border-r border-border/60">
+          <button onClick={closeModal} className="flex items-center gap-1.5 px-5 pb-1 pt-5 text-xs text-muted hover:text-text">← Back</button>
+          <h2 className="px-5 pb-2 text-2xl font-bold tracking-tight">Settings</h2>
           <div className="min-h-0 flex-1 overflow-y-auto px-3 pb-3">
             {NAV.map((g) => (
               <div key={g.group} className="mt-3">

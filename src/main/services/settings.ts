@@ -2,7 +2,7 @@ import { app } from 'electron'
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { homedir, totalmem } from 'node:os'
 import { join } from 'node:path'
-import { DEFAULT_ACCENT, type Settings } from '@shared/types'
+import { DEFAULT_ACCENT, OLD_DEFAULT_ACCENT, type Settings } from '@shared/types'
 
 const file = () => join(app.getPath('userData'), 'settings.json')
 
@@ -57,6 +57,8 @@ export function getSettings(): Settings {
   let stored: Partial<Settings> = {}
   try {
     if (existsSync(file())) stored = JSON.parse(readFileSync(file(), 'utf8'))
+    // Players who never picked an accent move to the new default (blue).
+    if (typeof stored.accent === 'string' && stored.accent.toUpperCase() === OLD_DEFAULT_ACCENT) delete stored.accent
   } catch {
     // Corrupt file: fall back to defaults; it gets rewritten on next save.
   }

@@ -4,6 +4,8 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.screens.inventory.InventoryScreen;
+import net.minecraft.client.renderer.RenderPipelines;
+import net.minecraft.resources.Identifier;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -19,6 +21,7 @@ public final class PauseLayout {
 
     /** The "Back to Game" button (drawn in the accent colour) and the leave button (drawn in red). */
     public static AbstractWidget primary, danger;
+    private static final Identifier PANDA = Identifier.fromNamespaceAndPath("pandaclient", "textures/gui/panda_logo.png");
     private static int colX, colW, headerY;
 
     public static void apply(List<AbstractWidget> buttons, AbstractWidget pandaButton, int w, int h) {
@@ -48,6 +51,16 @@ public final class PauseLayout {
     public static void render(GuiGraphics g, int w, int h, int mx, int my) {
         Minecraft mc = Minecraft.getInstance();
         Draw d = new Draw(g);
+        // Top bar: panda logo, PANDACLIENT, your name.
+        d.rect(0, 0, w, 22, 0x8C070A12);
+        g.pose().pushMatrix();
+        g.pose().translate(7, 4);
+        g.pose().scale(14f / 256f, 14f / 256f);
+        g.blit(RenderPipelines.GUI_TEXTURED, PANDA, 0, 0, 0f, 0f, 256, 256, 256, 256);
+        g.pose().popMatrix();
+        d.text("PANDACLIENT", 25, 7, 0xFFFFFFFF, false);
+        String me = mc.getUser() != null ? mc.getUser().getName() : "";
+        d.text(me, w - Draw.textWidth(me) - 8, 7, 0xFFE3E9F1, false);
         boolean single = mc.getSingleplayerServer() != null;
         String place = single ? mc.getSingleplayerServer().getWorldData().getLevelName()
                 : mc.getCurrentServer() != null ? mc.getCurrentServer().name : "Multiplayer";

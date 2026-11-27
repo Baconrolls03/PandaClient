@@ -37,7 +37,7 @@ public final class PandaTitleScreen extends Screen {
     private void placePlayer(Draw d) {
         if (!card() || !Modules.TITLE_SCREEN.lobbyPlayer.on() || t() < 0.4f) return;
         int ph = Math.min(height - 90, 180), pw = Math.round(ph * 0.55f);
-        int px = Math.round(width * 0.56f) - pw / 2, py = height / 2 - ph / 2 + 8;
+        int px = width / 2 - pw / 2, py = height / 2 - ph / 2 + 12;
         if (player == null) {
             player = LobbyPlayer.create(minecraft, pw, ph);
             if (player == null) return;
@@ -141,6 +141,7 @@ public final class PandaTitleScreen extends Screen {
         float in = Math.min(1f, Math.max(0f, (t - 0.2f) / 0.6f));
         float ease = 1 - (1 - in) * (1 - in) * (1 - in);
 
+        if (!card()) {
         // logo, floating gently
         int lw = logoW(), lh = logoH();
         float ly = top() - lh - 14 + (float) Math.sin(t * 1.2f) * 2.5f - (1 - ease) * 12;
@@ -171,6 +172,8 @@ public final class PandaTitleScreen extends Screen {
             d.centered(LABELS[i], x0 + w / 2, y0 + 6, tc, true);
         }
 
+        }
+        if (card()) drawTopBar(d, mx, my, ease);
         placePlayer(d);
         if (card()) drawCard(d, mx, my, ease);
 
@@ -180,6 +183,54 @@ public final class PandaTitleScreen extends Screen {
         d.text("Minecraft " + FabricLoader.getInstance().getModContainer("minecraft").map(c -> c.getMetadata().getVersion().getFriendlyString()).orElse("") + "  ·  " + mods + " mods", 6, height - 12, Draw.alpha(0xFFFFFFFF, fa), true);
         String who = minecraft.getUser() != null ? "Signed in as " + minecraft.getUser().getName() : "PandaClient";
         d.text(who, width - Draw.textWidth(who) - 6, height - 12, Draw.alpha(0xFFFFFFFF, fa), true);
+    }
+
+    // ---------------------------------------------------------------- top bar (OneClient style)
+
+    private static final Identifier PANDA = Identifier.fromNamespaceAndPath("pandaclient", "textures/gui/panda_logo.png");
+    private static final String[] TABS = {"Play", "Mods", "Cosmetics", "Options", "Quit"};
+
+    private int tabX(int i) {
+        int total = 0;
+        for (String t : TABS) total += Draw.textWidth(t) + 16;
+        int x = width / 2 - total / 2;
+        for (int k = 0; k < i; k++) x += Draw.textWidth(TABS[k]) + 16;
+        return x;
+    }
+
+    private void drawTopBar(Draw d, int mx, int my, float ease) {
+        int a = (int) (255 * ease);
+        d.rect(0, 0, width, 22, Draw.alpha(0xFF070A12, (int) (140 * ease)));
+        d.g.pose().pushMatrix();
+        d.g.pose().translate(7, 4);
+        d.g.pose().scale(14f / 256f, 14f / 256f);
+        d.g.blit(RenderPipelines.GUI_TEXTURED, PANDA, 0, 0, 0f, 0f, 256, 256, 256, 256);
+        d.g.pose().popMatrix();
+        d.text("PANDACLIENT", 25, 7, Draw.alpha(0xFFFFFFFF, a), false);
+        for (int i = 0; i < TABS.length; i++) {
+            int x = tabX(i), w = Draw.textWidth(TABS[i]) + 16;
+            boolean hov = Widgets.in(mx, my, x, 2, w, 18), on = i == 0;
+            d.centered(TABS[i], x + w / 2, 7, Draw.alpha(on || hov ? 0xFFFFFFFF : 0xFF9AA4B2, a), false);
+            if (on) d.rect(x + 6, 19, x + w - 6, 20, Draw.alpha(0xFF4C6FFF, a));
+        }
+        String who = minecraft.getUser() != null ? minecraft.getUser().getName() : "";
+        d.text(who, width - Draw.textWidth(who) - 8, 7, Draw.alpha(0xFFE3E9F1, a), false);
+    }
+
+    private boolean clickTopBar(double mx, double my) {
+        if (my > 21) return false;
+        for (int i = 0; i < TABS.length; i++) {
+            if (!Widgets.in(mx, my, tabX(i), 2, Draw.textWidth(TABS[i]) + 16, 18)) continue;
+            switch (i) {
+                case 1 -> minecraft.setScreen(new MenuScreen(this));
+                case 2 -> minecraft.setScreen(MenuScreen.openAt(this, Modules.COSMETICS));
+                case 3 -> minecraft.setScreen(new OptionsScreen(this, minecraft.options));
+                case 4 -> minecraft.stop();
+                default -> {}
+            }
+            return true;
+        }
+        return false;
     }
 
     // ---------------------------------------------------------------- server card (bottom right)
@@ -260,7 +311,8 @@ public final class PandaTitleScreen extends Screen {
 
     @Override
     public boolean mouseClicked(MouseButtonEvent e, boolean doubleClick) {
-        if (e.button() == 0 && t() >= 0.6f && card() && clickCard(e.x(), e.y())) return true;
+        if (e.button() == 0 && t() >= 0.6f && card() && (clickTopBar(e.x(), e.y()) || clickCard(e.x(), e.y()))) return true;
+        if (card()) return super.mouseClicked(e, doubleClick);
         if (e.button() != 0 || t() < 0.6f) return super.mouseClicked(e, doubleClick);
         for (int i = 0; i < LABELS.length; i++) {
             int[] b = box(i);

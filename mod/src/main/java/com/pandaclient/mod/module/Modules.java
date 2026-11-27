@@ -11,7 +11,7 @@ import java.util.List;
 public final class Modules {
     private Modules() {}
 
-    public static final Setting.Choice THEME = new Setting.Choice("theme", "Menu accent", "Mint", "Mint", "Blue", "Purple", "Pink", "Orange", "Red");
+    public static final Setting.Choice THEME = new Setting.Choice("theme", "Menu accent", "Blue", "Blue", "Mint", "Purple", "Pink", "Orange", "Red");
 
     public static final FpsHud FPS = new FpsHud();
     public static final CpsHud CPS = new CpsHud();
@@ -81,7 +81,7 @@ public final class Modules {
 
     public static int accent() {
         return switch (THEME.get()) {
-            case "Blue" -> 0xFF4F8CFF;
+            case "Blue" -> 0xFF4C6FFF;
             case "Purple" -> 0xFFA77BFF;
             case "Pink" -> 0xFFFF7BC5;
             case "Orange" -> 0xFFFFA24F;
