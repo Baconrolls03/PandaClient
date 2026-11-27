@@ -119,6 +119,11 @@ public final class LobbyPanorama {
                 if (cube == null) cube = new CubeMap(ID);
                 loadedStamp = stamp;
             }
+            // over a world (the lobby opened in game), clear its depth so the panorama isn't hidden behind it
+            if (mc.level != null) {
+                var depth = mc.getMainRenderTarget().getDepthTexture();
+                if (depth != null) com.mojang.blaze3d.systems.RenderSystem.getDevice().createCommandEncoder().clearDepthTexture(depth, 1.0);
+            }
             cube.render(mc, pitch, yaw);
             return true;
         } catch (Throwable t) {

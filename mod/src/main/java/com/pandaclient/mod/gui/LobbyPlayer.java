@@ -69,7 +69,7 @@ public final class LobbyPlayer {
     /** How a lobby character stands this frame. swing: radians (feet to the right is positive). */
     public record Pose(float swing, float held, float walk, float time, float headYaw, float headPitch) {}
     /** Sign that turns {@link Pose#swing} into the model's roll. */
-    public static float swingSign = 1f;
+    public static float swingSign = -1f;
 
     private static final java.util.Map<String, net.minecraft.client.model.player.PlayerModel> MODELS = new java.util.HashMap<>();
 
