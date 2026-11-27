@@ -28,6 +28,8 @@ export const BUNDLED: { slug: string; category: 'Performance' | 'Visuals' | 'Uti
   { slug: 'language-reload', category: 'Utility' },
   { slug: 'cubes-without-borders', category: 'Utility' },
   { slug: 'bobby', category: 'Utility' },
+  // Mod Menu: lets the PandaClient menu open every mod's own settings.
+  { slug: 'modmenu', category: 'Utility' },
   // Essential: host your singleplayer world for friends, plus screenshots and friends in game.
   { slug: 'essential', category: 'Utility' }
 ]

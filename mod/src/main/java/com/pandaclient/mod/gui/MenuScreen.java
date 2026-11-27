@@ -262,7 +262,25 @@ public final class MenuScreen extends Screen {
             d.pop();
             Widgets.toggle(d, x + cw - 26, y + 8, on, a);
         }
-        contentHeight = ((mods.size() + cols - 1) / cols) * (CARD_H + GAP) + 30;
+        // Every installed mod's own settings, in one place.
+        var cfgs = com.pandaclient.mod.util.ModConfigs.all();
+        int top = y0 + ((mods.size() + cols - 1) / cols) * (CARD_H + GAP) + (mods.isEmpty() ? 50 : 10);
+        if (!cfgs.isEmpty()) {
+            d.text("MOD SETTINGS", cx, top, Theme.MUTED, false);
+            top += 14;
+            for (int i = 0; i < cfgs.size(); i++) {
+                var e = cfgs.get(i);
+                int x = cx + (i % cols) * (cw + GAP), y = top + (i / cols) * (CARD_H + GAP);
+                if (y > py + ph || y + CARD_H < contentY()) continue;
+                boolean hov = inContent && Widgets.in(mx, my, x, y, cw, CARD_H);
+                d.round(x, y, x + cw, y + CARD_H, hov ? Theme.RAISED : Theme.SURFACE);
+                d.round(x + 6, y + 5, x + 22, y + 21, Theme.RAISED);
+                d.centered(e.name().substring(0, 1).toUpperCase(Locale.ROOT), x + 14, y + 9, Theme.accent(), false);
+                d.text(Widgets.ellipsize(e.name(), cw - 70), x + 27, y + 9, Theme.TEXT, false);
+                d.text("Settings >", x + cw - Draw.textWidth("Settings >") - 6, y + 9, hov ? Theme.accent() : Theme.MUTED, false);
+            }
+        }
+        contentHeight = top - y0 + ((cfgs.size() + cols - 1) / cols) * (CARD_H + GAP) + 30;
     }
 
     private boolean clickBundled(double mx, double my) {
@@ -272,6 +290,16 @@ public final class MenuScreen extends Screen {
         for (int i = 0; i < mods.size(); i++) {
             int x = cx + (i % cols) * (cw + GAP), y = y0 + (i / cols) * (CARD_H + GAP);
             if (Widgets.in(mx, my, x, y, cw, CARD_H)) { com.pandaclient.mod.util.BundledMods.toggle(mods.get(i)); return true; }
+        }
+        var cfgs = com.pandaclient.mod.util.ModConfigs.all();
+        int top = y0 + ((mods.size() + cols - 1) / cols) * (CARD_H + GAP) + (mods.isEmpty() ? 50 : 10) + 14;
+        for (int i = 0; i < cfgs.size(); i++) {
+            int x = cx + (i % cols) * (cw + GAP), y = top + (i / cols) * (CARD_H + GAP);
+            if (Widgets.in(mx, my, x, y, cw, CARD_H)) {
+                Screen next = cfgs.get(i).open().apply(this);
+                if (next != null) minecraft.setScreen(next);
+                return true;
+            }
         }
         return false;
     }
