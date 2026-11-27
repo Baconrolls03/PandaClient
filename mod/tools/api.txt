@@ -188,3 +188,11 @@
 16|net.minecraft.client.renderer.GameRenderer|p|anoram|renderLevel|BlockOutline|getPanorama
 16|net.minecraft.client.gui.screens.inventory.InventoryScreen|p|renderEntityInInventory
 16|net.minecraft.client.gui.GuiGraphics|p|submitEntity|submitSkin|PictureInPicture|blurBeforeThisStratum|nextStratum
+16|net.minecraft.client.gui.components.PlayerSkinWidget|c|renderWidget|PlayerSkinWidget\(
+16|net.minecraft.client.gui.GuiGraphics|p|submitSkinRenderState|submitEntityRenderState
+16|net.minecraft.client.model.player.PlayerModel|p|.
+16|net.minecraft.client.model.HumanoidModel|p|head|hat|body|rightArm|leftArm|rightLeg|leftLeg
+16|net.minecraft.client.model.Model|p|root|renderToBuffer|resetPose
+16|net.minecraft.client.model.geom.ModelPart|p|xRot|yRot|zRot|resetPose|x;|y;|z;|xScale|yScale
+16|net.minecraft.world.entity.player.PlayerSkin|p|.
+16|net.minecraft.core.ClientAsset$Texture|p|.
