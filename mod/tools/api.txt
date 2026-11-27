@@ -161,3 +161,8 @@
 13|net.minecraft.client.renderer.texture.TextureManager|-|register|release
 13|net.minecraft.client.gui.screens.worldselection.SelectWorldScreen|-|SelectWorldScreen\(
 13|net.minecraft.world.level.storage.LevelSummary|-|getLevelName|getLevelId|getLastPlayed|class
+14|net.minecraft.network.chat.Style|-|withFont|getFont|EMPTY
+14|FIND:FontDescription|-|.
+14|net.minecraft.network.chat.FontDescription|-|.
+14|net.minecraft.network.chat.FontDescription$Resource|-|.
+14|net.minecraft.client.gui.Font|-|width\(|lineHeight
