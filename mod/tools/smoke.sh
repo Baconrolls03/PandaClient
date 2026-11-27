@@ -22,10 +22,12 @@ shoot() { # wait for "[PandaClient CI] shot NAME" lines in $1 and screenshot eac
 wait_exit() { for i in $(seq 1 300); do grep -qE "^exit [0-9]+" "$1" && return; sleep 1; done; }
 
 echo "=== 1. title screen"
-( gradle -p mod runClient --no-daemon > game.log 2>&1; echo "exit $?" >> game.log ) &
+MC_ARG=${SMOKE_MC:+-Pmc=$SMOKE_MC}
+( gradle -p mod runClient $MC_ARG --no-daemon > game.log 2>&1; echo "exit $?" >> game.log ) &
 shoot game.log menu settings hud
 wait_exit game.log
 
+[ -n "${SMOKE_TITLE_ONLY:-}" ] && exit 0
 echo "=== 2. in a world"
 printf 'eula=true\n' > $RUN/eula.txt
 printf 'online-mode=false\nlevel-type=minecraft\\:flat\nspawn-protection=0\nview-distance=4\nsimulation-distance=4\ngamemode=survival\ndifficulty=peaceful\nspawn-monsters=false\nmotd=PandaClient test\n' > $RUN/server.properties

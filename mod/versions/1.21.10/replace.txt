@@ -1,2 +1,6 @@
 # 1.21.11 renamed ResourceLocation to Identifier.
 Identifier => ResourceLocation
+# 1.21.11 moved these classes.
+net.minecraft.client.model.player.PlayerModel => net.minecraft.client.model.PlayerModel
+import net.minecraft.client.renderer.rendertype.RenderTypes; => import net.minecraft.client.renderer.RenderType;
+RenderTypes.entitySolid => RenderType.entitySolid

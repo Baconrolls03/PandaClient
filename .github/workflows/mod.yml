@@ -82,6 +82,16 @@ jobs:
         run: |
           grep -E "error:|What went wrong" -A6 build.log | grep -v "^--$" | head -150
           exit 1
+      - name: Start the game on ${{ matrix.mc }} (menus + every hook checked)
+        timeout-minutes: 12
+        env:
+          SMOKE_MC: ${{ matrix.mc }}
+          SMOKE_TITLE_ONLY: '1'
+        run: |
+          sudo apt-get install -y -qq xvfb imagemagick mesa-utils libgl1-mesa-dri > /dev/null
+          bash mod/tools/smoke.sh
+          grep -E "PandaClient|Mixin apply|mixin audit|Exception|Crash|exit |Caused by" game.log | grep -vE "DEBUG|Force-loading|flite|Narrator|OpenAL|Realms|SignedJWT" | head -40 || true
+          grep -q "\\[PandaClient CI\\] mixins OK" game.log
       - uses: actions/upload-artifact@v4
         with:
           name: pandaclient-mod-${{ matrix.mc }}
