@@ -54,3 +54,35 @@ jobs:
         with:
           name: pandaclient-mod
           path: mod/build/libs/pandaclient-*.jar
+
+  # The same mod built for older Minecraft versions (see mod/versions/).
+  other-versions:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        mc: ['1.21.10', '1.21.9']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 25
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: current
+      - name: Build for ${{ matrix.mc }}
+        id: build
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          gradle -p mod build -Pmc=${{ matrix.mc }} --no-daemon 2>&1 | tee build.log
+      - name: Errors
+        if: steps.build.outcome == 'failure'
+        run: |
+          grep -E "error:|What went wrong" -A6 build.log | grep -v "^--$" | head -150
+          exit 1
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pandaclient-mod-${{ matrix.mc }}
+          path: mod/build/libs/pandaclient-*.jar

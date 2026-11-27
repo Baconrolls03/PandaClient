@@ -11,23 +11,77 @@ buildscript {
 }
 apply plugin: 'fabric-loom'
 
-version = project.mod_version
+// ── Multi-version builds ────────────────────────────────────────────────
+// `gradle build -Pmc=1.21.10` builds the mod for another Minecraft version from the same source:
+// versions/<mc>/version.properties sets the Minecraft / Fabric API versions, versions/<mc>/replace.txt
+// lists text replacements for names that changed ("old => new" per line), and files under
+// versions/<mc>/java replace whole source files.
+def mc = (findProperty('mc') ?: project.minecraft_version).toString()
+def vdir = file("versions/$mc")
+def vprops = new Properties()
+if (file("$vdir/version.properties").exists()) file("$vdir/version.properties").withInputStream { vprops.load(it) }
+ext.mcVersion = mc
+ext.fabricApi = vprops.getProperty('fabric_version', project.fabric_version)
+def isMain = mc == project.minecraft_version
+
+def genDir = layout.buildDirectory.dir("generated/src-$mc").get().asFile
+tasks.register('prepareVersionSources') {
+    inputs.dir 'src/main/java'
+    if (vdir.exists()) inputs.dir vdir
+    outputs.dir genDir
+    onlyIf { !isMain }
+    doLast {
+        def rules = []
+        def rf = file("$vdir/replace.txt")
+        if (rf.exists()) rf.eachLine { line ->
+            if (line.trim() && !line.startsWith('#') && line.contains('=>')) {
+                def (from, to) = line.split('=>', 2)*.trim()
+                rules << [from, to]
+            }
+        }
+        delete genDir
+        copy { from 'src/main/java'; into genDir }
+        genDir.eachFileRecurse(groovy.io.FileType.FILES) { f ->
+            def text = f.getText('UTF-8')
+            def out = text
+            rules.each { r -> out = out.replace(r[0], r[1]) }
+            if (out != text) f.write(out, 'UTF-8')
+        }
+        if (file("$vdir/java").exists()) copy { from "$vdir/java"; into genDir }
+        if (file("$vdir/delete.txt").exists()) file("$vdir/delete.txt").eachLine { l -> if (l.trim()) delete new File(genDir, l.trim()) }
+    }
+}
+if (!isMain) {
+    sourceSets.main.java.srcDirs = [genDir]
+    tasks.named('compileJava') { dependsOn 'prepareVersionSources' }
+}
+
+version = "${project.mod_version}+${mc}"
 group = 'com.pandaclient'
 base { archivesName = 'pandaclient' }
 
 repositories { mavenCentral() }
 
 dependencies {
-    minecraft "com.mojang:minecraft:${project.minecraft_version}"
+    minecraft "com.mojang:minecraft:${mc}"
     // Mojang's official names: the same names Minecraft itself uses from 26.1 on.
     mappings loom.officialMojangMappings()
     modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
-    modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
+    modImplementation "net.fabricmc.fabric-api:fabric-api:${fabricApi}"
 }
 
 processResources {
     inputs.property 'version', project.version
-    filesMatching('fabric.mod.json') { expand 'version': project.version }
+    inputs.property 'mc', mc
+    filesMatching('fabric.mod.json') { expand 'version': project.version, 'mc': mc }
+    if (!isMain) {
+        // mixins the older version doesn't have (listed in versions/<mc>/mixins-remove.txt)
+        def rm = file("$vdir/mixins-remove.txt")
+        if (rm.exists()) filesMatching('pandaclient.mixins.json') {
+            def names = rm.readLines()*.trim().findAll { it }
+            filter { line -> names.any { line.contains('"' + it + '"') } ? null : line }
+        }
+    }
 }
 
 java {
