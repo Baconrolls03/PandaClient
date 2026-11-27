@@ -250,6 +250,66 @@ public final class PandaTitleScreen extends Screen {
         return new float[]{cx - w / 2, feet - h, w, h};
     }
 
+    // ---------------------------------------------------------------- pick up and throw characters
+
+    /** Lift (canvas units, negative = up) and vertical speed of each character you've thrown. */
+    private final java.util.Map<Object, float[]> lift = new java.util.HashMap<>();
+    private Object held;
+    private long lastDragAt, lastPhysics;
+    private float dragSpeed;
+    private static final Object YOU = new Object();
+
+    private float liftOf(Object who) { float[] s = lift.get(who); return s == null ? 0 : s[0]; }
+
+    /** Gravity and a little bounce for characters you let go of. */
+    private void physics() {
+        long now = System.currentTimeMillis();
+        float dt = lastPhysics == 0 ? 0 : Math.min(0.05f, (now - lastPhysics) / 1000f);
+        lastPhysics = now;
+        for (var it = lift.entrySet().iterator(); it.hasNext(); ) {
+            var e = it.next();
+            if (e.getKey() == held) continue;
+            float[] st = e.getValue();
+            st[1] += 2600 * dt;
+            st[0] += st[1] * dt;
+            if (st[0] >= 0) {
+                st[0] = 0;
+                if (Math.abs(st[1]) > 160) st[1] = -st[1] * 0.42f; else it.remove();
+            }
+        }
+    }
+
+    private Object characterAt(double mx, double my) {
+        if (player != null && player.isMouseOver(mx * k, my * k)) return YOU;
+        for (var e : mates.entrySet()) if (e.getValue().isMouseOver(mx * k, my * k)) return e.getKey();
+        return null;
+    }
+
+    @Override
+    public boolean mouseDragged(MouseButtonEvent e, double dx, double dy) {
+        if (held != null) {
+            float[] st = lift.computeIfAbsent(held, x -> new float[2]);
+            float d = (float) (dy / k);
+            st[0] = Math.max(-vh * 0.55f, Math.min(0, st[0] + d));
+            long now = System.currentTimeMillis();
+            float dtv = Math.max(0.008f, (now - lastDragAt) / 1000f);
+            dragSpeed = dragSpeed * 0.4f + (d / dtv) * 0.6f;
+            lastDragAt = now;
+        }
+        return super.mouseDragged(e, dx, dy);
+    }
+
+    @Override
+    public boolean mouseReleased(MouseButtonEvent e) {
+        if (held != null) {
+            float[] st = lift.get(held);
+            if (st != null) st[1] = Math.max(-2200, Math.min(2200, System.currentTimeMillis() - lastDragAt < 80 ? dragSpeed : 0));
+            held = null;
+            dragSpeed = 0;
+        }
+        return super.mouseReleased(e);
+    }
+
     private void placeMates() {
         var list = mateList();
         java.util.Set<java.util.UUID> keep = new java.util.HashSet<>();
@@ -270,12 +330,17 @@ public final class PandaTitleScreen extends Screen {
                 addRenderableWidget(w);
             }
             w.setX(Math.round(b[0] * k));
-            w.setY(Math.round(b[1] * k));
+            w.setY(Math.round((b[1] + liftOf(m.uuid())) * k));
         }
     }
 
     private void placePlayer() {
-        if (card() && Modules.TITLE_SCREEN.lobbyPlayer.on() && t() >= 0.4f) { zoom(); placeMates(); }
+        if (card() && Modules.TITLE_SCREEN.lobbyPlayer.on() && t() >= 0.4f) {
+            zoom();
+            physics();
+            placeMates();
+            if (player != null) player.setY(Math.round((playerBox()[1] + liftOf(YOU)) * k));
+        }
         if (!card() || !Modules.TITLE_SCREEN.lobbyPlayer.on() || t() < 0.4f || player != null) return;
         zoom();
         float[] b = playerBox();
@@ -294,9 +359,10 @@ public final class PandaTitleScreen extends Screen {
         sd.push(); sd.scale(k); sd.zoom = k;
         float[] b = playerBox();
         float cx = b[0] + b[2] / 2, cy = b[1] + b[3] - 4;
+        float sh = 1f / (1f - liftOf(YOU) / 260f);
         for (int i = 0; i < 5; i++) {
-            float rx = 34 - i * 5, ry = 8 - i * 1.2f;
-            sd.rounded(cx - rx, cy - ry, cx + rx, cy + ry, ry, 0x1A000000);
+            float rx = (34 - i * 5) * sh, ry = (8 - i * 1.2f) * sh;
+            sd.rounded(cx - rx, cy - ry, cx + rx, cy + ry, ry, Draw.alpha(0xFF000000, Math.round(26 * sh)));
         }
         for (int j = 0; j < mateList().size(); j++) {
             float[] mb = mateBox(j);
@@ -316,7 +382,7 @@ public final class PandaTitleScreen extends Screen {
             var m = list.get(i);
             if (!mates.containsKey(m.uuid())) continue;
             float[] mb = mateBox(i);
-            float w = tw(m.name(), 11, true) + (m.leader() ? 18 : 0) + 16, cx = mb[0] + mb[2] / 2, y = mb[1] - 24;
+            float w = tw(m.name(), 11, true) + (m.leader() ? 18 : 0) + 16, cx = mb[0] + mb[2] / 2, y = mb[1] - 24 + liftOf(m.uuid());
             d.rounded(cx - w / 2, y, cx + w / 2, y + 19, 5, col(0xC70B0E16), col(0x26FFFFFF));
             txt(m.name(), cx - w / 2 + 8, y + 9.5f, 11, m.online() ? 0xFFFFFFFF : 0xFFA3AAB6, true);
             if (m.leader()) d.icon(Draw.I_CROWN, cx + w / 2 - 14, y + 9.5f, 10, col(0xFFF5C451));
@@ -324,7 +390,7 @@ public final class PandaTitleScreen extends Screen {
         float[] b = playerBox();
         String n = name();
         float w = tw(n, 12, true) + tw("You", 10, false) + 22;
-        float cx = b[0] + b[2] / 2, y = b[1] - 26;
+        float cx = b[0] + b[2] / 2, y = b[1] - 26 + liftOf(YOU);
         d.rounded(cx - w / 2, y, cx + w / 2, y + 21, 5, col(0xD90B0E16), col(Draw.alpha(Theme.accent(), 170)));
         float x = cx - w / 2 + 8;
         txt(n, x, y + 10.5f, 12, 0xFFFFFFFF, true);
@@ -652,7 +718,15 @@ public final class PandaTitleScreen extends Screen {
             double mx = e.x() / k, my = e.y() / k;
             if (clickTopBar(mx, my) || clickCard(mx, my) || clickLeft(mx, my)) return true;
         }
-        if (card()) return super.mouseClicked(e, doubleClick);
+        if (card()) {
+            if (e.button() == 0) {
+                zoom();
+                held = characterAt(e.x() / k, e.y() / k);
+                lastDragAt = System.currentTimeMillis();
+                if (held != null) lift.computeIfAbsent(held, x -> new float[2])[1] = 0;
+            }
+            return super.mouseClicked(e, doubleClick);
+        }
         if (e.button() != 0 || t() < 0.6f) return super.mouseClicked(e, doubleClick);
         for (int i = 0; i < LABELS.length; i++) {
             int[] b = box(i);
