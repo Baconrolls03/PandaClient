@@ -13,6 +13,7 @@ import { ensureRuntime } from './javaRuntime'
 import { assetsDir, install, librariesDir, rulesAllow, type Arg, type Installed } from './mojang'
 import { ensurePandaMod } from '../pandaMod'
 import { diagnose } from '../crashDoctor'
+import { ensureBundledMods } from '../bundledMods'
 
 type Emit = (p: LaunchProgress) => void
 
@@ -147,6 +148,7 @@ export async function launchGame(id: string, emit: Emit, quickPlay?: QuickPlay):
     const auth = await launchAuth()
     const installed = await install(inst.mcVersion, inst.loaderVersion, proxy)
     await ensurePandaMod(inst, true, (m) => progress(m, null, 'preparing'))
+    await ensureBundledMods(inst, (m) => progress(m, null, 'preparing')).catch(() => {})
 
     const javaPath = inst.javaPath || s.javaPath
     const java = javaPath || (await ensureRuntime(installed.version.javaVersion?.component ?? 'jre-legacy', proxy))

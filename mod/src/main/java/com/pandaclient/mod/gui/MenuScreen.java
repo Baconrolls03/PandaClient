@@ -49,7 +49,7 @@ public final class MenuScreen extends Screen {
     // layout (recomputed every frame)
     private int px, py, pw, ph;
     private static final int HEADER = 26, SIDEBAR = 84;
-    private static final String[] CATEGORIES = {"All", "HUD", "PvP", "Visual", "Utility"};
+    private static final String[] CATEGORIES = {"All", "HUD", "PvP", "Visual", "Utility", "Mods"};
 
     public MenuScreen(Screen parent) {
         super(Component.literal("PandaClient"));
@@ -162,7 +162,8 @@ public final class MenuScreen extends Screen {
             if (a > 0) d.rect(x + 6, by + 4, x + 8, by + 14, Draw.alpha(Theme.accent(), (int) (255 * a)));
             String label = c.equals("All") ? "All mods" : c;
             int count = 0;
-            for (Module m : Modules.all()) if (c.equals("All") || m.category.label.equals(c)) count++;
+            if (c.equals("Mods")) count = com.pandaclient.mod.util.BundledMods.list().size();
+            else for (Module m : Modules.all()) if (c.equals("All") || m.category.label.equals(c)) count++;
             d.text(label, x + 13, by + 5, sel ? Theme.TEXT : Theme.MUTED, false);
             String n = String.valueOf(count);
             d.text(n, x + SIDEBAR - 12 - Draw.textWidth(n), by + 5, Theme.MUTED, false);
@@ -182,6 +183,7 @@ public final class MenuScreen extends Screen {
     private static final int CARD_H = 26, GAP = 4;
 
     private void drawGrid(Draw d, int mx, int my) {
+        if (category.equals("Mods")) { drawBundled(d, mx, my); return; }
         List<Module> mods = visibleModules();
         int cols = cols(), cx = contentX() + 8, cw = (contentW() - 16 - GAP * (cols - 1)) / cols;
         int y0 = contentY() + 8 - (int) Math.round(scroll);
@@ -212,6 +214,66 @@ public final class MenuScreen extends Screen {
         }
         if (mods.isEmpty()) d.centered("No mods match \"" + search + "\"", contentX() + contentW() / 2, contentY() + 40, Theme.MUTED, false);
         contentHeight = ((mods.size() + cols - 1) / cols) * (CARD_H + GAP) + 10;
+    }
+
+    // ------------------------------------------------------------------ bundled mods (Sodium, Sounds...)
+
+    private List<com.pandaclient.mod.util.BundledMods.Entry> bundledVisible() {
+        String q = search.toLowerCase(Locale.ROOT).trim();
+        List<com.pandaclient.mod.util.BundledMods.Entry> l = new ArrayList<>();
+        for (var e : com.pandaclient.mod.util.BundledMods.list()) if (q.isEmpty() || e.name().toLowerCase(Locale.ROOT).contains(q)) l.add(e);
+        return l;
+    }
+
+    private void drawBundled(Draw d, int mx, int my) {
+        var mods = bundledVisible();
+        int cols = cols(), cx = contentX() + 8, cw = (contentW() - 16 - GAP * (cols - 1)) / cols;
+        int y0 = contentY() + 8 - (int) Math.round(scroll);
+        boolean inContent = Widgets.in(mx, my, contentX(), contentY(), contentW(), contentH());
+        if (com.pandaclient.mod.util.BundledMods.restartNeeded()) {
+            d.round(cx, y0, cx + contentW() - 16, y0 + 16, Draw.alpha(0xFFF5C451, 40));
+            d.text("Restart Minecraft to apply your changes", cx + 6, y0 + 4, 0xFFF5C451, false);
+            y0 += 20;
+        }
+        if (mods.isEmpty()) d.centered("Start Minecraft from the PandaClient launcher to get these mods", contentX() + contentW() / 2, contentY() + 40, Theme.MUTED, false);
+        for (int i = 0; i < mods.size(); i++) {
+            var e = mods.get(i);
+            int x = cx + (i % cols) * (cw + GAP), y = y0 + (i / cols) * (CARD_H + GAP);
+            if (y > py + ph || y + CARD_H < contentY()) continue;
+            boolean on = com.pandaclient.mod.util.BundledMods.on(e);
+            float a = anim("b" + e.slug(), on);
+            d.round(x, y, x + cw, y + CARD_H, inContent && Widgets.in(mx, my, x, y, cw, CARD_H) ? Theme.RAISED : Theme.SURFACE);
+            if (a > 0) d.rect(x, y + 6, x + 2, y + CARD_H - 6, Draw.alpha(Theme.accent(), (int) (255 * a)));
+            var icon = com.pandaclient.mod.util.BundledMods.icon(e);
+            if (icon != null) {
+                int[] sz = com.pandaclient.mod.util.BundledMods.size(e);
+                d.g.pose().pushMatrix();
+                d.g.pose().translate(x + 6, y + 5);
+                d.g.pose().scale(16f / sz[0], 16f / sz[1]);
+                d.g.blit(net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED, icon, 0, 0, 0f, 0f, sz[0], sz[1], sz[0], sz[1]);
+                d.g.pose().popMatrix();
+            } else {
+                d.round(x + 6, y + 5, x + 22, y + 21, Theme.RAISED);
+                d.centered(e.name().substring(0, 1), x + 14, y + 9, Theme.accent(), false);
+            }
+            d.text(Widgets.ellipsize(e.name(), cw - 60), x + 27, y + 5, on ? Theme.TEXT : Theme.MUTED, false);
+            d.push(); d.translate(x + 27, y + 16); d.scale(0.7f);
+            d.text(e.category().toUpperCase(Locale.ROOT), 0, 0, Draw.alpha(Theme.accent(), 190), false);
+            d.pop();
+            Widgets.toggle(d, x + cw - 26, y + 8, on, a);
+        }
+        contentHeight = ((mods.size() + cols - 1) / cols) * (CARD_H + GAP) + 30;
+    }
+
+    private boolean clickBundled(double mx, double my) {
+        var mods = bundledVisible();
+        int cols = cols(), cx = contentX() + 8, cw = (contentW() - 16 - GAP * (cols - 1)) / cols;
+        int y0 = contentY() + 8 - (int) Math.round(scroll) + (com.pandaclient.mod.util.BundledMods.restartNeeded() ? 20 : 0);
+        for (int i = 0; i < mods.size(); i++) {
+            int x = cx + (i % cols) * (cw + GAP), y = y0 + (i / cols) * (CARD_H + GAP);
+            if (Widgets.in(mx, my, x, y, cw, CARD_H)) { com.pandaclient.mod.util.BundledMods.toggle(mods.get(i)); return true; }
+        }
+        return false;
     }
 
     // ------------------------------------------------------------------ settings page
@@ -373,6 +435,7 @@ public final class MenuScreen extends Screen {
     }
 
     private boolean clickGrid(double mx, double my, int button) {
+        if (category.equals("Mods")) return clickBundled(mx, my);
         List<Module> mods = visibleModules();
         int cols = cols(), cx = contentX() + 8, cw = (contentW() - 16 - GAP * (cols - 1)) / cols;
         int y0 = contentY() + 8 - (int) Math.round(scroll);
