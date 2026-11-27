@@ -11,7 +11,10 @@ function subscribe<T>(channel: string, cb: (payload: T) => void): () => void {
 const api: PandaApi = {
   window: {
     minimize: () => ipcRenderer.send('window:minimize'),
-    close: () => ipcRenderer.send('window:close')
+    close: () => ipcRenderer.send('window:close'),
+    maximize: () => ipcRenderer.send('window:maximize'),
+    fullscreen: () => ipcRenderer.send('window:fullscreen'),
+    onState: (cb) => subscribe('window:state', cb)
   },
   settings: {
     get: () => invoke('settings:get'),

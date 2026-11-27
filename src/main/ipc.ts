@@ -69,6 +69,11 @@ export function registerIpc(win: BrowserWindow): void {
 
   ipcMain.on('window:minimize', () => win.minimize())
   ipcMain.on('window:close', () => win.close())
+  // Maximise / restore (button and double-click on the top bar); F11 for true full screen.
+  ipcMain.on('window:maximize', () => (win.isMaximized() ? win.unmaximize() : win.maximize()))
+  ipcMain.on('window:fullscreen', () => win.setFullScreen(!win.isFullScreen()))
+  const sendState = () => send('window:state', { maximized: win.isMaximized(), fullscreen: win.isFullScreen() })
+  for (const ev of ['maximize', 'unmaximize', 'enter-full-screen', 'leave-full-screen'] as const) win.on(ev as 'maximize', sendState)
 
   // Settings
   ipcMain.handle('settings:get', () => getSettings())

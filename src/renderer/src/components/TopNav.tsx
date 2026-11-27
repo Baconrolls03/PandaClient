@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { BarChart3, ChevronLeft, Download, FolderOpen, Globe, LogIn, LogOut, Minus, Plus, Settings as SettingsIcon, Users, X } from 'lucide-react'
+import { BarChart3, ChevronLeft, Copy as RestoreIcon, Download, FolderOpen, Globe, LogIn, LogOut, Minus, Plus, Square, Settings as SettingsIcon, Users, X } from 'lucide-react'
 import { api } from '@/lib/api'
 import { useStore, type Route } from '@/lib/store'
 import { Logo } from './Logo'
@@ -116,12 +116,20 @@ function AccountMenu() {
 /** OneClient-style top bar: logo, page tabs in the middle, friends / downloads / account on the right. */
 export function TopNav() {
   const { route, navigate, back, canGoBack, tasks, openModal } = useStore()
+  const [win, setWin] = useState({ maximized: false, fullscreen: false })
+  useEffect(() => api.window.onState(setWin), [])
+  // F11: full screen on/off.
+  useEffect(() => {
+    const k = (e: KeyboardEvent) => e.key === 'F11' && (e.preventDefault(), api.window.fullscreen())
+    window.addEventListener('keydown', k)
+    return () => window.removeEventListener('keydown', k)
+  }, [])
   const [tasksOpen, setTasksOpen] = useState(false)
   const tasksRef = useOutside<HTMLDivElement>(tasksOpen, () => setTasksOpen(false))
   const busy = tasks.filter((t) => t.status === 'running').length
   const iconBtn = 'no-drag relative grid size-8 place-items-center rounded-lg text-muted transition-colors hover:bg-raised hover:text-text'
   return (
-    <header className="drag relative z-30 flex h-14 shrink-0 items-center gap-3 border-b border-border/50 bg-bg/80 pl-5 backdrop-blur-md">
+    <header onDoubleClick={(e) => e.target === e.currentTarget && api.window.maximize()} className="drag relative z-30 flex h-14 shrink-0 items-center gap-3 border-b border-border/50 bg-bg/80 pl-5 backdrop-blur-md">
       <button onClick={() => navigate({ name: 'home' })} className="no-drag flex items-center gap-2.5">
         <Logo size={22} />
         <span className="text-[15px] font-extrabold tracking-[0.14em]">PANDACLIENT</span>
@@ -169,6 +177,14 @@ export function TopNav() {
         <div className="no-drag ml-1 flex h-full">
           <button aria-label="Minimise" onClick={() => api.window.minimize()} className="grid h-full w-11 place-items-center text-muted transition-colors hover:bg-raised hover:text-text">
             <Minus size={16} />
+          </button>
+          <button
+            aria-label={win.maximized ? 'Restore' : 'Maximise'}
+            title={win.fullscreen ? 'Exit full screen (F11)' : win.maximized ? 'Restore' : 'Maximise (F11 for full screen)'}
+            onClick={() => (win.fullscreen ? api.window.fullscreen() : api.window.maximize())}
+            className="grid h-full w-11 place-items-center text-muted transition-colors hover:bg-raised hover:text-text"
+          >
+            {win.maximized || win.fullscreen ? <RestoreIcon size={13} /> : <Square size={13} />}
           </button>
           <button aria-label="Close" onClick={() => api.window.close()} className="grid h-full w-11 place-items-center text-muted transition-colors hover:bg-danger hover:text-white">
             <X size={16} />

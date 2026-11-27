@@ -267,7 +267,7 @@ export function createMock(): PandaApi {
   versionList.unshift({ id: '26.4-pre-1', type: 'snapshot', releaseTime: '2026-11-20T00:00:00Z', fabric: true })
 
   return {
-    window: { minimize: () => {}, close: () => {} },
+    window: { minimize: () => {}, close: () => {}, maximize: () => {}, fullscreen: () => {}, onState: () => () => {} },
     settings: {
       get: async () => settings,
       set: async (patch) => (settings = { ...settings, ...patch }),

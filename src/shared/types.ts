@@ -546,6 +546,11 @@ export interface PandaApi {
   window: {
     minimize(): void
     close(): void
+    /** Maximise, or restore if already maximised. */
+    maximize(): void
+    /** Full screen on/off (F11). */
+    fullscreen(): void
+    onState(cb: (s: { maximized: boolean; fullscreen: boolean }) => void): () => void
   }
   settings: {
     get(): Promise<Settings>
