@@ -78,18 +78,23 @@ public final class PauseLayout {
 
     private static String cap(String s) { return s.isEmpty() ? s : s.substring(0, 1).toUpperCase(Locale.ROOT) + s.substring(1); }
 
+    /** Soft shade behind the menu column (drawn before the buttons) so the text reads on any world. */
+    public static void renderShade(GuiGraphics g, int w, int h) {
+        Canvas c = new Canvas(g, w, h);
+        float vw = c.vw;
+        c.begin();
+        c.d.rect(0, 0, Math.round(vw) + 1, 720, 0x2605070B);
+        float sx = colX - 90;
+        for (int i = 0; i < 12; i++) c.d.rect(Math.round(sx + i * 7.5f), 0, Math.round(sx + i * 7.5f + 7.5f), 720, Draw.alpha(0xFF05070B, i * 10));
+        c.d.rect(Math.round(sx + 90), 0, Math.round(vw) + 1, 720, 0x7805070B);
+        c.end();
+    }
+
     public static void render(GuiGraphics g, int w, int h, int mx, int my) {
         Minecraft mc = Minecraft.getInstance();
         Canvas c = new Canvas(g, w, h);
         float vw = c.vw;
 
-        c.begin();
-        // soft shade behind the menu column (and a little over the whole game) so the text reads on any world
-        c.d.rect(0, 0, Math.round(vw) + 1, 720, c.col(0x2605070B));
-        float sx = colX - 90;
-        for (int i = 0; i < 12; i++) c.d.rect(Math.round(sx + i * 7.5f), 0, Math.round(sx + i * 7.5f + 7.5f), 720, c.col(Draw.alpha(0xFF05070B, i * 10)));
-        c.d.rect(Math.round(sx + 90), 0, Math.round(vw) + 1, 720, c.col(0x7805070B));
-        c.end();
 
         // Your character, large, following the mouse.
         float mx1 = vw * 0.12f, mx2 = Math.min(vw * 0.56f, colX - 30);

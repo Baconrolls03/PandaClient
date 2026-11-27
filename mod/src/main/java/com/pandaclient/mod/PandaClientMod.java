@@ -58,6 +58,8 @@ public final class PandaClientMod implements ClientModInitializer {
                 if (Modules.TITLE_SCREEN.lobbyFromWorld.on()) com.pandaclient.mod.util.LobbySnapshot.capture(client);
                 try {
                     com.pandaclient.mod.gui.PauseLayout.apply(buttons, panda, w, h);
+                    net.fabricmc.fabric.api.client.screen.v1.ScreenEvents.beforeRender(screen).register((s2, g, mx, my, delta) ->
+                        com.pandaclient.mod.gui.PauseLayout.renderShade(g, s2.width, s2.height));
                     net.fabricmc.fabric.api.client.screen.v1.ScreenEvents.afterRender(screen).register((s2, g, mx, my, delta) ->
                         com.pandaclient.mod.gui.PauseLayout.render(g, s2.width, s2.height, mx, my));
                 } catch (Throwable t) {
