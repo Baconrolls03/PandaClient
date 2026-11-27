@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { ArrowUpCircle, FilePlus, Package, Plus, RefreshCw, Trash2 } from 'lucide-react'
-import { CONTENT_FOLDERS, type ContentItem, type ContentType, type Instance, type ProjectType } from '@shared/types'
+import { ArrowUpCircle, CopyX, FilePlus, Package, Plus, RefreshCw, Trash2 } from 'lucide-react'
+import { CONTENT_FOLDERS, type ContentItem, type DuplicateMod, type ContentType, type Instance, type ProjectType } from '@shared/types'
 import { api } from '@/lib/api'
 import { useStore } from '@/lib/store'
 import { bytes } from '@/lib/format'
@@ -17,7 +17,11 @@ export function ContentTab({ inst }: { inst: Instance }) {
   const [checking, setChecking] = useState(false)
   const [updating, setUpdating] = useState(false)
 
-  const load = useCallback(() => api.content.list(inst.id).then(setItems).catch(() => setItems([])), [inst.id])
+  const [dups, setDups] = useState<DuplicateMod[]>([])
+  const load = useCallback(() => {
+    api.doctor.duplicates(inst.id).then(setDups).catch(() => setDups([]))
+    return api.content.list(inst.id).then(setItems).catch(() => setItems([]))
+  }, [inst.id])
   useEffect(() => {
     load()
   }, [load])
@@ -96,6 +100,23 @@ export function ContentTab({ inst }: { inst: Instance }) {
           </Button>
         </div>
       </div>
+
+      {dups.length > 0 && (
+        <div className="flex items-center gap-3 rounded-2xl border border-amber-400/40 bg-amber-400/10 px-4 py-3">
+          <CopyX size={18} className="shrink-0 text-amber-300" />
+          <div className="min-w-0 flex-1 text-sm">
+            <p className="font-medium">
+              {dups.length === 1 ? `${dups[0].name} is installed twice` : `${dups.length} mods are installed twice`}. Minecraft won't start like this.
+            </p>
+            <p className="truncate text-xs text-muted">
+              {dups.map((d) => `${d.name}: keeping ${d.keep}, turning off ${d.extra.join(', ')}`).join(' · ')}
+            </p>
+          </div>
+          <Button size="sm" variant="primary" onClick={async () => (await attempt(() => api.doctor.fixDuplicates(inst.id), 'Turned off the older copies'), load())}>
+            Fix
+          </Button>
+        </div>
+      )}
 
       {items == null ? (
         <div className="grid place-items-center py-16">

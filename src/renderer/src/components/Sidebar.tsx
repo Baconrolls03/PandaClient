@@ -1,4 +1,4 @@
-import { Compass, Globe, Home, Library, Plus, Settings as SettingsIcon, Shirt, Users, type LucideIcon } from 'lucide-react'
+import { BarChart3, Compass, Globe, Home, Library, Plus, Settings as SettingsIcon, Shirt, Users, type LucideIcon } from 'lucide-react'
 import { useStore, type Route } from '@/lib/store'
 import { AccountCard } from './AccountCard'
 import { InstanceIcon } from './ui'
@@ -10,7 +10,8 @@ const items: { route: Route; match: Route['name'][]; label: string; icon: Lucide
   { route: { name: 'discover', type: 'mod' }, match: ['discover', 'project'], label: 'Discover', icon: Compass },
   { route: { name: 'servers' }, match: ['servers'], label: 'Servers', icon: Globe },
   { route: { name: 'friends' }, match: ['friends'], label: 'Friends', icon: Users },
-  { route: { name: 'wardrobe' }, match: ['wardrobe'], label: 'Wardrobe', icon: Shirt }
+  { route: { name: 'wardrobe' }, match: ['wardrobe'], label: 'Wardrobe', icon: Shirt },
+  { route: { name: 'stats' }, match: ['stats'], label: 'Stats', icon: BarChart3 }
 ]
 
 export function Sidebar() {

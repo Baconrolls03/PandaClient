@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { Copy, RefreshCw, ScrollText, TriangleAlert } from 'lucide-react'
 import type { Instance, LogFile } from '@shared/types'
 import { api } from '@/lib/api'
@@ -12,8 +12,24 @@ function lineClass(l: string) {
   return ''
 }
 
+/** The line with every match of the search highlighted. */
+function highlight(l: string, q: string): ReactNode {
+  if (!q) return l || ' '
+  const out: ReactNode[] = []
+  const low = l.toLowerCase()
+  let i = 0
+  for (let at = low.indexOf(q); at >= 0; at = low.indexOf(q, i)) {
+    out.push(l.slice(i, at), <mark key={at} className="rounded-sm bg-mint/30 text-text">{l.slice(at, at + q.length)}</mark>)
+    i = at + q.length
+  }
+  out.push(l.slice(i))
+  return out
+}
+
 export function LogsTab({ inst }: { inst: Instance }) {
-  const { toast } = useStore()
+  const { toast, running } = useStore()
+  const box = useRef<HTMLPreElement>(null)
+  const [follow, setFollow] = useState(true)
   const [logs, setLogs] = useState<LogFile[] | null>(null)
   const [current, setCurrent] = useState<string | null>(null)
   const [text, setText] = useState<string | null>(null)
@@ -27,12 +43,32 @@ export function LogsTab({ inst }: { inst: Instance }) {
     })
   }, [inst.id])
   useEffect(loadList, [loadList])
-  const loadText = useCallback(() => {
-    if (!current) return
-    setText(null)
-    api.logs.read(inst.id, current).then(setText).catch((e) => setText(String(e)))
-  }, [inst.id, current])
-  useEffect(loadText, [loadText])
+  const loadText = useCallback(
+    (quiet = false) => {
+      if (!current) return
+      if (!quiet) setText(null)
+      api.logs.read(inst.id, current).then(setText).catch((e) => setText(String(e)))
+    },
+    [inst.id, current]
+  )
+  useEffect(() => loadText(), [loadText])
+
+  // Live: while the game runs, keep latest.log up to date as Minecraft writes it.
+  const isLatest = logs?.find((l) => l.path === current)?.name === 'latest.log'
+  const live = running.has(inst.id) && isLatest
+  useEffect(() => {
+    if (!live) return
+    let pending = false
+    const off = api.logs.onLive((e) => {
+      if (e.instanceId !== inst.id || pending) return
+      pending = true
+      setTimeout(() => ((pending = false), loadText(true)), 1000)
+    })
+    return off
+  }, [live, inst.id, loadText])
+  useEffect(() => {
+    if (live && follow && box.current) box.current.scrollTop = box.current.scrollHeight
+  })
 
   const lines = useMemo(() => {
     let l = (text ?? '').split('\n')
@@ -66,11 +102,17 @@ export function LogsTab({ inst }: { inst: Instance }) {
       </div>
       <div className="flex min-w-0 flex-col gap-3">
         <div className="flex items-center gap-2">
-          <SearchField value={q} onChange={setQ} placeholder="Filter lines" className="flex-1" />
+          <SearchField value={q} onChange={setQ} placeholder="Search the log" className="flex-1" />
+          {q && <span className="shrink-0 text-xs tabular-nums text-muted">{lines.length} match{lines.length === 1 ? '' : 'es'}</span>}
+          {live && (
+            <span className="flex shrink-0 items-center gap-1.5 rounded-full bg-mint/15 px-2 py-0.5 text-[11px] font-semibold text-mint">
+              <span className="size-1.5 animate-pulse rounded-full bg-mint" /> LIVE
+            </span>
+          )}
           <Chip active={level === 'all'} onClick={() => setLevel('all')}>All</Chip>
           <Chip active={level === 'warn'} onClick={() => setLevel('warn')}>Warnings</Chip>
           <Chip active={level === 'error'} onClick={() => setLevel('error')}>Errors</Chip>
-          <Button size="sm" variant="ghost" onClick={loadText} title="Reload">
+          <Button size="sm" variant="ghost" onClick={() => loadText()} title="Reload">
             <RefreshCw size={14} />
           </Button>
           <Button
@@ -82,8 +124,18 @@ export function LogsTab({ inst }: { inst: Instance }) {
             <Copy size={14} />
           </Button>
         </div>
-        <pre className="h-[52vh] select-text overflow-auto rounded-2xl border border-border bg-bg p-4 font-mono text-[12px] leading-relaxed">
-          {text == null ? 'Loading…' : lines.map((l, i) => <div key={i} className={lineClass(l)}>{l || ' '}</div>)}
+        <pre
+          ref={box}
+          onScroll={(e) => {
+            const el = e.currentTarget
+            setFollow(el.scrollHeight - el.scrollTop - el.clientHeight < 40)
+          }}
+          className="h-[52vh] select-text overflow-auto rounded-2xl border border-border bg-bg p-4 font-mono text-[12px] leading-relaxed">
+          {text == null ? 'Loading…' : lines.map((l, i) => (
+                <div key={i} className={lineClass(l)}>
+                  {highlight(l, q.toLowerCase())}
+                </div>
+              ))}
         </pre>
       </div>
     </div>

@@ -15,7 +15,10 @@ import * as mrpack from './services/mrpack'
 import * as mr from './services/modrinth'
 import * as tasks from './services/tasks'
 import * as accounts from './services/accounts'
-import { launchGame, runningInstances, stopGame } from './services/game/launch'
+import { launchGame, onLiveLog, runningInstances, stopGame } from './services/game/launch'
+import { findDuplicates, fixDuplicates, modIndex } from './services/crashDoctor'
+import { cancelCrashFinder, crashFinderState, onCrashFinder, runCrashFinder } from './services/crashFinder'
+import { getStats } from './services/stats'
 import { safeJoin } from './services/paths'
 import * as panda from './services/pandaApi'
 import * as mojangProfile from './services/mojangProfile'
@@ -154,6 +157,16 @@ export function registerIpc(win: BrowserWindow): void {
   ipcMain.handle('files:reveal', (_e, id: string, p: string) => files.revealFile(id, p))
   ipcMain.handle('logs:list', (_e, id: string) => files.listLogs(id))
   ipcMain.handle('logs:read', (_e, id: string, p: string) => files.readLog(id, p))
+  onLiveLog((instanceId, text) => send('logs:live', { instanceId, text }))
+
+  // Mod doctor: duplicates and the crash finder
+  ipcMain.handle('doctor:duplicates', async (_e, id: string) => findDuplicates(await modIndex(await instances.getInstance(id))))
+  ipcMain.handle('doctor:fixDuplicates', async (_e, id: string) => fixDuplicates(await instances.getInstance(id)))
+  onCrashFinder((s) => send('doctor:crashFinder', s))
+  ipcMain.handle('doctor:findCrash', (_e, id: string) => runCrashFinder(id))
+  ipcMain.handle('doctor:cancelFindCrash', () => cancelCrashFinder())
+  ipcMain.handle('doctor:crashFinderState', () => crashFinderState())
+  ipcMain.handle('stats:get', () => getStats())
 
   // Modrinth
   ipcMain.handle('modrinth:search', (_e, q) => mr.search(q))

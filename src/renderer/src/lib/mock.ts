@@ -417,7 +417,23 @@ export function createMock(): PandaApi {
           '[18:22:09] [Render thread/ERROR]: Failed to load texture minecraft:textures/missing.png',
           '[18:22:10] [Render thread/INFO]: Reloading ResourceManager: vanilla, fabric, sodium',
           '[18:22:14] [Render thread/INFO]: Sound engine started'
-        ].join('\n')
+        ].join('\n'),
+      onLive: () => () => {}
+    },
+    doctor: {
+      duplicates: async () => [{ id: 'sodium', name: 'Sodium', keep: 'sodium-0.6.13.jar', extra: ['sodium-0.6.5.jar'] }],
+      fixDuplicates: async () => [],
+      findCrash: async () => ({ running: false, step: 4, steps: 4, message: 'Found it: Bad Mod makes Minecraft crash.', culprit: { id: 'badmod', name: 'Bad Mod', file: 'badmod.jar' } }),
+      cancelFindCrash: async () => {},
+      crashFinderState: async () => ({ running: false, step: 0, steps: 0, message: '' }),
+      onCrashFinder: () => () => {}
+    },
+    stats: {
+      get: async () => ({
+        totalSec: 184_000, todaySec: 3_900, sessions: 61, longestSessionSec: 14_200, currentStreak: 5, longestStreak: 12, daysPlayed: 34,
+        week: Array.from({ length: 7 }, (_, i) => ({ day: new Date(now - (6 - i) * 86400000).toISOString().slice(0, 10), sec: [3600, 0, 5400, 7200, 1800, 9000, 3900][i] })),
+        top: [{ id: 'a', name: 'PvP 1.21.11', sec: 120_000 }, { id: 'b', name: 'Survival', sec: 64_000 }]
+      })
     },
     modrinth: {
       search: (q) => live(() => webModrinth.search(q), async () => {

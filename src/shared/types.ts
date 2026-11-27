@@ -243,6 +243,32 @@ export interface CrashReport {
   excerpt: string
 }
 
+export interface CrashFinderState {
+  running: boolean
+  instanceId?: string
+  step: number
+  steps: number
+  message: string
+  /** The mod found to cause the crash. */
+  culprit?: { id: string; name: string; file: string }
+  error?: string
+}
+
+export interface DuplicateMod { id: string; name: string; keep: string; extra: string[] }
+
+export interface PlayStats {
+  totalSec: number
+  todaySec: number
+  sessions: number
+  longestSessionSec: number
+  currentStreak: number
+  longestStreak: number
+  daysPlayed: number
+  /** Last 7 days, oldest first. */
+  week: { day: string; sec: number }[]
+  top: { id: string; name: string; sec: number }[]
+}
+
 export interface QuickPlay {
   world?: string
   server?: string
@@ -559,6 +585,19 @@ export interface PandaApi {
   logs: {
     list(id: string): Promise<LogFile[]>
     read(id: string, path: string): Promise<string>
+    /** Output of the running game as it is written. */
+    onLive(cb: (e: { instanceId: string; text: string }) => void): () => void
+  }
+  doctor: {
+    duplicates(id: string): Promise<DuplicateMod[]>
+    fixDuplicates(id: string): Promise<DuplicateMod[]>
+    findCrash(id: string): Promise<CrashFinderState>
+    cancelFindCrash(): Promise<void>
+    crashFinderState(): Promise<CrashFinderState>
+    onCrashFinder(cb: (s: CrashFinderState) => void): () => void
+  }
+  stats: {
+    get(): Promise<PlayStats>
   }
   modrinth: {
     search(q: SearchQuery): Promise<MrSearchResult>

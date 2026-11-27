@@ -12,6 +12,7 @@ export type Route =
   | { name: 'wardrobe' }
   | { name: 'friends' }
   | { name: 'servers' }
+  | { name: 'stats' }
 
 export type InstanceTab = 'content' | 'worlds' | 'screenshots' | 'files' | 'logs' | 'settings'
 

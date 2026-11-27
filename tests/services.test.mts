@@ -291,8 +291,50 @@ writeFileSync(crashInst.path + '/crash-reports/crash-1.txt', '---- Minecraft Cra
 const report = await cd.diagnose(crashInst, Date.now() - 10_000)
 assert.deepEqual(report.mods.map((m: any) => m.file), ['badmod-1.0.jar'])
 assert.match(report.summary, /Bad Mod/)
+// duplicate mods: two copies of Sodium -> keep the newest
+const jar = (j: object) => zipSync({ 'fabric.mod.json': new TextEncoder().encode(JSON.stringify(j)) })
+writeFileSync(crashInst.path + '/mods/sodium-0.6.5.jar', jar({ id: 'sodium', name: 'Sodium', version: '0.6.5+mc1.21.11' }))
+writeFileSync(crashInst.path + '/mods/sodium-fabric-0.6.13.jar', jar({ id: 'sodium', name: 'Sodium', version: '0.6.13+mc1.21.11' }))
+const dupsFound = cd.findDuplicates(await cd.modIndex(crashInst))
+assert.deepEqual(dupsFound, [{ id: 'sodium', name: 'Sodium', keep: 'sodium-fabric-0.6.13.jar', extra: ['sodium-0.6.5.jar'] }])
+await cd.fixDuplicates(crashInst)
+assert.ok(existsSync(crashInst.path + '/mods/sodium-0.6.5.jar.disabled'))
+assert.deepEqual(cd.findDuplicates(await cd.modIndex(crashInst)), [])
 await instances.removeInstance(crashInst.id)
 ok('crash helper: ' + report.summary)
+ok('duplicate mods: older Sodium copy turned off')
+
+// crash finder: halving search finds the bad mod in a few starts and never breaks dependencies
+const cf = await import(`${SRC}/crashFinder.ts`)
+const mk = (id: string, depends: string[] = []) => ({ id, name: id, file: id + '.jar', version: '1', enabled: true, depends, provides: [] })
+const all = [mk('fabric-api'), ...Array.from({ length: 30 }, (_, i) => mk('mod' + i, i % 7 === 3 ? ['lib' + i] : [])), ...[3, 10, 17, 24].map((i) => mk('lib' + i)), mk('addon', ['mod5'])]
+for (const bad of ['mod5', 'mod17', 'lib24', 'addon']) {
+  let suspects = all.filter((m) => m.id !== 'fabric-api')
+  let starts = 1
+  while (suspects.length > 1) {
+    const on = new Set(cf.nextTest(suspects, all))
+    const off = new Set(cf.offWithDependents(suspects.filter((m: any) => !on.has(m)), all))
+    const enabled = all.filter((m) => !off.has(m))
+    // every enabled mod has its dependencies enabled
+    for (const m of enabled) for (const d of m.depends) assert.ok(enabled.some((e) => e.id === d), `${m.id} is missing ${d}`)
+    starts++
+    const crashed = enabled.some((m) => m.id === bad)
+    const next = crashed ? suspects.filter((m) => on.has(m)) : suspects.filter((m) => !on.has(m))
+    if (next.length === 0 || next.length === suspects.length) break
+    suspects = next
+  }
+  assert.deepEqual(suspects.map((m) => m.id), [bad])
+  assert.ok(starts <= 8, `took ${starts} starts`)
+}
+ok('crash finder: finds the broken mod among 35 in at most 8 starts')
+
+// play streaks
+const st = await import(`${SRC}/stats.ts`)
+const day = (n: number) => st.dayKey(Date.now() - n * 86_400_000)
+assert.deepEqual(st.streaks(new Set([day(0), day(1), day(2), day(5), day(6), day(7), day(8)])), { current: 3, longest: 4 })
+assert.deepEqual(st.streaks(new Set([day(1), day(2)])), { current: 2, longest: 2 }) // not played yet today: streak still alive
+assert.deepEqual(st.streaks(new Set([day(2), day(3)])), { current: 0, longest: 2 })
+ok('play streaks')
 
 // 9. duplicate / remove / list
 const dup = await instances.duplicateInstance(inst.id)

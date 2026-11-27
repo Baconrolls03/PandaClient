@@ -13,6 +13,7 @@ import { Project } from '@/pages/Project'
 import { Wardrobe } from '@/pages/Wardrobe'
 import { Friends } from '@/pages/Friends'
 import { Servers } from '@/pages/Servers'
+import { Stats } from '@/pages/Stats'
 import { Instance } from '@/pages/instance/Instance'
 import { CreateInstanceModal } from '@/modals/CreateInstanceModal'
 import { InstallModal } from '@/modals/InstallModal'
@@ -42,6 +43,7 @@ function Shell() {
             {route.name === 'wardrobe' && <Wardrobe />}
             {route.name === 'friends' && <Friends />}
             {route.name === 'servers' && <Servers />}
+            {route.name === 'stats' && <Stats />}
           </main>
           <PlayBar />
         </div>

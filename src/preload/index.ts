@@ -73,7 +73,19 @@ const api: PandaApi = {
   },
   logs: {
     list: (id) => invoke('logs:list', id),
-    read: (id, p) => invoke('logs:read', id, p)
+    read: (id, p) => invoke('logs:read', id, p),
+    onLive: (cb) => subscribe('logs:live', cb)
+  },
+  doctor: {
+    duplicates: (id) => invoke('doctor:duplicates', id),
+    fixDuplicates: (id) => invoke('doctor:fixDuplicates', id),
+    findCrash: (id) => invoke('doctor:findCrash', id),
+    cancelFindCrash: () => invoke('doctor:cancelFindCrash'),
+    crashFinderState: () => invoke('doctor:crashFinderState'),
+    onCrashFinder: (cb) => subscribe('doctor:crashFinder', cb)
+  },
+  stats: {
+    get: () => invoke('stats:get')
   },
   modrinth: {
     search: (q) => invoke('modrinth:search', q),

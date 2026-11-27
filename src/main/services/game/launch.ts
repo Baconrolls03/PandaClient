@@ -12,7 +12,8 @@ import { type TaskHandle, startTask } from '../tasks'
 import { ensureRuntime } from './javaRuntime'
 import { assetsDir, install, librariesDir, rulesAllow, type Arg, type Installed } from './mojang'
 import { ensurePandaMod } from '../pandaMod'
-import { diagnose } from '../crashDoctor'
+import { diagnose, fixDuplicates } from '../crashDoctor'
+import { recordSession } from '../stats'
 import { ensureBundledMods } from '../bundledMods'
 
 type Emit = (p: LaunchProgress) => void
@@ -124,13 +125,18 @@ function runHook(cmd: string, cwd: string, env: NodeJS.ProcessEnv): Promise<void
 /* ───────────── Running games ───────────── */
 
 const running = new Map<string, ChildProcess>()
+let liveSink: (id: string, text: string) => void = () => {}
+/** Receives the running game's output as it is written (for the live log). */
+export function onLiveLog(cb: (id: string, text: string) => void) { liveSink = cb }
+const liveLog = (id: string, text: string) => liveSink(id, text)
 export const runningInstances = () => [...running.keys()]
 
 export function stopGame(id: string): void {
   running.get(id)?.kill()
 }
 
-export async function launchGame(id: string, emit: Emit, quickPlay?: QuickPlay): Promise<void> {
+/** quiet: a test start by the crash finder (no window changes, no playtime, no pre/post commands). */
+export async function launchGame(id: string, emit: Emit, quickPlay?: QuickPlay, opts: { quiet?: boolean } = {}): Promise<void> {
   if (running.has(id)) throw new Error('This instance is already running.')
   const inst = await getInstance(id)
   const s = getSettings()
@@ -148,7 +154,10 @@ export async function launchGame(id: string, emit: Emit, quickPlay?: QuickPlay):
     const auth = await launchAuth()
     const installed = await install(inst.mcVersion, inst.loaderVersion, proxy)
     await ensurePandaMod(inst, true, (m) => progress(m, null, 'preparing'))
-    await ensureBundledMods(inst, (m) => progress(m, null, 'preparing')).catch(() => {})
+    if (!opts.quiet) await ensureBundledMods(inst, (m) => progress(m, null, 'preparing')).catch(() => {})
+    // Two copies of the same mod always crash Fabric: keep the newest one.
+    const dups = await fixDuplicates(inst).catch(() => [])
+    if (dups.length) progress(`Turned off duplicate copies of ${dups.map((d) => d.name).join(', ')}`, null, 'preparing')
 
     const javaPath = inst.javaPath || s.javaPath
     const java = javaPath || (await ensureRuntime(installed.version.javaVersion?.component ?? 'jre-legacy', proxy))
@@ -168,7 +177,7 @@ export async function launchGame(id: string, emit: Emit, quickPlay?: QuickPlay):
     })
     const env = { ...process.env, INST_NAME: inst.name, INST_ID: inst.id, INST_DIR: inst.path, INST_MC_VERSION: inst.mcVersion, INST_JAVA: java }
 
-    if (hooks.preLaunch.trim()) {
+    if (hooks.preLaunch.trim() && !opts.quiet) {
       progress('Running pre-launch command', null, 'launching')
       await runHook(hooks.preLaunch, inst.path, env)
     }
@@ -188,6 +197,10 @@ export async function launchGame(id: string, emit: Emit, quickPlay?: QuickPlay):
     running.set(id, child)
     child.stdout?.pipe(out, { end: false })
     child.stderr?.pipe(out, { end: false })
+    // Live log for the Logs tab.
+    const live = (d: Buffer) => liveLog(id, d.toString('utf8'))
+    child.stdout?.on('data', live)
+    child.stderr?.on('data', live)
     const started = Date.now()
     await spawned
     await updateInstance(id, { lastPlayed: new Date().toISOString() })
@@ -195,8 +208,8 @@ export async function launchGame(id: string, emit: Emit, quickPlay?: QuickPlay):
     emit({ ...base, stage: 'running', progress: null, message: `${inst.name} is running` })
 
     const win = BrowserWindow.getAllWindows()[0]
-    if (s.onLaunch === 'minimize') win?.minimize()
-    if (s.onLaunch === 'close') {
+    if (s.onLaunch === 'minimize' && !opts.quiet) win?.minimize()
+    if (s.onLaunch === 'close' && !opts.quiet) {
       child.unref()
       app.quit()
       return
@@ -206,10 +219,13 @@ export async function launchGame(id: string, emit: Emit, quickPlay?: QuickPlay):
       running.delete(id)
       out.end()
       const played = Math.round((Date.now() - started) / 1000)
-      const latest = await getInstance(id).catch(() => null)
-      if (latest) await updateInstance(id, { playtimeSec: latest.playtimeSec + played }).catch(() => {})
-      if (hooks.postExit.trim()) runHook(hooks.postExit, inst.path, env).catch(() => {})
-      if (s.refocusOnExit && win && !win.isDestroyed()) {
+      if (!opts.quiet) {
+        const latest = await getInstance(id).catch(() => null)
+        if (latest) await updateInstance(id, { playtimeSec: latest.playtimeSec + played }).catch(() => {})
+        await recordSession(id, inst.name, started, played).catch(() => {})
+        if (hooks.postExit.trim()) runHook(hooks.postExit, inst.path, env).catch(() => {})
+      }
+      if (s.refocusOnExit && !opts.quiet && win && !win.isDestroyed()) {
         if (win.isMinimized()) win.restore()
         win.focus()
       }

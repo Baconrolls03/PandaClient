@@ -29,5 +29,6 @@
     "ScreenEffectRendererMixin",
     "SkyRendererMixin"
   ],
-  "injectors": { "defaultRequire": 1 }
+  "injectors": { "defaultRequire": 0 },
+  "overwrites": { "conformVisibility": true }
 }

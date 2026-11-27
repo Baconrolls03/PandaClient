@@ -21,7 +21,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 
 public final class PandaClientMod implements ClientModInitializer {
-    public static final String VERSION = "0.4.0";
+    public static final String VERSION = "0.5.0";
     private static CameraType cameraBeforeFreelook;
     private static boolean hitboxesApplied, menuWasDown, sprintWasDown, sneakWasDown, freelookWasDown;
     private static int prevSelfHurt;
@@ -66,7 +66,15 @@ public final class PandaClientMod implements ClientModInitializer {
         if (mc.options.hideGui || mc.screen instanceof HudEditorScreen) return;
         Draw d = new Draw(g);
         int w = g.guiWidth(), h = g.guiHeight();
-        for (HudModule m : Modules.hud()) if (m.enabled() && m.visible()) m.draw(d, w, h, false);
+        for (HudModule m : Modules.hud()) {
+            try {
+                if (m.enabled() && m.visible()) m.draw(d, w, h, false);
+            } catch (Throwable t) {
+                // Never let one HUD element break the game (e.g. a clash with another mod): turn it off and say why.
+                m.setEnabled(false);
+                System.err.println("[PandaClient] Turned off " + m.name + " after an error: " + t);
+            }
+        }
     }
 
     private static boolean physicallyDown(Minecraft mc, net.minecraft.client.KeyMapping k) {
@@ -107,7 +115,10 @@ public final class PandaClientMod implements ClientModInitializer {
         if (menuDown && !menuWasDown && mc.screen == null) mc.setScreen(new MenuScreen(null));
         menuWasDown = menuDown;
         while (Keys.HUD_EDITOR.consumeClick()) if (mc.screen == null) mc.setScreen(new HudEditorScreen(null));
-        for (Module m : Modules.all()) if (m.enabled()) m.tick();
+        for (Module m : Modules.all()) {
+            try { if (m.enabled()) m.tick(); } catch (Throwable t) { m.setEnabled(false); System.err.println("[PandaClient] Turned off " + m.name + " after an error: " + t); }
+        }
+        com.pandaclient.mod.util.StartMarker.tick(mc);
 
         if (mc.player == null) { Modules.FREELOOK.active = false; return; }
         boolean inGame = mc.screen == null;
