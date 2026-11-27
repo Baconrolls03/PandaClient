@@ -1,6 +1,5 @@
 import * as L from 'lucide-react'
 import type { IconPreset } from '@shared/types'
-import { ART_ICONS, artIcon } from './iconArt'
 
 /** Instance icon backgrounds: two-stop gradients. `dark` = draw the symbol in ink instead of white. */
 export const ICON_BACKGROUNDS: { id: string; name: string; from: string; to: string; dark?: boolean }[] = [
@@ -51,46 +50,58 @@ export const ICON_SYMBOLS: Record<string, Icon> = Object.assign({}, ...ICON_GROU
 
 export const backgroundOf = (id: string) => ICON_BACKGROUNDS.find((b) => b.id === id) ?? ICON_BACKGROUNDS[0]
 
-export function randomPreset(): IconPreset {
-  // Mostly PandaClient's own artwork; sometimes a symbol on a colour.
-  if (Math.random() < 0.8) return { bg: 'night', symbol: ART_ICONS[Math.floor(Math.random() * ART_ICONS.length)].id }
-  const symbols = Object.keys(ICON_SYMBOLS)
-  return { bg: ICON_BACKGROUNDS[Math.floor(Math.random() * ICON_BACKGROUNDS.length)].id, symbol: symbols[Math.floor(Math.random() * symbols.length)] }
-}
+// The order they appear in the editor.
+const ORDER = ['grass', 'workbench', 'furnace', 'chest', 'bookshelf', 'redore', 'slime', 'cake', 'campfire', 'pickaxe', 'sword', 'dynamite', 'lantern', 'panda', 'bear', 'shark', 'fox', 'pig', 'bee', 'amethyst', 'anvil', 'pan', 'armchair', 'globe', 'map', 'wand', 'potion', 'trophy', 'computer', 'beacon', 'gold']
 
-const ART_FOR: [RegExp, string][] = [
-  [/sword|target|bomb|skull|ghost|zap|medal/, 'art:swords'],
-  [/pickaxe|axe|shovel|hammer|mountain|snowy|cpu|magnet|anchor/, 'art:pickaxe'],
-  [/panda|cat|dog|rabbit|squirrel|rat|bird|fish|turtle|snail|bug|paw|bone|egg|feather|shell|bot/, 'art:panda'],
-  [/shield|castle|house|key|crown|pyramid/, 'art:shield'],
-  [/flask|wand|gem|diamond|potion|atom|orbit|telescope|satellite|moon|sparkles|star|infinity|lightbulb/, 'art:potion'],
-  [/box|package|gift|trophy|map|compass|scroll|hourglass|dice|puzzle|joystick|gamepad|rocket|ship/, 'art:chest'],
-  [/flame|sun|tent|cookie|cake|pizza|candy|carrot|wheat|apple|citrus/, 'art:campfire'],
-  [/tree|leaf|sprout|flower|clover|cherry|grape|waves|cloud|snowflake|tornado|globe|heart|music|palette|brush/, 'art:blossom']
+/** PandaClient's isometric voxel symbols (made for PandaClient), keyed "vox:<name>". */
+const VOX_FILES = import.meta.glob('@/assets/symbols/*.png', { eager: true, import: 'default' }) as Record<string, string>
+export const VOX_SYMBOLS: { id: string; name: string; src: string }[] = Object.entries(VOX_FILES)
+  .map(([path, src]) => {
+    const name = path.split('/').pop()!.replace('.png', '')
+    return { id: `vox:${name}`, name: name.charAt(0).toUpperCase() + name.slice(1), src }
+  })
+  .sort((a, b) => ORDER.indexOf(a.id.slice(4)) - ORDER.indexOf(b.id.slice(4)))
+
+// Older icons (line symbols and the first PandaClient artwork) shown as the closest voxel symbol.
+const VOX_FOR: [RegExp, string][] = [
+  [/art:panda|panda/, 'panda'], [/art:swords|sword|target|medal/, 'sword'], [/art:pickaxe|pickaxe|axe|shovel|hammer/, 'pickaxe'],
+  [/art:campfire|flame|tent/, 'campfire'], [/art:shield|shield|castle|crown/, 'beacon'], [/art:potion|flask|potion/, 'potion'],
+  [/art:chest|box|package|gift|chest/, 'chest'], [/art:blossom|flower|clover|sprout|leaf/, 'bee'], [/tree|trees|mountain|snowy/, 'grass'],
+  [/cat|dog|rabbit|squirrel|rat|paw/, 'fox'], [/bird|fish|turtle|waves|anchor|ship/, 'shark'], [/bug|snail/, 'bee'], [/egg|bone|skull|ghost/, 'slime'],
+  [/gem|diamond|sparkles|star|atom|orbit/, 'amethyst'], [/wand|lightbulb|telescope|satellite|moon|sun/, 'wand'], [/map|compass|scroll|globe/, 'map'],
+  [/trophy|key|hourglass/, 'trophy'], [/cpu|bot|joystick|gamepad|dice|puzzle|zap|magnet/, 'computer'], [/bomb/, 'dynamite'],
+  [/cake|cookie|candy|pizza|apple|cherry|carrot|wheat|grape|citrus/, 'cake'], [/house|pyramid|hexagon|boxes/, 'workbench'], [/heart|music|palette|brush|infinity/, 'pig']
 ]
-/** The PandaClient artwork closest to an older symbol icon. */
-function artForSymbol(symbol: string): string {
-  for (const [re, id] of ART_FOR) if (re.test(symbol)) return id
-  return ART_ICONS[Math.abs([...symbol].reduce((h, c) => (h * 31 + c.charCodeAt(0)) | 0, 0)) % ART_ICONS.length].id
+export function voxOf(symbol: string): { id: string; name: string; src: string } {
+  const direct = VOX_SYMBOLS.find((v) => v.id === symbol)
+  if (direct) return direct
+  for (const [re, name] of VOX_FOR) if (re.test(symbol)) return VOX_SYMBOLS.find((v) => v.id === `vox:${name}`) ?? VOX_SYMBOLS[0]
+  return VOX_SYMBOLS[Math.abs([...symbol].reduce((h, c) => (h * 31 + c.charCodeAt(0)) | 0, 0)) % VOX_SYMBOLS.length]
 }
 
-/** Draws a preset icon: gradient tile with a symbol, sized like an image. */
+export function randomPreset(): IconPreset {
+  return {
+    bg: ICON_BACKGROUNDS[Math.floor(Math.random() * ICON_BACKGROUNDS.length)].id,
+    symbol: VOX_SYMBOLS[Math.floor(Math.random() * VOX_SYMBOLS.length)].id
+  }
+}
+
+/** A profile icon: a colour tile with a voxel symbol on it (like the Modrinth App's icon editor). */
 export function PresetIcon({ preset, size, className = '' }: { preset: IconPreset; size: number; className?: string }) {
-  const art = artIcon(preset.symbol) ?? artIcon(artForSymbol(preset.symbol))
-  if (art)
-    return (
-      <div className={`shrink-0 overflow-hidden rounded-xl shadow-[0_4px_12px_-4px_rgb(0_0_0/0.5)] ${className}`} style={{ width: size, height: size }}>
-        <img src={art.src} alt={art.name} draggable={false} className="size-full scale-[1.12] object-cover" />
-      </div>
-    )
   const bg = backgroundOf(preset.bg)
-  const Symbol = ICON_SYMBOLS[preset.symbol] ?? L.Box
+  const sym = voxOf(preset.symbol)
+  const d = Math.max(1, Math.round(size * 0.04))
   return (
     <div
       className={`grid shrink-0 place-items-center rounded-xl shadow-[inset_0_-6px_12px_rgb(0_0_0/0.12),inset_0_2px_0_rgb(255_255_255/0.25)] ${className}`}
       style={{ width: size, height: size, background: `linear-gradient(145deg, ${bg.from}, ${bg.to})` }}
     >
-      <Symbol size={Math.round(size * 0.52)} strokeWidth={size >= 48 ? 2.1 : 2.4} color={bg.dark ? '#141B24' : '#FFFFFF'} className="drop-shadow-[0_1px_1px_rgb(0_0_0/0.18)]" />
+      <img
+        src={sym.src}
+        alt={sym.name}
+        draggable={false}
+        style={{ width: size * 0.72, height: size * 0.72, filter: `drop-shadow(${d}px ${d * 1.5}px 0 rgb(0 0 0 / 0.28))` }}
+      />
     </div>
   )
 }

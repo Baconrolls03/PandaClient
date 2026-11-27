@@ -2,8 +2,7 @@ import { useMemo, useState } from 'react'
 import { Check, ImageIcon, Info, RotateCcw, Search, Shuffle, Upload } from 'lucide-react'
 import type { IconPreset } from '@shared/types'
 import { api } from '@/lib/api'
-import { ICON_BACKGROUNDS, ICON_GROUPS, PresetIcon, randomPreset } from '@/lib/icons'
-import { ART_ICONS } from '@/lib/iconArt'
+import { ICON_BACKGROUNDS, PresetIcon, VOX_SYMBOLS, randomPreset, voxOf } from '@/lib/icons'
 import { Button, InstanceIcon, Modal } from '@/components/ui'
 
 export type IconChoice = { kind: 'preset'; preset: IconPreset } | { kind: 'file'; file: string } | { kind: 'default' }
@@ -27,12 +26,10 @@ function pushRecent(p: IconPreset) {
 
 export function IconEditor({ initial, onSave, onClose }: { initial: IconChoice; onSave: (c: IconChoice) => void; onClose: () => void }) {
   const [choice, setChoice] = useState<IconChoice>(initial)
-  const [query, setQuery] = useState('')
   const recents = useMemo(loadRecents, [])
   const preset: IconPreset = choice.kind === 'preset' ? choice.preset : { bg: 'mint', symbol: 'panda' }
   const setPreset = (p: Partial<IconPreset>) => setChoice({ kind: 'preset', preset: { ...preset, ...p } })
 
-  const groups = ICON_GROUPS.map((g) => ({ ...g, icons: Object.entries(g.icons).filter(([id]) => id.includes(query.trim().toLowerCase())) })).filter((g) => g.icons.length)
 
   const preview = (size: number) =>
     choice.kind === 'preset' ? (
@@ -53,7 +50,7 @@ export function IconEditor({ initial, onSave, onClose }: { initial: IconChoice; 
       footer={
         <>
           <span className="mr-auto flex items-center gap-2 text-xs text-muted">
-            <Info size={14} /> Pick a PandaClient icon or upload your own image.
+            <Info size={14} /> Mix and match a background and a symbol, or upload your own image.
           </span>
           <Button variant="ghost" onClick={onClose}>
             Cancel
@@ -114,18 +111,46 @@ export function IconEditor({ initial, onSave, onClose }: { initial: IconChoice; 
         {/* Pickers */}
         <div className="flex min-w-0 flex-col gap-5">
           <section>
-            <h3 className="mb-2.5 text-sm font-semibold">PandaClient icons</h3>
-            <div className="grid grid-cols-4 gap-3">
-              {ART_ICONS.map((a) => {
-                const active = choice.kind === 'preset' && preset.symbol === a.id
+            <h3 className="mb-2.5 text-sm font-semibold">Background</h3>
+            <div className="flex gap-2 overflow-x-auto pb-2">
+              {ICON_BACKGROUNDS.map((b) => {
+                const active = choice.kind === 'preset' && preset.bg === b.id
                 return (
                   <button
-                    key={a.id}
-                    title={a.name}
-                    onClick={() => setPreset({ symbol: a.id })}
-                    className={`overflow-hidden rounded-xl ring-2 ring-offset-2 ring-offset-surface transition-transform hover:scale-105 ${active ? 'ring-mint' : 'ring-transparent'}`}
+                    key={b.id}
+                    title={b.name}
+                    onClick={() => setPreset({ bg: b.id })}
+                    className="relative size-14 shrink-0 rounded-2xl transition-transform hover:scale-105"
+                    style={{ background: `linear-gradient(145deg, ${b.from}, ${b.to})` }}
                   >
-                    <img src={a.src} alt={a.name} className="aspect-square w-full scale-[1.12] object-cover" />
+                    {active && (
+                      <span className="absolute right-1 top-1 grid size-5 place-items-center rounded-full bg-white text-ink shadow">
+                        <Check size={12} strokeWidth={3} />
+                      </span>
+                    )}
+                  </button>
+                )
+              })}
+            </div>
+          </section>
+          <section className="border-t border-border pt-4">
+            <h3 className="mb-2.5 text-sm font-semibold">Symbol</h3>
+            <div className="grid max-h-[300px] grid-cols-6 gap-2 overflow-y-auto pr-1">
+              {VOX_SYMBOLS.map((v) => {
+                const active = choice.kind === 'preset' && voxOf(preset.symbol).id === v.id
+                return (
+                  <button
+                    key={v.id}
+                    title={v.name}
+                    onClick={() => setPreset({ symbol: v.id })}
+                    className={`relative grid aspect-square place-items-center rounded-2xl border transition-colors ${active ? 'border-text/60 bg-raised' : 'border-border bg-bg hover:bg-raised'}`}
+                  >
+                    <img src={v.src} alt={v.name} className="w-[72%] drop-shadow-[2px_3px_0_rgb(0_0_0/0.3)]" />
+                    {active && (
+                      <span className="absolute right-1 top-1 grid size-5 place-items-center rounded-full bg-white text-ink shadow">
+                        <Check size={12} strokeWidth={3} />
+                      </span>
+                    )}
                   </button>
                 )
               })}
