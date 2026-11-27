@@ -54,7 +54,7 @@ public final class CiCheck {
                 if (mc.screen instanceof com.pandaclient.mod.gui.PandaTitleScreen p) p.ciPose();
                 log("shot lobby-throw");
             }
-            case 104 -> { mc.setScreen(new MenuScreen(null)); log("shot menu"); }
+            case 104 -> { mc.setScreen(new MenuScreen(mc.screen)); log("shot menu"); }
             case 140 -> { mc.setScreen(MenuScreen.openAt(null, Modules.KEYSTROKES)); log("shot settings"); }
             case 240 -> { mc.setScreen(new HudEditorScreen(null)); log("shot hud"); }
             case 300 -> {

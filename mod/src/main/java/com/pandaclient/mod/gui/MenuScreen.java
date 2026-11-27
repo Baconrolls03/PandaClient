@@ -93,6 +93,7 @@ public final class MenuScreen extends Screen {
         List<Module> l = new ArrayList<>();
         String q = search.toLowerCase(Locale.ROOT).trim();
         for (Module m : Modules.all()) {
+            if (m == Modules.COSMETICS) continue; // cosmetics are set up in the launcher's Wardrobe
             if (!category.equals("All") && !m.category.label.equals(category)) continue;
             if (!q.isEmpty() && !m.name.toLowerCase(Locale.ROOT).contains(q) && !m.description.toLowerCase(Locale.ROOT).contains(q)) continue;
             l.add(m);
@@ -109,6 +110,17 @@ public final class MenuScreen extends Screen {
 
     @Override
     public void renderBackground(GuiGraphics g, int mouseX, int mouseY, float delta) {
+        // Opened from the lobby: keep the lobby (its 3D world and characters) behind the menu, dimmed.
+        if (minecraft.level == null && parent instanceof PandaTitleScreen lobby && lobby.width == width && lobby.height == height) {
+            try {
+                lobby.renderBackground(g, -1, -1, delta);
+                lobby.render(g, -1, -1, delta);
+                g.fill(0, 0, width, height, 0x73000000);
+                return;
+            } catch (Throwable ignored) {
+                // fall back to the plain dark background
+            }
+        }
         g.fill(0, 0, width, height, 0x99000000);
     }
 
@@ -169,7 +181,7 @@ public final class MenuScreen extends Screen {
             String label = c.equals("All") ? "All mods" : c;
             int count = 0;
             if (c.equals("Mods")) count = com.pandaclient.mod.util.BundledMods.list().size();
-            else for (Module m : Modules.all()) if (c.equals("All") || m.category.label.equals(c)) count++;
+            else for (Module m : Modules.all()) if (m != Modules.COSMETICS && (c.equals("All") || m.category.label.equals(c))) count++;
             d.text(label, x + 13, by + 4, sel ? Theme.TEXT : Theme.MUTED, false);
             String n = String.valueOf(count);
             d.text(n, x + SIDEBAR - 12 - Draw.textWidth(n), by + 4, Theme.MUTED, false);

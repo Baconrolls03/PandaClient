@@ -210,7 +210,7 @@ public final class PandaTitleScreen extends Screen {
     // the window, so it looks the same at every GUI scale.
 
     private static final Identifier PANDA = Identifier.fromNamespaceAndPath("pandaclient", "textures/gui/panda_logo.png");
-    private static final String[] TABS = {"Play", "Mods", "Cosmetics", "Options"};
+    private static final String[] TABS = {"Play", "Mods", "Options"};
     private static final int CARD_FILL = 0x9E0E1117, CARD_LINE = 0x24FFFFFF, MUTED = 0xFFA3AAB6, DIM = 0xFF7D8592;
     /** Where the middle of a line of text sits below its top, as a share of the font size. */
     private static final float MID = 0.52f;
@@ -535,8 +535,7 @@ public final class PandaTitleScreen extends Screen {
             if (!in(mx, my, tx - 8, 8, tx + w + 8, 42)) continue;
             switch (i) {
                 case 1 -> minecraft.setScreen(new MenuScreen(this));
-                case 2 -> minecraft.setScreen(MenuScreen.openAt(this, Modules.COSMETICS));
-                case 3 -> minecraft.setScreen(new OptionsScreen(this, minecraft.options));
+                case 2 -> minecraft.setScreen(new OptionsScreen(this, minecraft.options));
                 default -> {}
             }
             return true;
