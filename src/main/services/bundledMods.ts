@@ -27,7 +27,9 @@ export const BUNDLED: { slug: string; category: 'Performance' | 'Visuals' | 'Uti
   { slug: 'continuity', category: 'Visuals' },
   { slug: 'language-reload', category: 'Utility' },
   { slug: 'cubes-without-borders', category: 'Utility' },
-  { slug: 'bobby', category: 'Utility' }
+  { slug: 'bobby', category: 'Utility' },
+  // Essential: host your singleplayer world for friends, plus screenshots and friends in game.
+  { slug: 'essential', category: 'Utility' }
 ]
 
 /** Which bundled mods the player switched off (written by the in-game menu, shared by all instances). */
