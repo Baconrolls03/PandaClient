@@ -1,18 +1,31 @@
 # PandaClient
 
-A simple, clean, Fabric-only Minecraft: Java Edition launcher.
+A fast, clean Minecraft: Java Edition launcher and PvP client for Fabric.
 
-- One-click setup: latest Minecraft + Fabric + Sodium, Lithium, Iris and Fabric API
-- Browse and install mods, modpacks, resource packs, shaders and data packs from Modrinth
-- Separate instances, each with its own mods, worlds, screenshots and settings
-- Minecraft files are always downloaded from Mojang, never bundled
+- **PandaClient mod built in:** a PvP HUD (FPS, CPS, keystrokes, armour, potions…), zoom, freelook,
+  toggle sprint, hitboxes, custom crosshair, 1.7 animations, capes and more, all in one in-game menu (Right Shift)
+- **Fast by default:** Sodium, Lithium, FerriteCore, Entity Culling, Dynamic FPS and other performance mods are
+  installed and kept up to date for you, and Java is started with smooth-FPS settings
+- **Profiles:** separate setups with their own mods and worlds; move your mods to a new Minecraft version in one click
+- **Mods from Modrinth:** browse and install mods, modpacks, resource packs and shaders
+- **Friends:** see what server friends are on, join them, send party invites and share profiles
+- **Crash finder:** works out which mod is crashing the game, and fixes duplicate mods automatically
+- **Cloud sync:** your HUD layout and in-game settings follow you to any PC
+- Minecraft files always come from Mojang, and your Microsoft password and Minecraft token are never sent to PandaClient
 
-> Still in development: **Play** and **Microsoft sign-in** don't work yet.
+Supports Minecraft 1.21.6 – 1.21.11 (Fabric).
 
 ## Download (Windows)
 
 Get the latest `PandaClient-Setup-<version>.exe` from **[Releases](https://github.com/Baconrolls03/PandaClient/releases/latest)** and run it.
-If Windows says "Windows protected your PC", click **More info → Run anyway** (the installer isn't code-signed yet).
+
+## Code signing policy
+
+Free code signing provided by [SignPath.io](https://about.signpath.io), certificate by [SignPath Foundation](https://signpath.org).
+
+- Releases are built from this repository by GitHub Actions and signed only from that build; nothing is signed by hand.
+- Committers and reviewers: [@Baconrolls03](https://github.com/Baconrolls03). Approver: [@Baconrolls03](https://github.com/Baconrolls03).
+- Privacy: see [PRIVACY.md](PRIVACY.md). PandaClient doesn't send anything to other networked systems unless the player uses a feature that needs it.
 
 PandaClient updates itself: when a new version is out it downloads in the background and a
 **Restart to update** button appears in the title bar.

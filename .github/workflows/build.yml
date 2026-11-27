@@ -108,7 +108,7 @@ jobs:
           build/pandaclient-mod-*.jar \
             --target "$GITHUB_SHA" \
             --title "PandaClient $version" \
-            --notes "Download **PandaClient-Setup-$version.exe** below and run it. Already have PandaClient? It updates itself."
+            --notes "Download **PandaClient-Setup-$version.exe** below and run it. Already have PandaClient? It updates itself.<br><br>Free code signing provided by [SignPath.io](https://about.signpath.io), certificate by [SignPath Foundation](https://signpath.org)."
       - uses: actions/upload-artifact@v4
         with:
           name: PandaClient-Windows-Installer
