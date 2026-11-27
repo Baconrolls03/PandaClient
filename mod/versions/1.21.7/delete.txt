@@ -1,0 +1,2 @@
+com/pandaclient/mod/cosmetics/AccessoryLayer.java
+com/pandaclient/mod/mixin/SkyRendererMixin.java
