@@ -44,10 +44,14 @@ jobs:
       - name: Build the PandaClient mod
         shell: bash
         run: |
-          gradle -p mod build --no-daemon -q
           mkdir -p build/mods
-          cp "$(ls mod/build/libs/pandaclient-*.jar | grep -v sources | head -1)" build/mods/pandaclient.jar
-          cp build/mods/pandaclient.jar build/pandaclient-mod.jar
+          # One jar per supported Minecraft version (see mod/versions/)
+          for mc in 1.21.11 1.21.10 1.21.9; do
+            rm -rf mod/build/libs
+            gradle -p mod build -Pmc=$mc --no-daemon -q
+            cp "$(ls mod/build/libs/pandaclient-*.jar | grep -v sources | head -1)" "build/mods/pandaclient-$mc.jar"
+            cp "build/mods/pandaclient-$mc.jar" "build/pandaclient-mod-$mc.jar"
+          done
           ls -la build/mods
       - run: npx electron-vite build && npx electron-builder --win --publish never
       # Pushes to main publish a GitHub Release (once per version); the app's updater reads latest.yml from it.
@@ -66,7 +70,7 @@ jobs:
             "release/PandaClient-Setup-$version.exe" \
             "release/PandaClient-Setup-$version.exe.blockmap" \
             release/latest.yml \
-          build/pandaclient-mod.jar \
+          build/pandaclient-mod-*.jar \
             --target "$GITHUB_SHA" \
             --title "PandaClient $version" \
             --notes "Download **PandaClient-Setup-$version.exe** below and run it. Already have PandaClient? It updates itself."
