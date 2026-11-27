@@ -48,3 +48,7 @@ PoseStack pose, MultiBufferSource buffers, TextureAtlasSprite sprite, CallbackIn
 AvatarRenderState => PlayerRenderState
 public void submit(PoseStack pose, MultiBufferSource collector, int light, PlayerRenderState state, float yRot, float xRot) { => public void render(PoseStack pose, MultiBufferSource collector, int light, PlayerRenderState state, float yRot, float xRot) {
 collector.submitCustomGeometry(pose, RenderType.entitySolid(white()), (p, vc) -> cube(p, vc, x1, y1, z1, x2, y2, z2, argb, light)); => cube(pose.last(), collector.getBuffer(RenderType.entitySolid(white())), x1, y1, z1, x2, y2, z2, argb, light);
+# Before 1.21.9 a style named its font by id.
+import net.minecraft.network.chat.FontDescription; => 
+new FontDescription.Resource(ResourceLocation.fromNamespaceAndPath("pandaclient", "ui")) => ResourceLocation.fromNamespaceAndPath("pandaclient", "ui")
+new FontDescription.Resource(ResourceLocation.fromNamespaceAndPath("pandaclient", "ui_bold")) => ResourceLocation.fromNamespaceAndPath("pandaclient", "ui_bold")

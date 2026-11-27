@@ -27,8 +27,21 @@ public final class CiCheck {
         if (ticks < 0) log("game ready on " + mc.screen.getClass().getSimpleName());
         ticks = Math.max(ticks, 0) + 1;
         switch (ticks) {
-            case 8 -> log("shot lobby");
-            case 40 -> { mc.setScreen(new MenuScreen(null)); log("shot menu"); }
+            case 2 -> {
+                // A few servers so the lobby's server card shows real entries.
+                try {
+                    var list = new net.minecraft.client.multiplayer.ServerList(mc);
+                    list.load();
+                    if (list.size() == 0) {
+                        for (String[] sv : new String[][]{{"Hypixel", "mc.hypixel.net"}, {"Minemen Club", "minemen.club"}, {"PvP Legacy", "pvplegacy.net"}, {"Lunar Network", "lunar.gg"}})
+                            list.add(new net.minecraft.client.multiplayer.ServerData(sv[0], sv[1], net.minecraft.client.multiplayer.ServerData.Type.OTHER), false);
+                        list.save();
+                    }
+                } catch (Throwable t) { log("could not add test servers: " + t); }
+                mc.setScreen(new com.pandaclient.mod.gui.PandaTitleScreen());
+            }
+            case 24 -> log("shot lobby");
+            case 56 -> { mc.setScreen(new MenuScreen(null)); log("shot menu"); }
             case 140 -> { mc.setScreen(MenuScreen.openAt(null, Modules.KEYSTROKES)); log("shot settings"); }
             case 240 -> { mc.setScreen(new HudEditorScreen(null)); log("shot hud"); }
             case 300 -> {
@@ -97,8 +110,8 @@ public final class CiCheck {
                 for (var w : net.fabricmc.fabric.api.client.screen.v1.Screens.getButtons(mc.screen)) b.append('[').append(w.getMessage().getString()).append(" @").append(w.getX()).append(',').append(w.getY()).append("] ");
                 log("pause menu (" + mc.screen.getClass().getSimpleName() + ") buttons: " + b + " primary=" + (com.pandaclient.mod.gui.PauseLayout.primary != null ? com.pandaclient.mod.gui.PauseLayout.primary.getMessage().getString() : "none"));
             }
-            case 500 -> { mc.setScreen(null); log("freelook restored camera=" + mc.options.getCameraType()); }
-            case 520 -> finish(mc);
+            case 515 -> { mc.setScreen(null); log("freelook restored camera=" + mc.options.getCameraType()); }
+            case 535 -> finish(mc);
             default -> {}
         }
     }
@@ -135,7 +148,11 @@ public final class CiCheck {
             java.nio.file.Path dir = net.fabricmc.loader.api.FabricLoader.getInstance().getGameDir().resolve("ci-shots");
             java.nio.file.Files.createDirectories(dir);
             net.minecraft.client.Screenshot.takeScreenshot(mc.getMainRenderTarget(), img -> {
-                try (img) { img.writeToFile(dir.resolve(name + ".png")); } catch (Exception e) { System.out.println("[PandaClient CI] screenshot failed: " + e); }
+                try (img) {
+                    java.nio.file.Path tmp = dir.resolve(name + ".tmp");
+                    img.writeToFile(tmp);
+                    java.nio.file.Files.move(tmp, dir.resolve(name + ".png"), java.nio.file.StandardCopyOption.ATOMIC_MOVE);
+                } catch (Exception e) { System.out.println("[PandaClient CI] screenshot failed: " + e); }
             });
         } catch (Throwable t) { System.out.println("[PandaClient CI] screenshot failed: " + t); }
     }

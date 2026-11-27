@@ -79,6 +79,8 @@ public final class PandaClientMod implements ClientModInitializer {
         if (mc.options.hideGui || mc.screen instanceof HudEditorScreen) return;
         Draw d = new Draw(g);
         int w = g.guiWidth(), h = g.guiHeight();
+        Draw.hud = true;
+        try {
         for (HudModule m : Modules.hud()) {
             try {
                 if (m.enabled() && m.visible()) m.draw(d, w, h, false);
@@ -88,6 +90,7 @@ public final class PandaClientMod implements ClientModInitializer {
                 System.err.println("[PandaClient] Turned off " + m.name + " after an error: " + t);
             }
         }
+        } finally { Draw.hud = false; }
     }
 
     private static boolean physicallyDown(Minecraft mc, net.minecraft.client.KeyMapping k) {

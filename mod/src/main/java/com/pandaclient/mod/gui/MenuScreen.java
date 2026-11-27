@@ -162,27 +162,27 @@ public final class MenuScreen extends Screen {
         int by = y + 8;
         for (String c : CATEGORIES) {
             boolean sel = c.equals(category) && open == null;
-            boolean hover = Widgets.in(mx, my, x + 6, by, SIDEBAR - 13, 18);
+            boolean hover = Widgets.in(mx, my, x + 6, by, SIDEBAR - 13, 16);
             float a = anim("cat" + c, sel);
-            if (a > 0 || hover) d.round(x + 6, by, x + SIDEBAR - 7, by + 18, sel ? Draw.alpha(Theme.accent(), (int) (40 * a)) : Theme.SURFACE);
-            if (a > 0) d.rect(x + 6, by + 4, x + 8, by + 14, Draw.alpha(Theme.accent(), (int) (255 * a)));
+            if (a > 0 || hover) d.round(x + 6, by, x + SIDEBAR - 7, by + 16, sel ? Draw.alpha(Theme.accent(), (int) (40 * a)) : Theme.SURFACE);
+            if (a > 0) d.rect(x + 6, by + 4, x + 8, by + 12, Draw.alpha(Theme.accent(), (int) (255 * a)));
             String label = c.equals("All") ? "All mods" : c;
             int count = 0;
             if (c.equals("Mods")) count = com.pandaclient.mod.util.BundledMods.list().size();
             else for (Module m : Modules.all()) if (c.equals("All") || m.category.label.equals(c)) count++;
-            d.text(label, x + 13, by + 5, sel ? Theme.TEXT : Theme.MUTED, false);
+            d.text(label, x + 13, by + 4, sel ? Theme.TEXT : Theme.MUTED, false);
             String n = String.valueOf(count);
-            d.text(n, x + SIDEBAR - 12 - Draw.textWidth(n), by + 5, Theme.MUTED, false);
-            by += 21;
+            d.text(n, x + SIDEBAR - 12 - Draw.textWidth(n), by + 4, Theme.MUTED, false);
+            by += 18;
         }
         // bottom buttons
         int bottom = py + ph - 8;
         int bw = SIDEBAR - 13;
-        Widgets.button(d, x + 6, bottom - 18, bw, 18, "Edit HUD", Widgets.in(mx, my, x + 6, bottom - 18, bw, 18), true);
+        Widgets.button(d, x + 6, bottom - 16, bw, 16, "Edit HUD", Widgets.in(mx, my, x + 6, bottom - 16, bw, 16), true);
         String keyLabel = waitingKey == Keys.MENU ? "Press a key..." : "Menu: " + Keys.name(Keys.MENU);
-        Widgets.button(d, x + 6, bottom - 40, bw, 18, Widgets.ellipsize(keyLabel, bw - 6), Widgets.in(mx, my, x + 6, bottom - 40, bw, 18), false);
-        Widgets.button(d, x + 6, bottom - 62, bw, 18, "Accent: " + Modules.THEME.get(), Widgets.in(mx, my, x + 6, bottom - 62, bw, 18), false);
-        Widgets.button(d, x + 6, bottom - 84, bw, 18, Widgets.ellipsize("Profile: " + Config.profile, bw - 6), Widgets.in(mx, my, x + 6, bottom - 84, bw, 18), false);
+        Widgets.button(d, x + 6, bottom - 35, bw, 16, Widgets.ellipsize(keyLabel, bw - 6), Widgets.in(mx, my, x + 6, bottom - 35, bw, 16), false);
+        Widgets.button(d, x + 6, bottom - 54, bw, 16, "Accent: " + Modules.THEME.get(), Widgets.in(mx, my, x + 6, bottom - 54, bw, 16), false);
+        Widgets.button(d, x + 6, bottom - 73, bw, 16, Widgets.ellipsize("Profile: " + Config.profile, bw - 6), Widgets.in(mx, my, x + 6, bottom - 73, bw, 16), false);
     }
 
     private int cols() { return contentW() >= 280 ? 2 : 1; }
@@ -459,17 +459,17 @@ public final class MenuScreen extends Screen {
         // sidebar
         int by = py + HEADER + 8;
         for (String c : CATEGORIES) {
-            if (Widgets.in(mx, my, px + 6, by, SIDEBAR - 13, 18)) {
+            if (Widgets.in(mx, my, px + 6, by, SIDEBAR - 13, 16)) {
                 category = c; open = null; scrollTarget = scroll = 0; editingColor = null;
                 return true;
             }
-            by += 21;
+            by += 18;
         }
         int bottom = py + ph - 8, bw = SIDEBAR - 13;
-        if (Widgets.in(mx, my, px + 6, bottom - 18, bw, 18)) { minecraft.setScreen(new HudEditorScreen(this)); return true; }
-        if (Widgets.in(mx, my, px + 6, bottom - 40, bw, 18)) { waitingKey = Keys.MENU; return true; }
-        if (Widgets.in(mx, my, px + 6, bottom - 62, bw, 18)) { Modules.THEME.cycle(button == 1 ? -1 : 1); Config.markDirty(); return true; }
-        if (Widgets.in(mx, my, px + 6, bottom - 84, bw, 18)) {
+        if (Widgets.in(mx, my, px + 6, bottom - 16, bw, 16)) { minecraft.setScreen(new HudEditorScreen(this)); return true; }
+        if (Widgets.in(mx, my, px + 6, bottom - 35, bw, 16)) { waitingKey = Keys.MENU; return true; }
+        if (Widgets.in(mx, my, px + 6, bottom - 54, bw, 16)) { Modules.THEME.cycle(button == 1 ? -1 : 1); Config.markDirty(); return true; }
+        if (Widgets.in(mx, my, px + 6, bottom - 73, bw, 16)) {
             int i = java.util.Arrays.asList(Config.PROFILES).indexOf(Config.profile);
             Config.switchProfile(Config.PROFILES[Math.floorMod(i + (button == 1 ? -1 : 1), Config.PROFILES.length)]);
             return true;

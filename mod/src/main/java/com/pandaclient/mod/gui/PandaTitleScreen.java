@@ -33,26 +33,6 @@ public final class PandaTitleScreen extends Screen {
     private net.minecraft.client.gui.components.AbstractWidget player;
     @Override protected void init() { player = null; }
 
-    /** Your character in the lobby (drag to spin), between the menu and the server card. */
-    private void placePlayer(Draw d) {
-        if (!card() || !Modules.TITLE_SCREEN.lobbyPlayer.on() || t() < 0.4f) return;
-        int ph = Math.min(height - 120, Math.round(height * 0.45f)), pw = Math.round(ph * 0.55f);
-        int px = width / 2 - pw / 2, py = height / 2 - ph / 2 + 12;
-        if (player == null) {
-            player = LobbyPlayer.create(minecraft, pw, ph);
-            if (player == null) return;
-            player.setX(px);
-            player.setY(py);
-            addRenderableWidget(player);
-        }
-        String name = minecraft.getUser() != null ? minecraft.getUser().getName() : "You";
-        int nw = Draw.textWidth(name) + 26, nx = px + pw / 2 - nw / 2, ny = py - 14;
-        d.round(nx, ny, nx + nw, ny + 13, 0xB30B0F16);
-        d.text(name, nx + 5, ny + 3, 0xFFFFFFFF, false);
-        d.push(); d.translate(nx + 8 + Draw.textWidth(name), ny + 4); d.scale(0.7f);
-        d.text("You", 0, 0, Theme.accent(), false);
-        d.pop();
-    }
     @Override public boolean isPauseScreen() { return false; }
 
     private float t() { return (System.currentTimeMillis() - start) / 1000f; }
@@ -89,13 +69,14 @@ public final class PandaTitleScreen extends Screen {
         g.pose().popMatrix();
 
         if (snap != null && card()) {
-            d.rect(0, 0, width, height, 0x330B0F16);
+            d.rect(0, 0, width, height, 0x260B0F16);
+            drawShadow(g);
             float fadeIn = Math.min(1f, t / 0.8f);
             if (fadeIn < 1) d.rect(0, 0, width, height, Draw.alpha(0xFF000000, (int) ((1 - fadeIn) * 255)));
             return;
         }
         // soft vignette: darker top and bottom so the logo and buttons read clearly
-        int bands = 24;
+        int bands = card() ? 0 : 24;
         for (int i = 0; i < bands; i++) {
             float f = 1 - i / (float) bands;
             int a = (int) (f * f * 150);
@@ -103,7 +84,7 @@ public final class PandaTitleScreen extends Screen {
             d.rect(0, h1, width, h2 + 1, Draw.alpha(0xFF070A12, a));
             d.rect(0, height - h2 - 1, width, height - h1, Draw.alpha(0xFF070A12, (int) (a * 1.3f)));
         }
-        d.rect(0, 0, width, height, 0x22070A12);
+        if (!card()) d.rect(0, 0, width, height, 0x22070A12);
 
         // fireflies drifting over the art
         if (Modules.TITLE_SCREEN.fireflies.on()) {
@@ -119,6 +100,7 @@ public final class PandaTitleScreen extends Screen {
             }
         }
 
+        if (card()) drawShadow(g);
         // fade in from black when the menu opens
         float fade = Math.min(1f, t / 0.8f);
         if (fade < 1) d.rect(0, 0, width, height, Draw.alpha(0xFF000000, (int) ((1 - fade) * 255)));
@@ -179,11 +161,7 @@ public final class PandaTitleScreen extends Screen {
         }
 
         }
-        if (card()) drawTopBar(d, mx, my, ease);
-        placePlayer(d);
-        if (card()) drawCard(d, mx, my, ease);
-
-        if (card()) { drawLobbyWidgets(d, ease); return; }
+        if (card()) { placePlayer(); lobby(g, mx, my, ease); return; }
         // footer
         int mods = FabricLoader.getInstance().getAllMods().size();
         int fa = (int) (170 * ease);
@@ -192,100 +170,239 @@ public final class PandaTitleScreen extends Screen {
         d.text(who, width - Draw.textWidth(who) - 6, height - 12, Draw.alpha(0xFFFFFFFF, fa), true);
     }
 
-    /** Frosted-glass panel like OneClient's lobby cards. */
-    private static void glass(Draw d, int x1, int y1, int x2, int y2, int a) {
-        d.round(x1, y1, x2, y2, Draw.alpha(0xFF101622, (int) (190 * a / 255f)));
-        d.rect(x1 + 3, y1, x2 - 3, y1 + 1, Draw.alpha(0xFFFFFFFF, (int) (28 * a / 255f)));
-    }
-
-    private void drawLobbyWidgets(Draw d, float ease) {
-        int a = (int) (255 * ease);
-        int x = 10, w = Math.min(150, width / 4);
-        // performance
-        int y = height / 2 - 44;
-        glass(d, x, y, x + w, y + 20, a);
-        d.rect(x + 7, y + 8, x + 11, y + 12, Draw.alpha(0xFF6EE08F, a));
-        d.text(minecraft.getFps() + " FPS", x + 15, y + 6, Draw.alpha(0xFFFFFFFF, a), false);
-        String ver = "Minecraft " + FabricLoader.getInstance().getModContainer("minecraft").map(c -> c.getMetadata().getVersion().getFriendlyString()).orElse("");
-        d.push(); d.translate(x + w - 6 - Draw.textWidth(ver) * 0.7f, y + 7.5f); d.scale(0.7f);
-        d.text(ver, 0, 0, Draw.alpha(0xFF9AA4B2, a), false);
-        d.pop();
-        // party
-        y += 26;
-        glass(d, x, y, x + w, y + 66, a);
-        d.round(x + 6, y + 6, x + 34, y + 17, Draw.alpha(0xFF4C6FFF, a));
-        d.text("Party", x + 9, y + 8, Draw.alpha(0xFFFFFFFF, a), false);
-        String me = minecraft.getUser() != null ? minecraft.getUser().getName() : "You";
-        d.text(Widgets.ellipsize(me, w - 16), x + 8, y + 24, Draw.alpha(0xFFE3E9F1, a), false);
-        d.push(); d.translate(x + 8, y + 36); d.scale(0.7f);
-        for (String line : Widgets.wrap("Invite friends from the PandaClient launcher (Friends) and join their server in one click.", (int) ((w - 16) / 0.7f), 3)) {
-            d.text(line, 0, 0, Draw.alpha(0xFF9AA4B2, a), false);
-            d.translate(0, 10);
-        }
-        d.pop();
-        // bottom bar
-        d.rect(0, height - 12, width, height, Draw.alpha(0xFF070A12, (int) (170 * ease)));
-        d.push(); d.translate(6, height - 9); d.scale(0.7f);
-        d.text("PANDACLIENT  ·  Fabric  ·  " + FabricLoader.getInstance().getAllMods().size() + " mods", 0, 0, Draw.alpha(0xFFB7C0CC, a), false);
-        d.pop();
-        String c = "Not affiliated with Mojang or Microsoft";
-        d.push(); d.translate(width - 6 - Draw.textWidth(c) * 0.7f, height - 9); d.scale(0.7f);
-        d.text(c, 0, 0, Draw.alpha(0xFF7C8796, a), false);
-        d.pop();
-    }
-
-    // ---------------------------------------------------------------- top bar (OneClient style)
+    // ================================================================ OneClient-style lobby
+    // Everything below is laid out on a 720-unit-tall canvas (OneClient's own proportions), scaled to
+    // the window, so it looks the same at every GUI scale.
 
     private static final Identifier PANDA = Identifier.fromNamespaceAndPath("pandaclient", "textures/gui/panda_logo.png");
-    private static final String[] TABS = {"Play", "Mods", "Cosmetics", "Options", "Quit"};
+    private static final String[] TABS = {"Play", "Mods", "Cosmetics", "Options"};
+    private static final int CARD_FILL = 0x9E0E1117, CARD_LINE = 0x24FFFFFF, MUTED = 0xFFA3AAB6, DIM = 0xFF7D8592;
+    /** Where the middle of a line of text sits below its top, as a share of the font size. */
+    private static final float MID = 0.5f;
 
-    private int tabX(int i) {
-        int total = 0;
-        for (String t : TABS) total += Draw.textWidth(t) + 16;
-        int x = width / 2 - total / 2;
-        for (int k = 0; k < i; k++) x += Draw.textWidth(TABS[k]) + 16;
+    private float k = 1f;           // GUI pixels per canvas unit
+    private float vw = 1280, vh = 720;
+    private Draw d;
+    private float a = 1f;            // fade-in
+
+    private void zoom() {
+        k = height / 720f;
+        vw = width / k;
+        vh = 720f;
+    }
+
+    private int col(int argb) { return Draw.alpha(argb, Math.round((argb >>> 24) * a)); }
+
+    private void txt(String s, float x, float cy, float size, int argb, boolean bold) {
+        d.textScaled(s, x, cy - size * MID, size / 8f, col(argb), bold);
+    }
+    private float tw(String s, float size, boolean bold) { return (bold ? Draw.boldWidth(s) : Draw.textWidth(s)) * size / 8f; }
+    private void txtR(String s, float right, float cy, float size, int argb, boolean bold) { txt(s, right - tw(s, size, bold), cy, size, argb, bold); }
+    private void txtC(String s, float cx, float cy, float size, int argb, boolean bold) { txt(s, cx - tw(s, size, bold) / 2, cy, size, argb, bold); }
+
+    private void card(float x1, float y1, float x2, float y2, float r) { d.rounded(x1, y1, x2, y2, r, col(CARD_FILL), col(CARD_LINE)); }
+
+    private static boolean in(double mx, double my, float x1, float y1, float x2, float y2) { return mx >= x1 && my >= y1 && mx < x2 && my < y2; }
+
+    private String name() { return minecraft.getUser() != null ? minecraft.getUser().getName() : "Player"; }
+    private static String mcVersion() {
+        return FabricLoader.getInstance().getModContainer("minecraft").map(c -> c.getMetadata().getVersion().getFriendlyString()).orElse("");
+    }
+
+    private void lobby(GuiGraphics g, int mouseX, int mouseY, float ease) {
+        zoom();
+        a = ease;
+        d = new Draw(g);
+        double mx = mouseX / k, my = mouseY / k;
+        d.push();
+        d.scale(k);
+        d.zoom = k;
+        drawNametag();
+        drawTopBar(mx, my);
+        drawLeft(mx, my);
+        drawServerCard(mx, my);
+        drawFooter();
+        d.pop();
+    }
+
+    // ---------------------------------------------------------------- your character
+
+    /** Canvas box of the character: x, y, w, h. */
+    private float[] playerBox() {
+        float ph = 190, pw = ph * 0.55f;
+        float feet = vh * 0.80f;
+        return new float[]{vw * 0.55f - pw / 2, feet - ph, pw, ph};
+    }
+
+    private void placePlayer() {
+        if (!card() || !Modules.TITLE_SCREEN.lobbyPlayer.on() || t() < 0.4f || player != null) return;
+        zoom();
+        float[] b = playerBox();
+        player = LobbyPlayer.create(minecraft, Math.round(b[2] * k), Math.round(b[3] * k));
+        if (player == null) return;
+        player.setX(Math.round(b[0] * k));
+        player.setY(Math.round(b[1] * k));
+        addRenderableWidget(player);
+    }
+
+    /** Soft shadow under the character's feet (drawn before the character). */
+    private void drawShadow(GuiGraphics g) {
+        if (!Modules.TITLE_SCREEN.lobbyPlayer.on()) return;
+        zoom();
+        Draw sd = new Draw(g);
+        sd.push(); sd.scale(k); sd.zoom = k;
+        float[] b = playerBox();
+        float cx = b[0] + b[2] / 2, cy = b[1] + b[3] - 4;
+        for (int i = 0; i < 5; i++) {
+            float rx = 34 - i * 5, ry = 8 - i * 1.2f;
+            sd.rounded(cx - rx, cy - ry, cx + rx, cy + ry, ry, 0x1A000000);
+        }
+        sd.pop();
+    }
+
+    private void drawNametag() {
+        if (!Modules.TITLE_SCREEN.lobbyPlayer.on()) return;
+        float[] b = playerBox();
+        String n = name();
+        float w = tw(n, 12, true) + tw("You", 10, false) + 22;
+        float cx = b[0] + b[2] / 2, y = b[1] - 26;
+        d.rounded(cx - w / 2, y, cx + w / 2, y + 21, 5, col(0xD90B0E16), col(Draw.alpha(Theme.accent(), 170)));
+        float x = cx - w / 2 + 8;
+        txt(n, x, y + 10.5f, 12, 0xFFFFFFFF, true);
+        txt("You", x + tw(n, 12, true) + 6, y + 10.5f, 10, Theme.accent(), false);
+    }
+
+    // ---------------------------------------------------------------- top bar
+
+    private float tabX(int i) {
+        float total = 0;
+        for (String t : TABS) total += tw(t, 13, false) + 23;
+        total -= 23;
+        float x = vw / 2 - total / 2;
+        for (int j = 0; j < i; j++) x += tw(TABS[j], 13, false) + 23;
         return x;
     }
 
-    private void drawTopBar(Draw d, int mx, int my, float ease) {
-        int a = (int) (255 * ease);
-        d.rect(0, 0, width, 22, Draw.alpha(0xFF070A12, (int) (140 * ease)));
-        d.g.pose().pushMatrix();
-        d.g.pose().translate(7, 4);
-        d.g.pose().scale(14f / 256f, 14f / 256f);
-        d.g.blit(RenderPipelines.GUI_TEXTURED, PANDA, 0, 0, 0f, 0f, 256, 256, 256, 256);
-        d.g.pose().popMatrix();
-        d.text("PANDACLIENT", 25, 7, Draw.alpha(0xFFFFFFFF, a), false);
-        for (int i = 0; i < TABS.length; i++) {
-            int x = tabX(i), w = Draw.textWidth(TABS[i]) + 16;
-            boolean hov = Widgets.in(mx, my, x, 2, w, 18), on = i == 0;
-            d.centered(TABS[i], x + w / 2, 7, Draw.alpha(on || hov ? 0xFFFFFFFF : 0xFF9AA4B2, a), false);
-            if (on) d.rect(x + 6, 19, x + w - 6, 20, Draw.alpha(0xFF4C6FFF, a));
+    private void drawTopBar(double mx, double my) {
+        // a little shade behind the bar so it reads on bright backgrounds
+        for (int i = 0; i < 8; i++) d.rect(0, i * 9, Math.round(vw) + 1, i * 9 + 9, col(Draw.alpha(0xFF05070B, 70 - i * 9)));
+        d.push(); d.translate(24, 14); d.scale(22f / 256f);
+        d.g.blit(RenderPipelines.GUI_TEXTURED, PANDA, 0, 0, 0f, 0f, 256, 256, 256, 256, col(0xFFFFFFFF));
+        d.pop();
+        float x = 54;
+        for (char ch : "PANDACLIENT".toCharArray()) {
+            String c = String.valueOf(ch);
+            txt(c, x, 25, 15, 0xFFFFFFFF, true);
+            x += tw(c, 15, true) + 1.6f;
         }
-        String who = minecraft.getUser() != null ? minecraft.getUser().getName() : "";
-        d.text(who, width - Draw.textWidth(who) - 8, 7, Draw.alpha(0xFFE3E9F1, a), false);
+        for (int i = 0; i < TABS.length; i++) {
+            float tx = tabX(i), w = tw(TABS[i], 13, false);
+            boolean on = i == 0, hov = in(mx, my, tx - 8, 8, tx + w + 8, 42);
+            txt(TABS[i], tx, 25, 13, on || hov ? 0xFFFFFFFF : 0xFFB4BAC5, false);
+            if (on) d.rounded(tx, 39, tx + w, 41, 1, col(Theme.accent()));
+            else if (hov) d.rounded(tx, 39, tx + w, 41, 1, col(0x66FFFFFF));
+        }
+        // right: you, full screen, quit
+        float cx = vw - 36;
+        d.icon(Draw.I_CLOSE, cx, 25, 14, col(in(mx, my, cx - 14, 11, cx + 14, 39) ? 0xFFFF7A7A : 0xFFE6E9EE));
+        cx = vw - 69;
+        d.icon(Draw.I_EXPAND, cx, 25, 14, col(in(mx, my, cx - 14, 11, cx + 14, 39) ? 0xFFFFFFFF : 0xFFE6E9EE));
+        float hx = vw - 120;
+        d.rounded(hx - 1, 9, hx + 31, 41, 7, col(0x33FFFFFF));
+        boolean face = false;
+        if (a > 0.98f) { d.push(); d.translate(hx + 3, 13); d.scale(24f / 24f); face = LobbyPlayer.face(minecraft, d.g, 0, 0, 24); d.pop(); }
+        if (!face) txtC(name().substring(0, 1).toUpperCase(java.util.Locale.ROOT), hx + 15, 25, 13, 0xFFFFFFFF, true);
+        txtR(name(), hx - 10, 25, 13, 0xFFFFFFFF, true);
     }
 
     private boolean clickTopBar(double mx, double my) {
-        if (my > 21) return false;
+        if (my > 44) return false;
         for (int i = 0; i < TABS.length; i++) {
-            if (!Widgets.in(mx, my, tabX(i), 2, Draw.textWidth(TABS[i]) + 16, 18)) continue;
+            float tx = tabX(i), w = tw(TABS[i], 13, false);
+            if (!in(mx, my, tx - 8, 8, tx + w + 8, 42)) continue;
             switch (i) {
                 case 1 -> minecraft.setScreen(new MenuScreen(this));
                 case 2 -> minecraft.setScreen(MenuScreen.openAt(this, Modules.COSMETICS));
                 case 3 -> minecraft.setScreen(new OptionsScreen(this, minecraft.options));
-                case 4 -> minecraft.stop();
                 default -> {}
             }
             return true;
         }
+        if (in(mx, my, vw - 50, 11, vw - 22, 39)) { minecraft.stop(); return true; }
+        if (in(mx, my, vw - 83, 11, vw - 55, 39)) { minecraft.getWindow().toggleFullScreen(); return true; }
+        return false;
+    }
+
+    // ---------------------------------------------------------------- left column
+
+    private void drawLeft(double mx, double my) {
+        float x1 = 22, x2 = 292;
+        // bottom buttons
+        float by = vh - 63, bh = 38;
+        card(x1, by, 201, by + bh, 10);
+        boolean hHud = in(mx, my, x1, by, 140, by + bh);
+        if (hHud) d.rounded(x1 + 3, by + 3, 140, by + bh - 3, 8, col(0x14FFFFFF));
+        d.icon(Draw.I_LAYOUT, 46, by + bh / 2, 15, col(0xFFFFFFFF));
+        txt("Edit HUD", 62, by + bh / 2, 12, 0xFFFFFFFF, false);
+        d.rect(Math.round(144), Math.round(by + 10), Math.round(145), Math.round(by + bh - 10), col(0x22FFFFFF));
+        boolean hMods = in(mx, my, 146, by, 201, by + bh);
+        if (hMods) d.rounded(148, by + 3, 198, by + bh - 3, 8, col(0x14FFFFFF));
+        d.icon(Draw.I_GRID, 173, by + bh / 2, 15, col(0xFFFFFFFF));
+        card(215, by, x2, by + bh, 10);
+        boolean hSound = in(mx, my, 215, by, 253, by + bh), hOpt = in(mx, my, 253, by, x2, by + bh);
+        if (hSound) d.rounded(218, by + 3, 252, by + bh - 3, 8, col(0x14FFFFFF));
+        if (hOpt) d.rounded(255, by + 3, x2 - 3, by + bh - 3, 8, col(0x14FFFFFF));
+        d.icon(Draw.I_SOUND, 235, by + bh / 2, 15, col(0xFFFFFFFF));
+        d.icon(Draw.I_GEAR, 273, by + bh / 2, 15, col(0xFFFFFFFF));
+
+        // party
+        float py2 = by - 9, py1 = py2 - 186;
+        card(x1, py1, x2, py2, 10);
+        float pw = tw("Party", 12, false) + 20;
+        d.rounded(x1 + 10, py1 + 9, x1 + 10 + pw, py1 + 32, 6, col(Theme.accent()));
+        txt("Party", x1 + 20, py1 + 20.5f, 12, 0xFFFFFFFF, false);
+        txtR("1 / 8", x2 - 12, py1 + 20.5f, 11, DIM, false);
+        // you, the party leader
+        float ry = py1 + 48;
+        d.rounded(x1 + 10, ry, x1 + 34, ry + 24, 5, col(0x33FFFFFF));
+        boolean face = a > 0.98f && LobbyPlayer.face(minecraft, d.g, Math.round(x1 + 12), Math.round(ry + 2), 20);
+        if (!face) txtC(name().substring(0, 1).toUpperCase(java.util.Locale.ROOT), x1 + 22, ry + 12, 12, 0xFFFFFFFF, true);
+        txt(name(), x1 + 44, ry + 12, 12, 0xFFFFFFFF, true);
+        d.icon(Draw.I_CROWN, x1 + 52 + tw(name(), 12, true), ry + 12, 11, col(0xFFF5C451));
+        txtR("Online", x2 - 12, ry + 12, 10, 0xFF6EE08F, false);
+        // invite row, shaped like OneClient's message box
+        float iy = py2 - 38;
+        d.rounded(x1 + 10, iy, x2 - 40, iy + 28, 7, col(0x40000000), col(0x1FFFFFFF));
+        txt("Invite friends from the launcher", x1 + 20, iy + 14, 11, DIM, false);
+        d.rounded(x2 - 34, iy, x2 - 10, iy + 28, 7, col(0x40000000), col(0x1FFFFFFF));
+        d.icon(Draw.I_INVITE, x2 - 22, iy + 14, 13, col(0xFFDDE2EA));
+        txt("Join your friends' servers in one click", x1 + 12, iy - 14, 10, DIM, false);
+
+        // performance
+        float fy2 = py1 - 9, fy1 = fy2 - 38;
+        card(x1, fy1, x2, fy2, 10);
+        d.icon(Draw.I_GAUGE, 42, (fy1 + fy2) / 2, 13, col(0xFFFFFFFF));
+        int fps = minecraft.getFps();
+        txt(fps + " FPS", 58, (fy1 + fy2) / 2, 11, 0xFFFFFFFF, true);
+        txtR(String.format(java.util.Locale.ROOT, "%.1f ms", 1000f / Math.max(1, fps)), x2 - 12, (fy1 + fy2) / 2, 11, MUTED, false);
+    }
+
+    private boolean clickLeft(double mx, double my) {
+        float by = vh - 63, bh = 38;
+        if (in(mx, my, 22, by, 140, by + bh)) { minecraft.setScreen(new HudEditorScreen(this)); return true; }
+        if (in(mx, my, 146, by, 201, by + bh)) { minecraft.setScreen(new MenuScreen(this)); return true; }
+        if (in(mx, my, 215, by, 253, by + bh)) { minecraft.setScreen(new net.minecraft.client.gui.screens.options.SoundOptionsScreen(this, minecraft.options)); return true; }
+        if (in(mx, my, 253, by, 292, by + bh)) { minecraft.setScreen(new OptionsScreen(this, minecraft.options)); return true; }
         return false;
     }
 
     // ---------------------------------------------------------------- server card (bottom right)
 
     private static boolean multiplayerTab = true;
+    private static int picked;
     private net.minecraft.client.multiplayer.ServerList servers;
+    private static java.util.List<net.minecraft.world.level.storage.LevelSummary> worlds;
+    private static boolean worldsRequested;
 
     private net.minecraft.client.multiplayer.ServerList servers() {
         if (servers == null) {
@@ -295,73 +412,170 @@ public final class PandaTitleScreen extends Screen {
         return servers;
     }
 
-    private int[] cardBox() {
-        int cw = Math.min(180, width / 2 - 30), ch = 112;
-        return new int[]{width - cw - 14, height - ch - 22, cw, ch};
+    private java.util.List<net.minecraft.world.level.storage.LevelSummary> worlds() {
+        if (!worldsRequested) {
+            worldsRequested = true;
+            try {
+                var src = minecraft.getLevelSource();
+                src.loadLevelSummaries(src.findLevelCandidates()).thenAccept(list -> {
+                    var l = new java.util.ArrayList<>(list);
+                    java.util.Collections.sort(l);
+                    worlds = l;
+                });
+            } catch (Throwable ignored) {}
+        }
+        return worlds == null ? java.util.List.of() : worlds;
     }
 
-    private void drawCard(Draw d, int mx, int my, float ease) {
-        int[] c = cardBox();
-        int a = (int) (255 * ease);
-        int x = c[0], y = c[1] + Math.round((1 - ease) * 12), w = c[2], h = c[3];
-        glass(d, x, y, x + w, y + h, a);
-        d.round(x + 4, y + 4, x + w - 4, y + 18, Draw.alpha(0xFF0A0E16, (int) (160 * ease)));
+    private int count() { return multiplayerTab ? servers().size() : worlds().size(); }
+
+    /** Name, line under it, picture of entry i of the current tab. */
+    private Object[] entry(int i) {
+        if (multiplayerTab) {
+            var sd = servers().get(i);
+            byte[] bytes = sd.getIconBytes();
+            com.pandaclient.mod.util.IconCache.Icon icon = bytes == null ? null
+                : com.pandaclient.mod.util.IconCache.get("s:" + sd.ip + ":" + java.util.Arrays.hashCode(bytes), () -> new java.io.ByteArrayInputStream(bytes));
+            return new Object[]{sd.name, sd.ip, icon};
+        }
+        var w = worlds().get(i);
+        var path = w.getIcon();
+        com.pandaclient.mod.util.IconCache.Icon icon = com.pandaclient.mod.util.IconCache.get("w:" + w.getLevelId() + ":" + w.getLastPlayed(),
+            () -> path != null && java.nio.file.Files.isRegularFile(path) ? java.nio.file.Files.newInputStream(path) : null);
+        long ago = System.currentTimeMillis() - w.getLastPlayed();
+        String when = ago < 3_600_000L ? "Played just now" : ago < 86_400_000L ? "Played " + ago / 3_600_000L + "h ago" : "Played " + ago / 86_400_000L + "d ago";
+        return new Object[]{w.getLevelName(), when, icon};
+    }
+
+    private void picture(Object[] e, float x1, float y1, float size, float r) {
+        d.rounded(x1, y1, x1 + size, y1 + size, r, col(0x59000000), col(0x1AFFFFFF));
+        var icon = (com.pandaclient.mod.util.IconCache.Icon) e[2];
+        float inner = size * 0.84f, o = (size - inner) / 2;
+        if (icon != null) {
+            d.push(); d.translate(x1 + o, y1 + o); d.scale(inner / icon.w());
+            d.g.blit(RenderPipelines.GUI_TEXTURED, icon.id(), 0, 0, 0f, 0f, icon.w(), icon.h(), icon.w(), icon.h(), col(0xFFFFFFFF));
+            d.pop();
+        } else {
+            String n = (String) e[0];
+            d.rounded(x1 + o, y1 + o, x1 + o + inner, y1 + o + inner, r * 0.8f, col(Draw.lerpColor(Theme.accent(), 0xFF0B0E16, 0.35f)));
+            txtC(n.isEmpty() ? "?" : n.substring(0, 1).toUpperCase(java.util.Locale.ROOT), x1 + size / 2, y1 + size / 2, size * 0.42f, 0xFFFFFFFF, true);
+        }
+    }
+
+    private float[] cardBox() { return new float[]{vw - 301, vh - 295, vw - 23, vh - 25}; }
+
+    private void drawServerCard(double mx, double my) {
+        float[] c = cardBox();
+        float x1 = c[0], y1 = c[1], x2 = c[2], y2 = c[3];
+        d.rounded(x1, y1, x2, y2, 12, col(0xA60D1120), col(0x2BFFFFFF));
         // tabs
-        int tw = (w - 8) / 2;
+        d.rounded(x1 + 8, y1 + 8, x2 - 8, y1 + 37, 8, col(0x59000000), col(0x1AFFFFFF));
+        float half = (x2 - x1 - 16) / 2;
         for (int i = 0; i < 2; i++) {
             boolean on = (i == 1) == multiplayerTab;
-            int tx = x + 4 + i * tw;
-            if (on) d.round(tx, y + 4, tx + tw, y + 18, Draw.alpha(0xFF4C6FFF, a));
-            d.centered(i == 0 ? "Singleplayer" : "Multiplayer", tx + tw / 2, y + 7, Draw.alpha(on ? 0xFFFFFFFF : 0xFF8C97A6, a), false);
+            float tx = x1 + 8 + i * half;
+            if (on) d.rounded(tx + 3, y1 + 11, tx + half - 3, y1 + 34, 6, col(Theme.accent()));
+            else if (in(mx, my, tx, y1 + 8, tx + half, y1 + 37)) d.rounded(tx + 3, y1 + 11, tx + half - 3, y1 + 34, 6, col(0x14FFFFFF));
+            txtC(i == 0 ? "Singleplayer" : "Multiplayer", tx + half / 2, y1 + 22.5f, 12, on ? 0xFFFFFFFF : 0xFFC9CED6, false);
         }
-        int iy = y + 26;
-        String title, sub;
-        if (multiplayerTab) {
-            var list = servers();
-            if (list.size() > 0) { var sd = list.get(0); title = sd.name; sub = sd.ip; }
-            else { title = "No servers yet"; sub = "Add one to start playing"; }
-        } else { title = "Your worlds"; sub = "Pick a world or make a new one"; }
-        d.round(x + 8, iy, x + 36, iy + 28, Draw.alpha(0xFF4C6FFF, a));
-        d.centered(title.isEmpty() ? "?" : title.substring(0, 1).toUpperCase(java.util.Locale.ROOT), x + 22, iy + 10, Draw.alpha(0xFFFFFFFF, a), false);
-        d.text(Widgets.ellipsize(title, w - 50), x + 42, iy + 5, Draw.alpha(0xFFFFFFFF, a), false);
-        d.push(); d.translate(x + 42, iy + 17); d.scale(0.75f);
-        d.text(Widgets.ellipsize(sub, (int) ((w - 50) / 0.75f)), 0, 0, Draw.alpha(0xFF9AA4B2, a), false);
-        d.pop();
-        // big play button
-        int by = y + h - 42;
-        boolean hov = Widgets.in(mx, my, x + 8, by, w - 16, 22);
-        d.round(x + 8, by, x + w - 8, by + 22, Draw.alpha(hov ? Draw.lerpColor(0xFF3F6BFF, 0xFFFFFFFF, 0.12f) : 0xFF3F6BFF, a));
-        String label = multiplayerTab ? (servers().size() > 0 ? "Play" : "Add a server") : "Choose a world";
-        d.centered(label, x + w / 2, by + 7, Draw.alpha(0xFFFFFFFF, a), false);
-        boolean allHov = Widgets.in(mx, my, x + w - 60, y + h - 15, 56, 11);
-        d.push(); d.translate(x + w - 8 - Draw.textWidth(multiplayerTab ? "All servers >" : "All worlds >") * 0.75f, y + h - 12); d.scale(0.75f);
-        d.text(multiplayerTab ? "All servers >" : "All worlds >", 0, 0, Draw.alpha(allHov ? 0xFFFFFFFF : 0xFF8C97A6, a), false);
-        d.pop();
+        int n = count();
+        if (picked >= n) picked = 0;
+        float iy = y1 + 57;
+        if (n > 0) {
+            Object[] e = entry(picked);
+            picture(e, x1 + 8, iy, 77, 12);
+            txt(Widgets.ellipsize((String) e[0], (int) ((x2 - x1 - 115) * 8 / 17f)), x1 + 98, iy + 28, 17, 0xFFFFFFFF, true);
+            if (multiplayerTab) d.rounded(x1 + 98, iy + 49.5f, x1 + 104, iy + 55.5f, 3, col(0xFF41D17D));
+            txt(Widgets.ellipsize((String) e[1], (int) ((x2 - x1 - 125) * 8 / 10f)), x1 + (multiplayerTab ? 109 : 98), iy + 52.5f, 10, MUTED, false);
+        } else {
+            picture(new Object[]{multiplayerTab ? "+" : "+", "", null}, x1 + 8, iy, 77, 12);
+            txt(multiplayerTab ? "No servers yet" : "No worlds yet", x1 + 98, iy + 28, 15, 0xFFFFFFFF, true);
+            txt(multiplayerTab ? "Add one to start playing" : "Create one to start playing", x1 + 98, iy + 52.5f, 10, MUTED, false);
+        }
+        // play
+        float py = y1 + 169;
+        boolean hov = in(mx, my, x1 + 8, py, x2 - 9, py + 47);
+        d.rounded(x1 + 8, py, x2 - 9, py + 47, 9, col(hov ? Draw.lerpColor(Theme.accent(), 0xFFFFFFFF, 0.12f) : Theme.accent()));
+        txtC(n > 0 ? "Play" : multiplayerTab ? "Add a server" : "Create a world", (x1 + x2) / 2, py + 23.5f, 17, 0xFFFFFFFF, true);
+        // recent + all
+        float fy = y2 - 21;
+        txt("Recent", x1 + 8, fy, 11, MUTED, false);
+        int shown = 0;
+        for (int i = 0; i < n && shown < 3; i++) {
+            if (i == picked) continue;
+            float ix = x1 + 50 + shown * 33;
+            picture(entry(i), ix, fy - 14, 28, 7);
+            if (in(mx, my, ix, fy - 14, ix + 28, fy + 14)) d.rounded(ix, fy - 14, ix + 28, fy + 14, 7, col(0x26FFFFFF));
+            shown++;
+        }
+        String all = "All";
+        float aw = tw(all, 11, false) + tw(String.valueOf(n), 11, false) + 34;
+        boolean hAll = in(mx, my, x2 - 8 - aw, fy - 14, x2 - 8, fy + 14);
+        d.rounded(x2 - 8 - aw, fy - 14, x2 - 8, fy + 14, 8, col(hAll ? 0x26FFFFFF : 0x0DFFFFFF), col(0x33FFFFFF));
+        float ax = x2 - aw + 2;
+        txt(all, ax, fy, 11, 0xFFFFFFFF, false);
+        txt(String.valueOf(n), ax + tw(all, 11, false) + 5, fy, 11, MUTED, false);
+        d.icon(Draw.I_ARROW, x2 - 21, fy, 11, col(0xFFFFFFFF));
     }
 
     private boolean clickCard(double mx, double my) {
-        int[] c = cardBox();
-        int x = c[0], y = c[1], w = c[2], h = c[3];
-        if (!Widgets.in(mx, my, x, y, w, h)) return false;
-        int tw = (w - 8) / 2;
-        if (Widgets.in(mx, my, x + 4, y + 4, tw, 14)) { multiplayerTab = false; return true; }
-        if (Widgets.in(mx, my, x + 4 + tw, y + 4, tw, 14)) { multiplayerTab = true; return true; }
-        boolean play = Widgets.in(mx, my, x + 8, y + h - 42, w - 16, 22);
-        boolean all = Widgets.in(mx, my, x + w - 60, y + h - 15, 56, 11);
+        float[] c = cardBox();
+        float x1 = c[0], y1 = c[1], x2 = c[2], y2 = c[3];
+        if (!in(mx, my, x1, y1, x2, y2)) return false;
+        float half = (x2 - x1 - 16) / 2;
+        if (in(mx, my, x1 + 8, y1 + 8, x1 + 8 + half, y1 + 37)) { multiplayerTab = false; picked = 0; return true; }
+        if (in(mx, my, x1 + 8 + half, y1 + 8, x2 - 8, y1 + 37)) { multiplayerTab = true; picked = 0; return true; }
+        int n = count();
+        float fy = y2 - 21;
+        int shown = 0;
+        for (int i = 0; i < n && shown < 3; i++) {
+            if (i == picked) continue;
+            float ix = x1 + 50 + shown * 33;
+            if (in(mx, my, ix, fy - 14, ix + 28, fy + 14)) { picked = i; return true; }
+            shown++;
+        }
+        float py = y1 + 169;
+        boolean play = in(mx, my, x1 + 8, py, x2 - 9, py + 47);
+        boolean all = in(mx, my, x2 - 90, fy - 14, x2 - 8, fy + 14);
         if (!play && !all) return true;
-        if (!multiplayerTab) { minecraft.setScreen(new SelectWorldScreen(this)); return true; }
-        var list = servers();
-        if (play && list.size() > 0) {
-            var sd = list.get(0);
+        if (!multiplayerTab) {
+            if (play && n > 0) {
+                String id = worlds().get(picked).getLevelId();
+                minecraft.createWorldOpenFlows().openWorld(id, () -> minecraft.setScreen(this));
+            } else minecraft.setScreen(new SelectWorldScreen(this));
+            return true;
+        }
+        if (play && n > 0) {
+            var sd = servers().get(picked);
             net.minecraft.client.gui.screens.ConnectScreen.startConnecting(this, minecraft,
                 net.minecraft.client.multiplayer.resolver.ServerAddress.parseString(sd.ip), sd, false, null);
         } else minecraft.setScreen(new JoinMultiplayerScreen(this));
         return true;
     }
 
+    // ---------------------------------------------------------------- footer
+
+    private void drawFooter() {
+        float y = vh - 12;
+        d.push(); d.translate(22, y - 5); d.scale(10f / 256f);
+        d.g.blit(RenderPipelines.GUI_TEXTURED, PANDA, 0, 0, 0f, 0f, 256, 256, 256, 256, col(0xFFFFFFFF));
+        d.pop();
+        float x = 36;
+        txt("PANDACLIENT", x, y, 9, 0xFFFFFFFF, true);
+        x += tw("PANDACLIENT", 9, true) + 9;
+        txt("Fabric " + mcVersion(), x, y, 9, MUTED, false);
+        x += tw("Fabric " + mcVersion(), 9, false) + 8;
+        txt("PandaClient " + com.pandaclient.mod.PandaClientMod.VERSION, x, y, 9, MUTED, false);
+        txtR("Not affiliated with Mojang or Microsoft", vw - 22, y, 9, MUTED, false);
+    }
+
     @Override
     public boolean mouseClicked(MouseButtonEvent e, boolean doubleClick) {
-        if (e.button() == 0 && t() >= 0.6f && card() && (clickTopBar(e.x(), e.y()) || clickCard(e.x(), e.y()))) return true;
+        if (e.button() == 0 && t() >= 0.6f && card()) {
+            zoom();
+            double mx = e.x() / k, my = e.y() / k;
+            if (clickTopBar(mx, my) || clickCard(mx, my) || clickLeft(mx, my)) return true;
+        }
         if (card()) return super.mouseClicked(e, doubleClick);
         if (e.button() != 0 || t() < 0.6f) return super.mouseClicked(e, doubleClick);
         for (int i = 0; i < LABELS.length; i++) {

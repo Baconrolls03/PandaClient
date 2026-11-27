@@ -90,7 +90,8 @@ public final class HudEditorScreen extends Screen {
             boolean hl = m == hover;
             d.rect(x - 2, y - 2, x + w + 2, y + h + 2, hl ? Draw.alpha(accent, 40) : 0x18FFFFFF);
             d.outline(x - 2, y - 2, x + w + 2, y + h + 2, hl ? accent : 0x40FFFFFF);
-            m.draw(d, width, height, true);
+            Draw.hud = true;
+            try { m.draw(d, width, height, true); } finally { Draw.hud = false; }
             if (hl) {
                 // resize handle
                 d.rect(x + w - 2, y + h - 2, x + w + 3, y + h + 3, 0xFF0F141C);
