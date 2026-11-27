@@ -45,11 +45,13 @@ const FILE_FILTERS: Record<string, Electron.FileFilter[]> = {
 async function createInstance(input: CreateInstanceInput, onTransfer: (r: TransferReport) => void = () => {}) {
   const loaderVersion = input.loaderVersion || (await latestStableFabric(input.mcVersion).catch(() => null))
   const inst = await instances.createInstance({ ...input, loaderVersion })
-  const bundle = BUNDLES.find((b) => b.id === (input.bundle ?? (input.performancePack ? 'performance' : null)))
+  const ids = input.bundles?.length ? input.bundles : [input.bundle ?? (input.performancePack ? 'performance' : null)]
+  const chosen = BUNDLES.filter((b) => ids.includes(b.id))
+  const mods = [...new Set(chosen.flatMap((b) => b.mods))]
   // Runs in the background; progress shows in the downloads panel.
   void (async () => {
     if (input.copyFrom) onTransfer(await transferProfile(input.copyFrom, inst.id))
-    if (bundle) await content.installMany(inst.id, bundle.mods, `${bundle.name} mods for ${inst.name}`)
+    if (mods.length) await content.installMany(inst.id, mods, `${chosen.map((b) => b.name).join(' + ')} mods for ${inst.name}`)
   })().catch(() => {})
   return inst
 }

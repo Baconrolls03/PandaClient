@@ -42,6 +42,7 @@ function defaults(): Settings {
     compactLibrary: false,
     showPlayTime: true,
     onboarded: false,
+    showSetup: false,
     showAdvanced: false,
     cloudSync: true,
     sidebarRecents: true,

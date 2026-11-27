@@ -1,7 +1,7 @@
 {
   "name": "pandaclient",
   "productName": "PandaClient",
-  "version": "0.12.0",
+  "version": "0.13.0",
   "description": "A simple, clean Minecraft Java launcher.",
   "private": true,
   "main": "./out/main/index.js",

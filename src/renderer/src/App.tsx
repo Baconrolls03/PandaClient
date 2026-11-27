@@ -2,9 +2,8 @@ import { useEffect, useState } from 'react'
 import type { Settings as SettingsT } from '@shared/types'
 import { api } from '@/lib/api'
 import { StoreProvider, useStore } from '@/lib/store'
-import { TitleBar } from '@/components/TitleBar'
-import { Sidebar } from '@/components/Sidebar'
-import { PlayBar } from '@/components/PlayBar'
+import { TopNav } from '@/components/TopNav'
+import { LaunchToast } from '@/components/LaunchToast'
 import { Toasts } from '@/components/Toasts'
 import { Home } from '@/pages/Home'
 import { Library } from '@/pages/Library'
@@ -33,25 +32,20 @@ function Shell() {
   const key = JSON.stringify(route)
   return (
     <div className="flex h-full flex-col">
-      <TitleBar />
-      <div className="flex min-h-0 flex-1">
-        <Sidebar />
-        <div className="flex min-w-0 flex-1 flex-col">
-          <main key={key} className="min-h-0 flex-1 animate-pop overflow-y-auto">
-            {(route.name === 'home' || route.name === 'servers' || route.name === 'stats') && <PlayTabs active={route.name} />}
-            {route.name === 'home' && <Home />}
-            {route.name === 'library' && <Library />}
-            {route.name === 'instance' && <Instance id={route.id} tab={route.tab} />}
-            {route.name === 'discover' && <Discover type={route.type} instanceId={route.instanceId} />}
-            {route.name === 'project' && <Project id={route.id} instanceId={route.instanceId} />}
-            {route.name === 'wardrobe' && <Wardrobe />}
-            {route.name === 'friends' && <Friends />}
-            {route.name === 'servers' && <Servers />}
-            {route.name === 'stats' && <Stats />}
-          </main>
-          <PlayBar />
-        </div>
-      </div>
+      <TopNav />
+      <main key={key} className="min-h-0 flex-1 animate-pop overflow-y-auto">
+        {(route.name === 'servers' || route.name === 'stats') && <PlayTabs active={route.name} />}
+        {route.name === 'home' && <Home />}
+        {route.name === 'library' && <Library />}
+        {route.name === 'instance' && <Instance id={route.id} tab={route.tab} />}
+        {route.name === 'discover' && <Discover type={route.type} instanceId={route.instanceId} />}
+        {route.name === 'project' && <Project id={route.id} instanceId={route.instanceId} />}
+        {route.name === 'wardrobe' && <Wardrobe />}
+        {route.name === 'friends' && <Friends />}
+        {route.name === 'servers' && <Servers />}
+        {route.name === 'stats' && <Stats />}
+      </main>
+      <LaunchToast />
       {modal?.kind === 'create-instance' && <CreateInstanceModal />}
       {modal?.kind === 'install' && <InstallModal projectId={modal.projectId} title={modal.title} projectType={modal.projectType} />}
       {modal?.kind === 'settings' && <SettingsModal section={modal.section} />}

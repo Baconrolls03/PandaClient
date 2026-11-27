@@ -56,6 +56,8 @@ export interface Settings {
   showPlayTime: boolean
   /** First-run setup finished (or skipped). */
   onboarded: boolean
+  /** Show the first-run setup again (from Settings). */
+  showSetup: boolean
   /** Show Java, JVM arguments and launch hooks. */
   showAdvanced: boolean
   /** Keep PandaClient settings (HUD layout, mods on/off) in the cloud. */
@@ -155,6 +157,8 @@ export interface CreateInstanceInput {
   performancePack?: boolean
   /** Ready-made mod set (see shared/bundles). */
   bundle?: import('./bundles').BundleId | null
+  /** Several mod sets at once (first-run setup). */
+  bundles?: import('./bundles').BundleId[]
   /** Copy the mods, packs and settings of this profile (updated to the new version where possible). */
   copyFrom?: string | null
   /** Local image file to use as the icon. */

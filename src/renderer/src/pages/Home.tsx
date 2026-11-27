@@ -1,45 +1,54 @@
-import { useEffect, useState } from 'react'
-import { ArrowRight, Clock, Compass, FileUp, Flame, Plus, Shirt, Users, Zap } from 'lucide-react'
-import type { PlayStats } from '@shared/types'
+import { useEffect, useRef, useState } from 'react'
+import { Clock, Compass, FileUp, Flame, LayoutGrid, Plus, Settings2, Users, Zap } from 'lucide-react'
+import type { Instance, PlayStats } from '@shared/types'
 import { api } from '@/lib/api'
 import { useStore } from '@/lib/store'
 import { playtime, timeAgo } from '@/lib/format'
-import { Logo } from '@/components/Logo'
+import { artFor } from '@/lib/lobbyArt'
 import { PlayButton } from '@/components/PlayButton'
-import { NewsCard } from '@/components/NewsCard'
-import { InstanceCard } from '@/components/InstanceCard'
-import { Button, InstanceIcon, LoaderBadge } from '@/components/ui'
+import { Button } from '@/components/ui'
 
-function Section({ title, action, children }: { title: string; action?: React.ReactNode; children: React.ReactNode }) {
+/** A big picture card for one profile in the lobby's bottom row. */
+function ProfileCard({ inst, active, onClick, delay }: { inst: Instance; active: boolean; onClick: () => void; delay: number }) {
   return (
-    <section>
-      <div className="mb-3 flex items-center justify-between">
-        <h2 className="text-base font-semibold tracking-tight">{title}</h2>
-        {action}
+    <button
+      onClick={onClick}
+      style={{ animationDelay: `${delay}ms` }}
+      className={`group relative h-28 w-52 shrink-0 animate-rise overflow-hidden rounded-2xl border-2 text-left shadow-lift transition-all duration-200 hover:-translate-y-1 ${active ? 'border-blue' : 'border-white/10 hover:border-white/30'}`}
+    >
+      <img src={artFor(inst.id)} alt="" className="absolute inset-0 size-full object-cover transition-transform duration-500 group-hover:scale-110" />
+      <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent" />
+      <div className="absolute inset-x-3 bottom-2.5">
+        <div className="truncate text-[15px] font-bold text-white drop-shadow">{inst.name}</div>
+        <div className="truncate text-[11px] text-white/70">Minecraft {inst.mcVersion}</div>
       </div>
-      {children}
-    </section>
-  )
-}
-
-function SeeAll({ onClick }: { onClick: () => void }) {
-  return (
-    <button onClick={onClick} className="flex items-center gap-1 text-xs font-medium text-muted transition-colors hover:text-mint">
-      See all <ArrowRight size={13} />
     </button>
   )
 }
 
+/** The lobby: full-screen artwork for the selected profile, Launch, and every profile along the bottom. */
 export function Home() {
   const { selected, instances, navigate, openModal, attempt, update, toast, settings, online } = useStore()
-  const [quickBusy, setQuickBusy] = useState(false)
   const [stats, setStats] = useState<PlayStats | null>(null)
   const [friendsOnline, setFriendsOnline] = useState<number | null>(null)
+  const [quickBusy, setQuickBusy] = useState(false)
+  const [tilt, setTilt] = useState({ x: 0, y: 0 })
+  const frame = useRef(0)
 
   useEffect(() => {
     api.stats.get().then(setStats).catch(() => {})
     api.friends.list().then((l) => setFriendsOnline(l.filter((f) => f.status === 'friends' && f.online).length)).catch(() => {})
   }, [])
+
+  // Parallax: the picture follows the mouse a little.
+  const onMove = (e: React.MouseEvent) => {
+    if (settings.reduceMotion) return
+    const r = e.currentTarget.getBoundingClientRect()
+    const x = (e.clientX - r.left) / r.width - 0.5
+    const y = (e.clientY - r.top) / r.height - 0.5
+    cancelAnimationFrame(frame.current)
+    frame.current = requestAnimationFrame(() => setTilt({ x, y }))
+  }
 
   async function quickSetup() {
     setQuickBusy(true)
@@ -56,125 +65,107 @@ export function Home() {
     }
   }
 
+  const art = artFor(selected?.id)
+  const recent = [...instances].sort((a, b) => (b.lastPlayed ?? b.created).localeCompare(a.lastPlayed ?? a.created)).slice(0, 6)
+
   return (
-    <div className="mx-auto flex max-w-6xl flex-col gap-8 px-8 pb-8 pt-4">
-      {/* Hero */}
-      <section className="relative overflow-hidden rounded-3xl border border-border bg-surface p-8 shadow-soft">
-        <div className="pointer-events-none absolute inset-0">
-          <div className="absolute -right-20 -top-28 size-96 rounded-full bg-mint/12 blur-3xl" />
-          <div className="absolute -bottom-40 left-1/4 size-96 rounded-full bg-blue/10 blur-3xl" />
-          <Logo size={240} className="absolute -bottom-12 right-6 rotate-[-8deg] opacity-[0.07]" />
-        </div>
-        <div className="relative">
-          {selected ? (
-            <>
-              <p className="mb-4 flex items-center gap-3 text-sm font-medium text-mint">
-                {selected.lastPlayed ? 'Continue playing' : 'Ready to play'}
-                {online != null && <span className="rounded-full bg-mint/10 px-2.5 py-0.5 text-xs text-mint">{online.toLocaleString()} online now</span>}
-              </p>
-              <div className="flex items-center gap-5">
-                <InstanceIcon url={selected.iconUrl} preset={selected.iconPreset} size={84} className="rounded-2xl shadow-lift" />
-                <div className="min-w-0">
-                  <h1 className="truncate text-3xl font-bold tracking-tight">{selected.name}</h1>
-                  <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-muted">
-                    <LoaderBadge version={selected.loaderVersion} />
-                    <span>Minecraft {selected.mcVersion}</span>
-                    <span>·</span>
-                    <span>{selected.lastPlayed ? `Played ${timeAgo(selected.lastPlayed)}` : 'Never played'}</span>
-                    {settings.showPlayTime && selected.playtimeSec > 0 && (
-                      <>
-                        <span>·</span>
-                        <span>{playtime(selected.playtimeSec)} played</span>
-                      </>
-                    )}
-                  </div>
-                </div>
-              </div>
-              <div className="mt-8 flex flex-wrap items-center gap-3">
-                <PlayButton instanceId={selected.id} />
-                <Button size="lg" variant="secondary" onClick={() => navigate({ name: 'instance', id: selected.id })}>
-                  Manage
-                </Button>
-                <Button size="lg" variant="ghost" onClick={() => navigate({ name: 'discover', type: 'mod', instanceId: selected.id })}>
-                  <Plus size={18} /> Add mods
-                </Button>
-                <Button size="lg" variant="ghost" onClick={() => navigate({ name: 'wardrobe' })}>
-                  <Shirt size={18} /> Wardrobe
-                </Button>
-              </div>
-            </>
-          ) : (
-            <>
-              <p className="mb-1 text-sm font-medium text-mint">Welcome to PandaClient</p>
-              <h1 className="text-3xl font-bold tracking-tight">Let's get you playing</h1>
-              <p className="mt-2 max-w-lg text-sm text-muted">
-                One click sets up the latest Minecraft with PandaClient and the PvP mods. Or build your own profile, or grab a modpack.
-              </p>
-              <div className="mt-8 flex flex-wrap items-center gap-3">
-                <Button size="lg" variant="primary" busy={quickBusy} onClick={quickSetup}>
-                  {!quickBusy && <Zap size={18} />} Quick setup
-                </Button>
-                <Button size="lg" variant="secondary" onClick={() => openModal({ kind: 'create-instance' })}>
-                  <Plus size={18} /> Custom profile
-                </Button>
-                <Button size="lg" variant="ghost" onClick={() => openModal({ kind: 'import' })}>
-                  <FileUp size={18} /> Import from another launcher
-                </Button>
-                <Button size="lg" variant="ghost" onClick={() => navigate({ name: 'discover', type: 'modpack' })}>
-                  <Compass size={18} /> Browse modpacks
-                </Button>
-              </div>
-            </>
-          )}
-        </div>
-      </section>
+    <div onMouseMove={onMove} className="relative flex h-full min-h-[560px] flex-col overflow-hidden bg-black">
+      {/* Artwork with a slow drift and parallax */}
+      <div className="absolute -inset-6 transition-transform duration-700 ease-out" style={{ transform: `translate(${tilt.x * -18}px, ${tilt.y * -12}px)` }}>
+        <img key={art} src={art} alt="" className="size-full object-cover [animation:var(--animate-fade),var(--animate-drift)]" />
+      </div>
+      <div className="absolute inset-0 bg-gradient-to-r from-bg/95 via-bg/55 to-transparent" />
+      <div className="absolute inset-0 bg-gradient-to-t from-bg via-transparent to-bg/40" />
 
-      {selected && (
-        <div className="grid grid-cols-3 gap-3">
-          <button onClick={() => navigate({ name: 'stats' })} className="flex items-center gap-3 rounded-2xl border border-border bg-surface p-4 text-left transition-colors hover:bg-raised">
-            <span className={`grid size-10 place-items-center rounded-xl ${stats?.currentStreak ? 'bg-orange-400/15 text-orange-400' : 'bg-raised text-muted'}`}>
-              <Flame size={18} />
-            </span>
-            <span>
-              <span className="block text-lg font-bold tabular-nums">{stats ? `${stats.currentStreak} day${stats.currentStreak === 1 ? '' : 's'}` : '–'}</span>
-              <span className="block text-xs text-muted">{stats?.currentStreak && !stats.todaySec ? 'Play today to keep your streak' : 'Play streak'}</span>
-            </span>
-          </button>
-          <button onClick={() => navigate({ name: 'friends' })} className="flex items-center gap-3 rounded-2xl border border-border bg-surface p-4 text-left transition-colors hover:bg-raised">
-            <span className="grid size-10 place-items-center rounded-xl bg-mint/15 text-mint">
-              <Users size={18} />
-            </span>
-            <span>
-              <span className="block text-lg font-bold tabular-nums">{friendsOnline ?? '–'}</span>
-              <span className="block text-xs text-muted">Friends online</span>
-            </span>
-          </button>
-          <button onClick={() => navigate({ name: 'stats' })} className="flex items-center gap-3 rounded-2xl border border-border bg-surface p-4 text-left transition-colors hover:bg-raised">
-            <span className="grid size-10 place-items-center rounded-xl bg-blue/15 text-blue">
-              <Clock size={18} />
-            </span>
-            <span>
-              <span className="block text-lg font-bold tabular-nums">{stats ? playtime(stats.todaySec) : '–'}</span>
-              <span className="block text-xs text-muted">Played today</span>
-            </span>
-          </button>
-        </div>
-      )}
-
-      {instances.length > 0 && (
-        <Section title="Jump back in" action={<SeeAll onClick={() => navigate({ name: 'library' })} />}>
-          <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-5">
-            {instances.slice(0, 5).map((inst) => (
-              <InstanceCard key={inst.id} inst={inst} />
-            ))}
+      {/* Title, details and Launch */}
+      <div className="relative flex flex-1 flex-col justify-center px-12">
+        {selected ? (
+          <div key={selected.id} className="max-w-xl">
+            <p className="animate-rise text-xs font-semibold uppercase tracking-[0.2em] text-mint">
+              {selected.lastPlayed ? 'Continue playing' : 'Ready to play'}
+              {online != null && <span className="ml-3 rounded-full bg-white/10 px-2 py-0.5 normal-case tracking-normal text-white/80">{online.toLocaleString()} online</span>}
+            </p>
+            <h1 className="mt-2 animate-rise text-5xl font-extrabold tracking-tight text-white drop-shadow-lg [animation-delay:60ms]">{selected.name}</h1>
+            <p className="mt-2 animate-rise text-sm text-white/70 [animation-delay:120ms]">
+              Minecraft {selected.mcVersion} · Fabric · {selected.lastPlayed ? `Played ${timeAgo(selected.lastPlayed)}` : 'Never played'}
+              {settings.showPlayTime && selected.playtimeSec > 0 && ` · ${playtime(selected.playtimeSec)} played`}
+            </p>
+            <div className="mt-6 flex animate-rise items-center gap-3 [animation-delay:180ms]">
+              <PlayButton instanceId={selected.id} label="Launch" />
+              <button
+                title="Manage profile"
+                onClick={() => navigate({ name: 'instance', id: selected.id })}
+                className="grid size-14 place-items-center rounded-2xl border border-white/15 bg-white/10 text-white backdrop-blur transition-colors hover:bg-white/20"
+              >
+                <Settings2 size={20} />
+              </button>
+              <button
+                title="Add mods"
+                onClick={() => navigate({ name: 'discover', type: 'mod', instanceId: selected.id })}
+                className="grid size-14 place-items-center rounded-2xl border border-white/15 bg-white/10 text-white backdrop-blur transition-colors hover:bg-white/20"
+              >
+                <Plus size={20} />
+              </button>
+            </div>
+            <div className="mt-6 flex animate-rise flex-wrap gap-2 [animation-delay:240ms]">
+              <button onClick={() => navigate({ name: 'stats' })} className="flex items-center gap-1.5 rounded-full border border-white/10 bg-black/30 px-3 py-1.5 text-xs text-white/85 backdrop-blur hover:bg-black/50">
+                <Flame size={13} className={stats?.currentStreak ? 'text-orange-400' : ''} /> {stats ? `${stats.currentStreak} day streak` : 'Streak'}
+              </button>
+              <button onClick={() => navigate({ name: 'stats' })} className="flex items-center gap-1.5 rounded-full border border-white/10 bg-black/30 px-3 py-1.5 text-xs text-white/85 backdrop-blur hover:bg-black/50">
+                <Clock size={13} /> {stats ? `${playtime(stats.todaySec)} today` : 'Today'}
+              </button>
+              <button onClick={() => navigate({ name: 'friends' })} className="flex items-center gap-1.5 rounded-full border border-white/10 bg-black/30 px-3 py-1.5 text-xs text-white/85 backdrop-blur hover:bg-black/50">
+                <Users size={13} className="text-mint" /> {friendsOnline ?? 0} friends online
+              </button>
+            </div>
           </div>
-        </Section>
-      )}
+        ) : (
+          <div className="max-w-xl">
+            <p className="animate-rise text-xs font-semibold uppercase tracking-[0.2em] text-mint">Welcome to PandaClient</p>
+            <h1 className="mt-2 animate-rise text-5xl font-extrabold tracking-tight text-white [animation-delay:60ms]">Let's get you playing</h1>
+            <p className="mt-3 animate-rise text-sm text-white/70 [animation-delay:120ms]">One click sets up the newest Minecraft with PandaClient and the PvP mods.</p>
+            <div className="mt-6 flex animate-rise flex-wrap gap-3 [animation-delay:180ms]">
+              <Button size="lg" variant="primary" busy={quickBusy} onClick={quickSetup}>
+                {!quickBusy && <Zap size={18} />} Quick setup
+              </Button>
+              <Button size="lg" variant="secondary" onClick={() => openModal({ kind: 'create-instance' })}>
+                <Plus size={18} /> Custom profile
+              </Button>
+              <Button size="lg" variant="ghost" onClick={() => openModal({ kind: 'import' })}>
+                <FileUp size={18} /> Import
+              </Button>
+              <Button size="lg" variant="ghost" onClick={() => navigate({ name: 'discover', type: 'modpack' })}>
+                <Compass size={18} /> Modpacks
+              </Button>
+            </div>
+          </div>
+        )}
+      </div>
 
-      {settings.homeSections.news && <NewsCard />}
-      <p className="pb-2 text-center text-[11px] text-muted/70">
-        Fabric content from Modrinth · Minecraft files always downloaded from Mojang
-      </p>
+      {/* Every profile along the bottom */}
+      {instances.length > 0 && (
+        <div className="relative flex items-end gap-3 overflow-x-auto px-12 pb-8 pt-4">
+          {recent.map((inst, i) => (
+            <ProfileCard key={inst.id} inst={inst} active={inst.id === selected?.id} delay={260 + i * 50} onClick={() => update({ selectedInstance: inst.id })} />
+          ))}
+          <button
+            title="All profiles"
+            onClick={() => navigate({ name: 'library' })}
+            style={{ animationDelay: `${260 + recent.length * 50}ms` }}
+            className="grid h-28 w-20 shrink-0 animate-rise place-items-center rounded-2xl border-2 border-white/10 bg-black/40 text-white/80 backdrop-blur transition-all hover:-translate-y-1 hover:border-white/30 hover:text-white"
+          >
+            <LayoutGrid size={22} />
+          </button>
+          <button
+            title="New profile"
+            onClick={() => openModal({ kind: 'create-instance' })}
+            style={{ animationDelay: `${310 + recent.length * 50}ms` }}
+            className="grid h-28 w-20 shrink-0 animate-rise place-items-center rounded-2xl border-2 border-dashed border-white/15 bg-black/30 text-white/70 backdrop-blur transition-all hover:-translate-y-1 hover:border-blue hover:text-white"
+          >
+            <Plus size={22} />
+          </button>
+        </div>
+      )}
     </div>
   )
 }

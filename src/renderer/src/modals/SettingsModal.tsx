@@ -223,6 +223,11 @@ function Behavior({ s, update }: { s: Settings; update: (p: Partial<Settings>) =
       <Row title="Sync my PandaClient settings" text="Your HUD layout, mods on/off and in-game settings follow you to any PC you sign in on.">
         <Toggle label="Cloud sync" checked={s.cloudSync} onChange={(v) => update({ cloudSync: v })} />
       </Row>
+      <Row title="Welcome setup" text="Go through the first-open setup again (folder, account, bundles, appearance).">
+        <Button size="sm" onClick={() => update({ showSetup: true })}>
+          Show it again
+        </Button>
+      </Row>
       <Row title="Show advanced settings" text="Java, JVM arguments and launch hooks. Most people never need these.">
         <Toggle label="Advanced" checked={s.showAdvanced} onChange={(v) => update({ showAdvanced: v })} />
       </Row>

@@ -183,6 +183,7 @@ export function createMock(): PandaApi {
     compactLibrary: false,
     showPlayTime: true,
     onboarded: true,
+    showSetup: false,
     showAdvanced: false,
     cloudSync: true,
     sidebarRecents: true,
