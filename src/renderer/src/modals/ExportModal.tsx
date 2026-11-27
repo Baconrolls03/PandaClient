@@ -43,7 +43,7 @@ export function ExportModal({ inst, onClose }: { inst: Instance; onClose: () => 
     const n = await attempt(() => api.share.send(inst.id, picked.map((p) => p.uuid)))
     setBusy(false)
     if (n) {
-      toast(`Shared mod instance with ${picked.map((p) => p.username).join(', ')}`, 'success')
+      toast(`Shared mod profile with ${picked.map((p) => p.username).join(', ')}`, 'success')
       onClose()
     }
   }
@@ -82,7 +82,7 @@ export function ExportModal({ inst, onClose }: { inst: Instance; onClose: () => 
         </>
       }
     >
-      <p className="mb-3 text-sm text-muted">Search for players who use PandaClient. They'll get a pop-up to add this instance.</p>
+      <p className="mb-3 text-sm text-muted">Search for players who use PandaClient. They'll get a pop-up to add this profile.</p>
       <SearchField value={q} onChange={setQ} placeholder="Minecraft username" />
       {picked.length > 0 && (
         <div className="mt-3 flex flex-wrap gap-1.5">

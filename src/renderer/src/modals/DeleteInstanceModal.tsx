@@ -10,7 +10,7 @@ export function DeleteInstanceModal({ inst, onClose }: { inst: Instance; onClose
   const [busy, setBusy] = useState(false)
   return (
     <Modal
-      title="Delete instance"
+      title="Delete profile"
       onClose={onClose}
       footer={
         <>

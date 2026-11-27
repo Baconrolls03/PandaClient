@@ -1,21 +1,52 @@
 import { useEffect, useMemo, useState } from 'react'
-import { FileUp, ImagePlus, Zap } from 'lucide-react'
+import { Camera, Copy, FileUp, Gauge, ImagePlus, Package, Sword, Trees } from 'lucide-react'
 import type { LoaderVersion, VersionList } from '@shared/types'
 import { api } from '@/lib/api'
 import { useStore } from '@/lib/store'
-import { Button, InstanceIcon, Modal, Select, TextField, Toggle } from '@/components/ui'
+import { Button, InstanceIcon, Modal, Select, TextField } from '@/components/ui'
+import { BUNDLES, type BundleId } from '@shared/bundles'
 import { PresetIcon, randomPreset } from '@/lib/icons'
 import { IconEditor, type IconChoice } from './IconEditor'
 import { VersionSelect } from '@/components/VersionSelect'
 
+const BUNDLE_ICON: Record<BundleId, typeof Sword> = { pvp: Sword, performance: Gauge, survival: Trees, recording: Camera, none: Package }
+
+/** Pick a play style: a ready-made set of mods. */
+export function BundlePicker({ value, onChange }: { value: BundleId; onChange: (b: BundleId) => void }) {
+  return (
+    <div className="grid grid-cols-2 gap-2">
+      {BUNDLES.map((b) => {
+        const Icon = BUNDLE_ICON[b.id]
+        const on = value === b.id
+        return (
+          <button
+            key={b.id}
+            onClick={() => onChange(b.id)}
+            className={`flex items-start gap-3 rounded-2xl border p-3 text-left transition-colors ${on ? 'border-mint/60 bg-mint/10' : 'border-border bg-bg hover:bg-raised'} ${b.id === 'none' ? 'col-span-2' : ''}`}
+          >
+            <span className={`grid size-9 shrink-0 place-items-center rounded-xl ${on ? 'bg-mint/20 text-mint' : 'bg-raised text-muted'}`}>
+              <Icon size={17} />
+            </span>
+            <span>
+              <span className="block text-sm font-semibold">{b.name}</span>
+              <span className="block text-xs leading-snug text-muted">{b.description}</span>
+            </span>
+          </button>
+        )
+      })}
+    </div>
+  )
+}
+
 export function CreateInstanceModal() {
-  const { closeModal, settings, update, attempt, navigate, toast, openModal } = useStore()
+  const { closeModal, settings, update, attempt, navigate, toast, openModal, instances } = useStore()
   const [list, setList] = useState<VersionList | null>(null)
   const [name, setName] = useState('')
   const [mc, setMc] = useState('')
   const [loaderVersions, setLoaderVersions] = useState<LoaderVersion[] | null>(null)
   const [loaderVersion, setLoaderVersion] = useState('')
-  const [perfPack, setPerfPack] = useState(true)
+  const [bundle, setBundle] = useState<BundleId>('pvp')
+  const [copyFrom, setCopyFrom] = useState('')
   const [icon, setIcon] = useState<IconChoice>(() => ({ kind: 'preset', preset: randomPreset() }))
   const [editingIcon, setEditingIcon] = useState(false)
   const [busy, setBusy] = useState(false)
@@ -52,7 +83,8 @@ export function CreateInstanceModal() {
         name: name.trim() || placeholder,
         mcVersion: mc,
         loaderVersion: loaderVersion || null,
-        performancePack: perfPack,
+        bundle,
+        copyFrom: copyFrom || null,
         iconPreset: icon.kind === 'preset' ? icon.preset : null,
         iconFile: icon.kind === 'file' ? icon.file : null
       })
@@ -62,13 +94,13 @@ export function CreateInstanceModal() {
       update({ selectedInstance: inst.id })
       closeModal()
       navigate({ name: 'instance', id: inst.id })
-      toast(`Created ${inst.name}`, 'success')
+      toast(copyFrom ? `Created ${inst.name}. Moving your mods over…` : `Created ${inst.name}`, 'success')
     }
   }
 
   return (
     <Modal
-      title="New instance"
+      title="New profile"
       onClose={closeModal}
       width="max-w-xl"
       allowOverflow
@@ -139,16 +171,26 @@ export function CreateInstanceModal() {
           </div>
         </div>
 
-        {(
-          <div className="flex items-center gap-4 rounded-2xl border border-mint/25 bg-mint/5 p-4">
-            <div className="grid size-10 place-items-center rounded-xl bg-mint/15 text-mint">
-              <Zap size={18} />
+        <div>
+          <label className="mb-1.5 block text-xs font-medium text-muted">Play style</label>
+          <BundlePicker value={bundle} onChange={setBundle} />
+        </div>
+
+        {instances.length > 0 && (
+          <div className="flex items-center gap-4 rounded-2xl border border-border bg-bg p-4">
+            <div className="grid size-10 shrink-0 place-items-center rounded-xl bg-blue/15 text-blue">
+              <Copy size={18} />
             </div>
-            <div className="flex-1">
-              <div className="text-sm font-semibold">PandaClient performance pack</div>
-              <div className="text-xs text-muted">Fabric API, Sodium, Lithium and Iris from Modrinth</div>
+            <div className="min-w-0 flex-1">
+              <div className="text-sm font-semibold">Move my mods from another profile</div>
+              <div className="text-xs text-muted">Mods are updated to {mc || 'this version'}. Any that aren't out for it yet are left out, and you'll see which.</div>
             </div>
-            <Toggle label="Performance pack" checked={perfPack} onChange={setPerfPack} />
+            <Select
+              value={copyFrom}
+              onChange={setCopyFrom}
+              className="w-44"
+              options={[{ value: '', label: "Don't move" }, ...instances.map((i) => ({ value: i.id, label: `${i.name} (${i.mcVersion})` }))]}
+            />
           </div>
         )}
       </div>

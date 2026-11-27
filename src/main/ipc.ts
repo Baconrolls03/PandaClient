@@ -1,6 +1,8 @@
 import { app, BrowserWindow, clipboard, ClipboardItem, dialog, ipcMain, shell } from 'electron'
 import { totalmem } from 'node:os'
-import type { CreateInstanceInput, QuickPlay, Settings, SystemInfo } from '@shared/types'
+import type { CreateInstanceInput, QuickPlay, Settings, SystemInfo, TransferReport } from '@shared/types'
+import { BUNDLES } from '@shared/bundles'
+import { transferProfile } from './services/profileTransfer'
 import { rm } from 'node:fs/promises'
 import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
@@ -40,13 +42,15 @@ const FILE_FILTERS: Record<string, Electron.FileFilter[]> = {
   content: [{ name: 'Mods & packs', extensions: ['jar', 'zip'] }]
 }
 
-async function createInstance(input: CreateInstanceInput) {
+async function createInstance(input: CreateInstanceInput, onTransfer: (r: TransferReport) => void = () => {}) {
   const loaderVersion = input.loaderVersion || (await latestStableFabric(input.mcVersion).catch(() => null))
   const inst = await instances.createInstance({ ...input, loaderVersion })
-  if (input.performancePack) {
-    // Runs in the background; progress shows in the downloads panel.
-    content.installMany(inst.id, content.PERFORMANCE_PACK, `Performance mods for ${inst.name}`).catch(() => {})
-  }
+  const bundle = BUNDLES.find((b) => b.id === (input.bundle ?? (input.performancePack ? 'performance' : null)))
+  // Runs in the background; progress shows in the downloads panel.
+  void (async () => {
+    if (input.copyFrom) onTransfer(await transferProfile(input.copyFrom, inst.id))
+    if (bundle) await content.installMany(inst.id, bundle.mods, `${bundle.name} mods for ${inst.name}`)
+  })().catch(() => {})
   return inst
 }
 
@@ -111,7 +115,7 @@ export function registerIpc(win: BrowserWindow): void {
   // Instances
   ipcMain.handle('instances:list', () => instances.listInstances())
   ipcMain.handle('instances:create', async (_e, input: CreateInstanceInput) => {
-    const inst = await createInstance(input)
+    const inst = await createInstance(input, (r) => send('profiles:transferred', r))
     // The PandaClient mod is part of every supported instance from the start.
     void ensurePandaMod(inst, true, () => {}).catch(() => {})
     return inst

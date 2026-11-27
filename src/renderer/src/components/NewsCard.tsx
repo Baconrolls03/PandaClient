@@ -9,7 +9,7 @@ const entries = [
       'Real launching: Minecraft, Fabric and the right Java are downloaded from Mojang for you',
       'Microsoft sign-in with multiple accounts',
       'Wardrobe: PandaClient cosmetics, your real skin and Mojang capes',
-      'Themes, accent colours, instance icons and a new Settings window'
+      'Themes, accent colours, profile icons and a new Settings window'
     ]
   },
   {
@@ -17,9 +17,9 @@ const entries = [
     date: 'Nov 2026',
     title: 'Library & Discover',
     items: [
-      'Fabric instances for any version Fabric supports',
+      'Fabric profiles for any version Fabric supports',
       'Browse and install Fabric mods and modpacks, resource packs, shaders and data packs from Modrinth',
-      'Content, Worlds, Screenshots, Files and Logs for every instance',
+      'Content, Worlds, Screenshots, Files and Logs for every profile',
       'Update checks, .mrpack import & export'
     ]
   },

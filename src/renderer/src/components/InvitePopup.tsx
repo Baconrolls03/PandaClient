@@ -21,7 +21,7 @@ export function InvitePopup() {
   }
   const join = async () => {
     await close()
-    if (!selected) return toast('Make an instance first', 'error')
+    if (!selected) return toast('Make a profile first', 'error')
     if (running.has(selected.id)) return toast(`${selected.name} is already running`, 'error')
     launch(selected.id, { server: inv.server })
   }

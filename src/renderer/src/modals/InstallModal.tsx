@@ -92,7 +92,7 @@ export function InstallModal({ projectId, title, projectType }: { projectId: str
           </>
         }
       >
-        <p className="mb-4 text-sm text-muted">Modpacks install as a new instance with everything set up for you. Only Fabric versions are listed.</p>
+        <p className="mb-4 text-sm text-muted">Modpacks install as a new profile with everything set up for you. Only Fabric versions are listed.</p>
         <label className="mb-1.5 block text-xs font-medium text-muted">Version</label>
         {versions == null ? (
           <Spinner />

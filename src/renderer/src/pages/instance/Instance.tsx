@@ -52,7 +52,7 @@ export function Instance({ id, tab = 'content' }: { id: string; tab?: InstanceTa
   if (!inst)
     return (
       <div className="p-8">
-        <Empty icon={<Package size={22} />} title="Instance not found" action={<Button onClick={() => navigate({ name: 'library' })}>Back to library</Button>} />
+        <Empty icon={<Package size={22} />} title="Profile not found" action={<Button onClick={() => navigate({ name: 'library' })}>Back to library</Button>} />
       </div>
     )
 
@@ -108,7 +108,7 @@ export function Instance({ id, tab = 'content' }: { id: string; tab?: InstanceTa
               >
                 <FileText size={14} /> Export
               </Button>
-              <Button variant="secondary" size="sm" onClick={() => attempt(() => api.instances.duplicate(inst.id), 'Instance duplicated')}>
+              <Button variant="secondary" size="sm" onClick={() => attempt(() => api.instances.duplicate(inst.id), 'Profile duplicated')}>
                 <Copy size={14} /> Duplicate
               </Button>
               <Button variant="danger" size="sm" onClick={() => setDeleting(true)}>

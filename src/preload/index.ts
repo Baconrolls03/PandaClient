@@ -33,6 +33,7 @@ const api: PandaApi = {
   instances: {
     list: () => invoke('instances:list'),
     create: (input) => invoke('instances:create', input),
+    onTransferred: (cb) => subscribe('profiles:transferred', cb),
     update: (id, patch) => invoke('instances:update', id, patch),
     setIcon: (id, file) => invoke('instances:setIcon', id, file),
     duplicate: (id) => invoke('instances:duplicate', id),

@@ -328,6 +328,27 @@ for (const bad of ['mod5', 'mod17', 'lib24', 'addon']) {
 }
 ok('crash finder: finds the broken mod among 35 in at most 8 starts')
 
+// moving mods from an old-version profile into a new one
+const pt = await import(`${SRC}/profileTransfer.ts`)
+const old = await instances.createInstance({ name: 'Old', mcVersion: '1.20.1', loaderVersion: '0.16.5' })
+for (const d of ['mods', 'resourcepacks', 'config']) mkdirSync(old.path + '/' + d, { recursive: true })
+writeFileSync(old.path + '/mods/sodium-0.5.0.jar', 'sodium') // on Modrinth for 1.21.1 -> comes over
+writeFileSync(old.path + '/mods/lithium-0.11.jar', 'lith') // only 1.20.1 -> left out
+writeFileSync(old.path + '/mods/homemade.jar', 'mine') // not on Modrinth -> left out
+writeFileSync(old.path + '/resourcepacks/faithful.zip', 'rp')
+writeFileSync(old.path + '/config/sodium.json', '{"x":1}')
+writeFileSync(old.path + '/options.txt', 'key_key.zoom:key.keyboard.c')
+const fresh = await instances.createInstance({ name: 'New', mcVersion: '1.21.1', loaderVersion: '0.16.5' })
+const moved = await pt.transferProfile(old.id, fresh.id)
+assert.deepEqual(moved.moved.sort(), ['Faithful', 'Sodium'])
+assert.deepEqual(moved.removed.map((r: any) => r.name).sort(), ['Lithium', 'homemade.jar'])
+assert.ok(existsSync(fresh.path + '/mods/sodium-0.5.0.jar') && !existsSync(fresh.path + '/mods/lithium-0.11.jar'))
+assert.equal(readFileSync(fresh.path + '/config/sodium.json', 'utf8'), '{"x":1}')
+assert.match(readFileSync(fresh.path + '/options.txt', 'utf8'), /zoom/)
+await instances.removeInstance(old.id)
+await instances.removeInstance(fresh.id)
+ok('move mods to a new profile: Sodium updated, Lithium and an unknown jar left out and listed')
+
 // play streaks
 const st = await import(`${SRC}/stats.ts`)
 const day = (n: number) => st.dayKey(Date.now() - n * 86_400_000)

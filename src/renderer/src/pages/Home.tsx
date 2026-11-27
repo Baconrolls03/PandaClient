@@ -121,14 +121,14 @@ export function Home() {
               <p className="mb-1 text-sm font-medium text-mint">Welcome to PandaClient</p>
               <h1 className="text-3xl font-bold tracking-tight">Let's get you playing</h1>
               <p className="mt-2 max-w-lg text-sm text-muted">
-                One click sets up the latest Minecraft with Fabric and a performance pack (Sodium, Lithium, Iris). Or build your own instance, or grab a modpack.
+                One click sets up the latest Minecraft with Fabric and a performance pack (Sodium, Lithium, Iris). Or build your own profile, or grab a modpack.
               </p>
               <div className="mt-8 flex flex-wrap items-center gap-3">
                 <Button size="lg" variant="primary" busy={quickBusy} onClick={quickSetup}>
                   {!quickBusy && <Zap size={18} />} Quick setup
                 </Button>
                 <Button size="lg" variant="secondary" onClick={() => openModal({ kind: 'create-instance' })}>
-                  <Plus size={18} /> Custom instance
+                  <Plus size={18} /> Custom profile
                 </Button>
                 <Button size="lg" variant="ghost" onClick={() => openModal({ kind: 'import' })}>
                   <FileUp size={18} /> Import from another launcher

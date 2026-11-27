@@ -34,7 +34,7 @@ const NAV: { group: string; items: { id: SettingsSection; label: string; icon: L
   { group: 'Display', items: [{ id: 'appearance', label: 'Appearance', icon: Paintbrush }, { id: 'behavior', label: 'Behavior', icon: SlidersHorizontal }] },
   { group: 'Account', items: [{ id: 'accounts', label: 'Minecraft accounts', icon: Users }] },
   {
-    group: 'Instance defaults',
+    group: 'Profile defaults',
     items: [
       { id: 'java', label: 'Java and memory', icon: Coffee },
       { id: 'window', label: 'Window', icon: AppWindow },
@@ -205,13 +205,13 @@ function Behavior({ s, update }: { s: Settings; update: (p: Partial<Settings>) =
         <Toggle label="Refocus" checked={s.refocusOnExit} onChange={(v) => update({ refocusOnExit: v })} />
       </Row>
       <Heading>Home and library</Heading>
-      <Row title="Compact library" text="Show instances as a list instead of cards.">
+      <Row title="Compact library" text="Show profiles as a list instead of cards.">
         <Toggle label="Compact library" checked={s.compactLibrary} onChange={(v) => update({ compactLibrary: v })} />
       </Row>
-      <Row title="Show play time" text="How long you've played each instance.">
+      <Row title="Show play time" text="How long you've played each profile.">
         <Toggle label="Show play time" checked={s.showPlayTime} onChange={(v) => update({ showPlayTime: v })} />
       </Row>
-      <Row title="Recent instances in the sidebar">
+      <Row title="Recent profiles in the sidebar">
         <Toggle label="Sidebar recents" checked={s.sidebarRecents} onChange={(v) => update({ sidebarRecents: v })} />
       </Row>
       {sections.map((x) => (
@@ -219,7 +219,7 @@ function Behavior({ s, update }: { s: Settings; update: (p: Partial<Settings>) =
           <Toggle label={x.label} checked={s.homeSections[x.key]} onChange={(v) => update({ homeSections: { ...s.homeSections, [x.key]: v } })} />
         </Row>
       ))}
-      <Row title="Show snapshots" text="List snapshot versions when creating instances.">
+      <Row title="Show snapshots" text="List snapshot versions when creating profiles.">
         <Toggle label="Snapshots" checked={s.showSnapshots} onChange={(v) => update({ showSnapshots: v })} />
       </Row>
     </>
@@ -277,7 +277,7 @@ function Java({ s, update }: { s: Settings; update: (p: Partial<Settings>) => vo
   const maxRam = Math.max(2048, Math.floor(((info?.totalMemMb ?? 8192) - 2048) / 512) * 512)
   return (
     <>
-      <Heading sub="Instances use these unless you change them in an instance's own settings.">Memory</Heading>
+      <Heading sub="Profiles use these unless you change them in a profile's own settings.">Memory</Heading>
       <Row title="Maximum RAM" text={info ? `${gb(info.totalMemMb)} installed. 4 GB suits most Fabric setups.` : undefined}>
         <Slider min={1024} max={maxRam} step={512} value={Math.min(s.ramMb, maxRam)} onChange={(v) => update({ ramMb: v })} format={gb} />
       </Row>
@@ -325,7 +325,7 @@ function WindowSection({ s, update }: { s: Settings; update: (p: Partial<Setting
   return (
     <>
       <Heading sub="How the Minecraft window opens.">Game window</Heading>
-      <Row title="Fullscreen" text="Updates the instance's options.txt before launch.">
+      <Row title="Fullscreen" text="Updates the profile's options.txt before launch.">
         <Toggle label="Fullscreen" checked={s.window.fullscreen} onChange={(v) => set({ fullscreen: v })} />
       </Row>
       <Row title="Width" text="Window width in pixels when not fullscreen.">
@@ -359,7 +359,7 @@ function Hooks({ s, update }: { s: Settings; update: (p: Partial<Settings>) => v
   ]
   return (
     <>
-      <Heading sub="Advanced. Commands run in the instance folder with INST_NAME, INST_ID, INST_DIR, INST_MC_VERSION and INST_JAVA set.">Launch hooks</Heading>
+      <Heading sub="Advanced. Commands run in the profile folder with INST_NAME, INST_ID, INST_DIR, INST_MC_VERSION and INST_JAVA set.">Launch hooks</Heading>
       {fields.map((f) => (
         <div key={f.key} className="border-b border-border/60 py-4 last:border-0">
           <div className="text-sm font-semibold">{f.title}</div>
@@ -375,7 +375,7 @@ function Resources({ s, update }: { s: Settings; update: (p: Partial<Settings>) 
   const { attempt, toast } = useStore()
   return (
     <>
-      <Heading sub="Instances, versions, libraries and Java runtimes live here.">Game directory</Heading>
+      <Heading sub="Profiles, versions, libraries and Java runtimes live here.">Game directory</Heading>
       <div className="flex gap-2">
         <TextField value={s.gameDir} onChange={(v) => update({ gameDir: v })} mono className="flex-1" />
         <Button onClick={async () => { const p = await api.settings.pickDirectory(s.gameDir); if (p) update({ gameDir: p }) }}>Change</Button>
@@ -385,7 +385,7 @@ function Resources({ s, update }: { s: Settings; update: (p: Partial<Settings>) 
       <Row title="Parallel downloads" text="Files downloaded at once when installing.">
         <Slider min={1} max={16} step={1} value={s.maxDownloads} onChange={(v) => update({ maxDownloads: v })} format={String} />
       </Row>
-      <Row title="Clear caches" text="Forget cached version lists and Modrinth lookups. Your instances aren't touched.">
+      <Row title="Clear caches" text="Forget cached version lists and Modrinth lookups. Your profiles aren't touched.">
         <Button onClick={async () => { const r = await attempt(() => api.system.clearCache()); if (r) toast(r, 'success') }}>Clear</Button>
       </Row>
     </>

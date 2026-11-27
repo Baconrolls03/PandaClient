@@ -220,7 +220,7 @@ const pick = (list: MrVersion[]) => {
 function typeFor(project: MrProject, version: MrVersion, inst: Instance): ContentType {
   if (project.project_type === 'resourcepack') return 'resourcepack'
   if (project.project_type === 'shader') return 'shader'
-  if (project.project_type === 'modpack') throw new Error('Modpacks install as their own instance.')
+  if (project.project_type === 'modpack') throw new Error('Modpacks install as their own profile.')
   if (version.loaders.some((l) => MOD_LOADERS.includes(l))) return 'mod'
   if (version.loaders.includes('datapack')) return 'datapack'
   return 'mod'

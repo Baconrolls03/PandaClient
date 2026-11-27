@@ -54,7 +54,7 @@ export function PlayBar() {
                 <Plus size={20} />
               </div>
               <div>
-                <div className="text-sm font-semibold">Create an instance</div>
+                <div className="text-sm font-semibold">Create a profile</div>
                 <div className="text-xs text-muted">Pick a version to start</div>
               </div>
             </>
@@ -93,7 +93,7 @@ export function PlayBar() {
               <div className="grid size-9 place-items-center rounded-xl bg-mint/10">
                 <Plus size={18} />
               </div>
-              New instance
+              New profile
             </button>
           </div>
         )}

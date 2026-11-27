@@ -34,7 +34,7 @@ export function IncomingShares() {
   }
   return (
     <Modal
-      title="Shared mod instance"
+      title="Shared mod profile"
       onClose={() => setShares((cur) => cur.filter((x) => x.id !== s.id))}
       width="max-w-sm"
       footer={
@@ -54,7 +54,7 @@ export function IncomingShares() {
         </div>
         <div>
           <p className="text-sm">
-            <span className="font-semibold">{s.from}</span> shared a mod instance with you
+            <span className="font-semibold">{s.from}</span> shared a mod profile with you
           </p>
           <p className="mt-0.5 font-semibold">{s.name}</p>
           <p className="text-xs text-muted">{mb(s.size)}</p>

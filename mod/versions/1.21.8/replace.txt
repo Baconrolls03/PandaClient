@@ -6,3 +6,38 @@ import net.minecraft.client.renderer.rendertype.RenderTypes; => import net.minec
 RenderTypes.entitySolid => RenderType.entitySolid
 # SkyRenderer.extractRenderState took the camera position before 1.21.11.
 ClientLevel level, float partial, Camera camera, SkyRenderState state => ClientLevel level, float partial, net.minecraft.world.phys.Vec3 camera, SkyRenderState state
+# Before 1.21.9: mouse, key and character input came as plain numbers.
+import net.minecraft.client.input.MouseButtonEvent; => import com.pandaclient.mod.compat.MouseButtonEvent;
+import net.minecraft.client.input.KeyEvent; => import com.pandaclient.mod.compat.KeyEvent;
+import net.minecraft.client.input.CharacterEvent; => import com.pandaclient.mod.compat.CharacterEvent;
+public boolean mouseClicked(MouseButtonEvent e, boolean doubleClick) { => public boolean mouseClicked(double pcX, double pcY, int pcB) { MouseButtonEvent e = new MouseButtonEvent(pcX, pcY, pcB); boolean doubleClick = false;
+super.mouseClicked(e, doubleClick) => super.mouseClicked(e.x(), e.y(), e.button())
+public boolean mouseDragged(MouseButtonEvent e, double dx, double dy) { => public boolean mouseDragged(double pcX, double pcY, int pcB, double dx, double dy) { MouseButtonEvent e = new MouseButtonEvent(pcX, pcY, pcB);
+super.mouseDragged(e, dx, dy) => super.mouseDragged(e.x(), e.y(), e.button(), dx, dy)
+public boolean mouseReleased(MouseButtonEvent e) { => public boolean mouseReleased(double pcX, double pcY, int pcB) { MouseButtonEvent e = new MouseButtonEvent(pcX, pcY, pcB);
+super.mouseReleased(e) => super.mouseReleased(e.x(), e.y(), e.button())
+public boolean keyPressed(KeyEvent e) { => public boolean keyPressed(int pcK, int pcS, int pcM) { KeyEvent e = new KeyEvent(pcK, pcS, pcM);
+super.keyPressed(e) => super.keyPressed(e.key(), e.scancode(), e.modifiers())
+public boolean charTyped(CharacterEvent e) { => public boolean charTyped(char pcC, int pcM) { CharacterEvent e = new CharacterEvent(pcC, pcM);
+super.charTyped(e) => super.charTyped(e.ch(), e.modifiers())
+import net.minecraft.client.input.MouseButtonInfo; => 
+@Inject(method = "onButton", at = @At("HEAD")) => @Inject(method = "onPress", at = @At("HEAD"), require = 0)
+long window, MouseButtonInfo info, int action, CallbackInfo ci => long window, int pcButton, int action, int pcMods, CallbackInfo ci
+info.button() => pcButton
+# Key categories were plain translation keys.
+public static final KeyMapping.Category CATEGORY = KeyMapping.Category.register(ResourceLocation.fromNamespaceAndPath("pandaclient", "main")); => public static final String CATEGORY = "key.category.pandaclient.main";
+# Game profiles used getters; the window handle was a number.
+.getProfile().id() => .getProfile().getId()
+InputConstants.isKeyDown(mc.getWindow(), => InputConstants.isKeyDown(mc.getWindow().getWindow(),
+# Hitboxes were a renderer switch, not a debug entry.
+if (mc.debugEntries != null && Modules.HITBOXES.enabled() != hitboxesApplied) { => if (Modules.HITBOXES.enabled() != hitboxesApplied) {
+var id = net.minecraft.client.gui.components.debug.DebugScreenEntries.ENTITY_HITBOXES; => // (no debug entries before 1.21.9)
+if (mc.debugEntries.isCurrentlyEnabled(id) != hitboxesApplied) mc.debugEntries.toggleStatus(id); => mc.getEntityRenderDispatcher().setRenderHitBoxes(hitboxesApplied);
+# Players: PlayerRenderer / PlayerRenderState. Hats and wings aren't drawn on 1.21.8.
+net.minecraft.client.renderer.entity.player.AvatarRenderer<?> avatar => net.minecraft.client.renderer.entity.player.PlayerRenderer avatar
+net.minecraft.client.renderer.entity.state.AvatarRenderState => net.minecraft.client.renderer.entity.state.PlayerRenderState
+net.minecraft.client.renderer.entity.player.AvatarRenderer => net.minecraft.client.renderer.entity.player.PlayerRenderer
+helper.register(new com.pandaclient.mod.cosmetics.AccessoryLayer(pandaclient$parent(avatar))); => {}
+# 1.7 animations: items were drawn straight into buffers.
+import net.minecraft.client.renderer.SubmitNodeCollector; => import net.minecraft.client.renderer.MultiBufferSource;
+SubmitNodeCollector collector => MultiBufferSource collector

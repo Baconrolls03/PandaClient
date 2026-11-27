@@ -286,13 +286,14 @@ export function createMock(): PandaApi {
     },
     instances: {
       list: async () => [...instances].sort((a, b) => (b.lastPlayed ?? b.created).localeCompare(a.lastPlayed ?? a.created)),
+      onTransferred: () => () => {},
       create: async (input) => {
         const id = input.name.toLowerCase().replace(/[^a-z0-9]+/g, '-') || 'instance'
         const inst = mkInst(id, input.name || 'New instance', input.mcVersion, input.loaderVersion ?? '0.20.1', null, null)
         instances = [...instances, inst]
         content.set(id, [])
         changed()
-        if (input.performancePack) fakeTask(`Performance mods for ${inst.name}`, 8)
+        if (input.performancePack || input.bundle) fakeTask(`Performance mods for ${inst.name}`, 8)
         return inst
       },
       update: async (id, patch) => {

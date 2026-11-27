@@ -21,6 +21,7 @@ import { SettingsModal } from '@/modals/SettingsModal'
 import { ImportModal } from '@/modals/ImportModal'
 import { IncomingShares } from '@/components/IncomingShares'
 import { CrashHelper } from '@/components/CrashHelper'
+import { TransferReportPopup } from '@/components/TransferReportPopup'
 import { InvitePopup } from '@/components/InvitePopup'
 import { useAppearance } from '@/lib/appearance'
 
@@ -54,6 +55,7 @@ function Shell() {
       {modal?.kind === 'import' && <ImportModal />}
       <IncomingShares />
       <CrashHelper />
+      <TransferReportPopup />
       <InvitePopup />
       <Toasts />
     </div>

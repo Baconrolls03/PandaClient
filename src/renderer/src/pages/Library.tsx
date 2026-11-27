@@ -35,14 +35,14 @@ export function Library() {
             <FileUp size={16} /> Import
           </Button>
           <Button variant="primary" onClick={() => openModal({ kind: 'create-instance' })}>
-            <Plus size={16} /> New instance
+            <Plus size={16} /> New profile
           </Button>
         </div>
       </div>
 
       {instances.length > 0 && (
         <div className="flex flex-wrap items-center gap-3">
-          <SearchField value={q} onChange={setQ} placeholder="Search instances" className="w-72" />
+          <SearchField value={q} onChange={setQ} placeholder="Search profiles" className="w-72" />
           <div className="ml-auto flex gap-1 rounded-xl border border-border bg-surface p-1">
             <button aria-label="Grid" onClick={() => update({ compactLibrary: false })} className={`grid size-8 place-items-center rounded-lg ${settings.compactLibrary ? 'text-muted' : 'bg-raised text-text'}`}>
               <LayoutGrid size={15} />
@@ -67,11 +67,11 @@ export function Library() {
       {instances.length === 0 ? (
         <Empty
           icon={<LibraryIcon size={22} />}
-          title="No instances yet"
+          title="No profiles yet"
           action={
             <div className="flex gap-2">
               <Button variant="primary" onClick={() => openModal({ kind: 'create-instance' })}>
-                <Plus size={16} /> New instance
+                <Plus size={16} /> New profile
               </Button>
               <Button onClick={() => openModal({ kind: 'import' })}>
                 <FileUp size={16} /> Import from Lunar, Modrinth…

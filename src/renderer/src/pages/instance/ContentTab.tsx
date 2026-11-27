@@ -198,7 +198,7 @@ export function ContentTab({ inst }: { inst: Instance }) {
         </div>
       )}
       {filter === 'datapack' && (
-        <p className="text-xs text-muted">Data packs go in the instance's datapacks folder. Copy them into a world's datapacks folder, or use a global data pack mod.</p>
+        <p className="text-xs text-muted">Data packs go in the profile's datapacks folder. Copy them into a world's datapacks folder, or use a global data pack mod.</p>
       )}
     </div>
   )

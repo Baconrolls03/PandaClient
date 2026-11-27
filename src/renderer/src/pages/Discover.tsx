@@ -95,7 +95,7 @@ function LockedFilter({ value, note, onUnlock }: { value: string; note: string; 
       <span className="inline-flex items-center gap-1.5 rounded-md bg-raised px-2 py-0.5 text-xs font-semibold">{value}</span>
       <div className="mt-3 rounded-xl border border-border bg-bg/60 p-3">
         <p className="text-[13px] font-semibold">{note}</p>
-        {onUnlock && <p className="mt-1 text-xs text-muted">Unlocking this filter may let you install content that doesn't work with this instance.</p>}
+        {onUnlock && <p className="mt-1 text-xs text-muted">Unlocking this filter may let you install content that doesn't work with this profile.</p>}
         {onUnlock && (
           <button onClick={onUnlock} className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-raised px-3 py-1.5 text-xs font-semibold transition-colors hover:bg-border">
             <LockOpen size={13} /> Unlock filter
@@ -378,7 +378,7 @@ export function Discover({ type, instanceId }: { type: ProjectType; instanceId?:
 
         <Section title="Game version">
           {gvLocked && inst ? (
-            <LockedFilter value={inst.mcVersion} note="Game version is provided by the instance" onUnlock={() => setGvUnlocked(true)} />
+            <LockedFilter value={inst.mcVersion} note="Game version is provided by the profile" onUnlock={() => setGvUnlocked(true)} />
           ) : (
             <>
               <label className="mb-2 flex h-8 items-center gap-2 rounded-lg bg-bg px-2.5">

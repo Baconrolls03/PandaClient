@@ -54,7 +54,7 @@ export function InstanceSettingsTab({ inst, onDelete, onEditIcon }: { inst: Inst
         </dl>
       </Card>
 
-      <Card title="Memory" description="Override the global RAM setting for this instance." action={<Toggle label="Custom memory" checked={inst.ramMb != null} onChange={(v) => save({ ramMb: v ? settings.ramMb : null })} />}>
+      <Card title="Memory" description="Override the global RAM setting for this profile." action={<Toggle label="Custom memory" checked={inst.ramMb != null} onChange={(v) => save({ ramMb: v ? settings.ramMb : null })} />}>
         <div className={`flex items-center gap-5 ${inst.ramMb == null ? 'pointer-events-none opacity-40' : ''}`}>
           <input
             type="range"
@@ -95,7 +95,7 @@ export function InstanceSettingsTab({ inst, onDelete, onEditIcon }: { inst: Inst
 
       <Card
         title="Game window"
-        description="Override the default window size for this instance."
+        description="Override the default window size for this profile."
         action={<Toggle label="Custom window" checked={inst.window != null} onChange={(v) => save({ window: v ? { ...settings.window } : null })} />}
       >
         {(() => {
@@ -116,7 +116,7 @@ export function InstanceSettingsTab({ inst, onDelete, onEditIcon }: { inst: Inst
 
       <Card
         title="Launch hooks"
-        description="Override the default commands for this instance."
+        description="Override the default commands for this profile."
         action={<Toggle label="Custom hooks" checked={inst.hooks != null} onChange={(v) => save({ hooks: v ? { ...settings.hooks } : null })} />}
       >
         <div className={`flex flex-col gap-3 ${inst.hooks ? '' : 'pointer-events-none opacity-40'}`}>
@@ -143,7 +143,7 @@ export function InstanceSettingsTab({ inst, onDelete, onEditIcon }: { inst: Inst
 
       <Card title="Danger zone">
         <div className="flex items-center justify-between gap-4">
-          <p className="text-sm text-muted">Delete this instance and everything in it, worlds included. It goes to the Recycle Bin.</p>
+          <p className="text-sm text-muted">Delete this profile and everything in it, worlds included. It goes to the Recycle Bin.</p>
           <Button
             variant="danger"
             onClick={onDelete}

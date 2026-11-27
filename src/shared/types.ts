@@ -145,8 +145,12 @@ export interface CreateInstanceInput {
   mcVersion: string
   /** Fabric loader version; null = latest stable. */
   loaderVersion: string | null
-  /** Install Fabric API, Sodium, Lithium, Iris. */
-  performancePack: boolean
+  /** Older callers: install the performance bundle. */
+  performancePack?: boolean
+  /** Ready-made mod set (see shared/bundles). */
+  bundle?: import('./bundles').BundleId | null
+  /** Copy the mods, packs and settings of this profile (updated to the new version where possible). */
+  copyFrom?: string | null
   /** Local image file to use as the icon. */
   iconFile?: string | null
 }
@@ -241,6 +245,15 @@ export interface CrashReport {
   /** Crash report file, if Minecraft wrote one. */
   file?: string
   excerpt: string
+}
+
+/** What happened when mods were moved into a new profile. */
+export interface TransferReport {
+  profileId: string
+  profileName: string
+  from: string
+  moved: string[]
+  removed: { name: string; reason: string }[]
 }
 
 export interface CrashFinderState {
@@ -543,6 +556,8 @@ export interface PandaApi {
   instances: {
     list(): Promise<Instance[]>
     create(input: CreateInstanceInput): Promise<Instance>
+    /** A profile finished copying mods from another profile. */
+    onTransferred(cb: (r: TransferReport) => void): () => void
     update(id: string, patch: Partial<Pick<Instance, 'name' | 'ramMb' | 'javaPath' | 'jvmArgs' | 'window' | 'hooks' | 'iconPreset'>>): Promise<Instance>
     setIcon(id: string, file: string | null): Promise<Instance>
     duplicate(id: string): Promise<Instance>

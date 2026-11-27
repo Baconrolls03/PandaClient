@@ -60,8 +60,8 @@ export function Sidebar() {
         <div className="mb-2 flex items-center justify-between px-3">
           <span className="text-[11px] font-semibold uppercase tracking-wider text-muted">Recent</span>
           <button
-            aria-label="New instance"
-            title="New instance"
+            aria-label="New profile"
+            title="New profile"
             onClick={() => openModal({ kind: 'create-instance' })}
             className="grid size-6 place-items-center rounded-md text-muted transition-colors hover:bg-raised hover:text-mint"
           >
@@ -69,7 +69,7 @@ export function Sidebar() {
           </button>
         </div>
         <div className="flex flex-col gap-0.5">
-          {recent.length === 0 && <p className="px-3 text-xs text-muted">No instances yet</p>}
+          {recent.length === 0 && <p className="px-3 text-xs text-muted">No profiles yet</p>}
           {recent.map((inst) => {
             const active = route.name === 'instance' && route.id === inst.id
             return (

@@ -137,7 +137,7 @@ export function stopGame(id: string): void {
 
 /** quiet: a test start by the crash finder (no window changes, no playtime, no pre/post commands). */
 export async function launchGame(id: string, emit: Emit, quickPlay?: QuickPlay, opts: { quiet?: boolean } = {}): Promise<void> {
-  if (running.has(id)) throw new Error('This instance is already running.')
+  if (running.has(id)) throw new Error('This profile is already running.')
   const inst = await getInstance(id)
   const s = getSettings()
   const base = { instanceId: id }
