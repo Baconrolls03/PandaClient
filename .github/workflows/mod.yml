@@ -61,7 +61,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        mc: ['1.21.10', '1.21.9']
+        mc: ['1.21.10', '1.21.9', '1.21.8']
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
@@ -80,7 +80,7 @@ jobs:
       - name: Errors
         if: steps.build.outcome == 'failure'
         run: |
-          grep -E "error:|What went wrong" -A6 build.log | grep -v "^--$" | head -150
+          grep -E "error:|What went wrong" -A6 build.log | grep -v "^--$" | head -400
           exit 1
       - name: Start the game on ${{ matrix.mc }} (menus + every hook checked)
         timeout-minutes: 12
