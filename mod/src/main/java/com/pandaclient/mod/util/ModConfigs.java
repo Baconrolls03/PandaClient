@@ -33,9 +33,19 @@ public final class ModConfigs {
         // Best source: Mod Menu's own list (it already loaded every mod's settings screen, and skips broken ones).
         try {
             Class<?> mm = Class.forName("com.terraformersmc.modmenu.ModMenu");
-            Object map = mm.getField("configScreenFactories").get(null);
             Method open = mm.getMethod("getConfigScreen", String.class, Screen.class);
-            if (map instanceof Map<?, ?> m) for (Object k : m.keySet()) {
+            // Mod Menu keeps the screens in private maps: the ones it loaded, and ones mods hand over for other mods.
+            Set<Object> keys = new java.util.LinkedHashSet<>();
+            for (String f : new String[]{"configScreenFactories", "delayedScreenFactoryProviders"}) {
+                try {
+                    var field = mm.getDeclaredField(f);
+                    field.setAccessible(true);
+                    Object v = field.get(null);
+                    if (v instanceof Map<?, ?> m) keys.addAll(m.keySet());
+                    else if (v instanceof List<?> l) for (Object o : l) if (o instanceof Map<?, ?> m) keys.addAll(m.keySet());
+                } catch (NoSuchFieldException ignored) {}
+            }
+            for (Object k : keys) {
                 String id = String.valueOf(k);
                 ModConfigs.seen.add(id);
                 if (SKIP.contains(id) || !seen.add(id)) continue;
@@ -49,17 +59,17 @@ public final class ModConfigs {
         }
         try {
             for (var c : FabricLoader.getInstance().getEntrypointContainers("modmenu", Object.class)) {
+                String id = c.getProvider().getMetadata().getId();
+                ModConfigs.seen.add(id);
                 try {
                     Object api = c.getEntrypoint();
-                    String id = c.getProvider().getMetadata().getId();
-                    seen.add(id);
                     Method m = api.getClass().getMethod("getModConfigScreenFactory");
                     // The interface's default returns no screen: only count mods that really have settings.
                     if (!m.getDeclaringClass().isInterface()) add(out, seen, id, m.invoke(api));
                     Object extra = api.getClass().getMethod("getProvidedConfigScreenFactories").invoke(api);
                     if (extra instanceof Map<?, ?> map) for (var e : map.entrySet()) add(out, seen, String.valueOf(e.getKey()), e.getValue());
-                } catch (Throwable ignored) {
-                    // a mod whose integration doesn't load: skip it
+                } catch (Throwable t) {
+                    ModConfigs.seen.add("(" + id + " failed: " + t + ")");
                 }
             }
         } catch (Throwable t) {
