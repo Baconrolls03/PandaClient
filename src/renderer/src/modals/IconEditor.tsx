@@ -3,6 +3,7 @@ import { Check, ImageIcon, Info, RotateCcw, Search, Shuffle, Upload } from 'luci
 import type { IconPreset } from '@shared/types'
 import { api } from '@/lib/api'
 import { ICON_BACKGROUNDS, ICON_GROUPS, PresetIcon, randomPreset } from '@/lib/icons'
+import { ART_ICONS } from '@/lib/iconArt'
 import { Button, InstanceIcon, Modal } from '@/components/ui'
 
 export type IconChoice = { kind: 'preset'; preset: IconPreset } | { kind: 'file'; file: string } | { kind: 'default' }
@@ -52,7 +53,7 @@ export function IconEditor({ initial, onSave, onClose }: { initial: IconChoice; 
       footer={
         <>
           <span className="mr-auto flex items-center gap-2 text-xs text-muted">
-            <Info size={14} /> Mix a background and a symbol, or upload your own image.
+            <Info size={14} /> Pick a PandaClient icon, mix a colour and a symbol, or upload your own image.
           </span>
           <Button variant="ghost" onClick={onClose}>
             Cancel
@@ -112,6 +113,24 @@ export function IconEditor({ initial, onSave, onClose }: { initial: IconChoice; 
 
         {/* Pickers */}
         <div className="flex min-w-0 flex-col gap-5">
+          <section>
+            <h3 className="mb-2.5 text-sm font-semibold">PandaClient icons</h3>
+            <div className="grid grid-cols-8 gap-2">
+              {ART_ICONS.map((a) => {
+                const active = choice.kind === 'preset' && preset.symbol === a.id
+                return (
+                  <button
+                    key={a.id}
+                    title={a.name}
+                    onClick={() => setPreset({ symbol: a.id })}
+                    className={`overflow-hidden rounded-xl ring-2 ring-offset-2 ring-offset-surface transition-transform hover:scale-105 ${active ? 'ring-mint' : 'ring-transparent'}`}
+                  >
+                    <img src={a.src} alt={a.name} className="aspect-square w-full scale-[1.12] object-cover" />
+                  </button>
+                )
+              })}
+            </div>
+          </section>
           <section>
             <h3 className="mb-2.5 text-sm font-semibold">Background</h3>
             <div className="grid grid-cols-8 gap-2">

@@ -1,5 +1,6 @@
 import * as L from 'lucide-react'
 import type { IconPreset } from '@shared/types'
+import { ART_ICONS, artIcon } from './iconArt'
 
 /** Instance icon backgrounds: two-stop gradients. `dark` = draw the symbol in ink instead of white. */
 export const ICON_BACKGROUNDS: { id: string; name: string; from: string; to: string; dark?: boolean }[] = [
@@ -51,12 +52,21 @@ export const ICON_SYMBOLS: Record<string, Icon> = Object.assign({}, ...ICON_GROU
 export const backgroundOf = (id: string) => ICON_BACKGROUNDS.find((b) => b.id === id) ?? ICON_BACKGROUNDS[0]
 
 export function randomPreset(): IconPreset {
+  // Mostly PandaClient's own artwork; sometimes a symbol on a colour.
+  if (Math.random() < 0.8) return { bg: 'night', symbol: ART_ICONS[Math.floor(Math.random() * ART_ICONS.length)].id }
   const symbols = Object.keys(ICON_SYMBOLS)
   return { bg: ICON_BACKGROUNDS[Math.floor(Math.random() * ICON_BACKGROUNDS.length)].id, symbol: symbols[Math.floor(Math.random() * symbols.length)] }
 }
 
 /** Draws a preset icon: gradient tile with a symbol, sized like an image. */
 export function PresetIcon({ preset, size, className = '' }: { preset: IconPreset; size: number; className?: string }) {
+  const art = artIcon(preset.symbol)
+  if (art)
+    return (
+      <div className={`shrink-0 overflow-hidden rounded-xl shadow-[0_4px_12px_-4px_rgb(0_0_0/0.5)] ${className}`} style={{ width: size, height: size }}>
+        <img src={art.src} alt={art.name} draggable={false} className="size-full scale-[1.12] object-cover" />
+      </div>
+    )
   const bg = backgroundOf(preset.bg)
   const Symbol = ICON_SYMBOLS[preset.symbol] ?? L.Box
   return (
