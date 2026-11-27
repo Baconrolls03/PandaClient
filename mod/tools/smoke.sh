@@ -21,6 +21,12 @@ shoot() { # wait for "[PandaClient CI] shot NAME" lines in $1 and screenshot eac
 }
 wait_exit() { for i in $(seq 1 300); do grep -qE "^exit [0-9]+" "$1" && return; sleep 1; done; }
 
+# Other mods, to check the PandaClient menu lists and opens their settings (Mod Menu + Dynamic FPS).
+mkdir -p $RUN/mods
+for slug in modmenu dynamic-fps; do
+  url=$(curl -s "https://api.modrinth.com/v2/project/$slug/version?loaders=%5B%22fabric%22%5D&game_versions=%5B%22${SMOKE_MC:-1.21.11}%22%5D" | python3 -c "import sys,json; v=json.load(sys.stdin); print(v[0]['files'][0]['url'] if v else '')")
+  [ -n "$url" ] && curl -sL -o "$RUN/mods/$slug.jar" "$url" && echo "added $slug for testing"
+done
 echo "=== 1. title screen"
 MC_ARG=${SMOKE_MC:+-Pmc=$SMOKE_MC}
 ( gradle -p mod runClient $MC_ARG --no-daemon > game.log 2>&1; echo "exit $?" >> game.log ) &

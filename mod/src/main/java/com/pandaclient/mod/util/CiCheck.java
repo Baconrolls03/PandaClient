@@ -29,6 +29,16 @@ public final class CiCheck {
             case 40 -> { mc.setScreen(new MenuScreen(null)); log("shot menu"); }
             case 140 -> { mc.setScreen(MenuScreen.openAt(null, Modules.KEYSTROKES)); log("shot settings"); }
             case 240 -> { mc.setScreen(new HudEditorScreen(null)); log("shot hud"); }
+            case 300 -> {
+                // One settings menu: every mod's own settings screen, found through Mod Menu's entry point.
+                var cfgs = ModConfigs.all();
+                log("mod settings found: " + cfgs.size() + " " + cfgs.stream().map(ModConfigs.Entry::name).toList() + " (entry points seen: " + ModConfigs.seen + ")");
+                if (!cfgs.isEmpty()) {
+                    var screen = cfgs.get(0).open().apply(new MenuScreen(null));
+                    log("opened " + cfgs.get(0).name() + " settings: " + (screen == null ? "nothing" : screen.getClass().getName()));
+                    if (screen != null) mc.setScreen(screen);
+                }
+            }
             case 340 -> finish(mc);
             default -> {}
         }

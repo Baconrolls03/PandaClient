@@ -17,6 +17,8 @@ export const BUNDLED: { slug: string; category: 'Performance' | 'Visuals' | 'Uti
   { slug: 'immediatelyfast', category: 'Performance' },
   { slug: 'entityculling', category: 'Performance' },
   { slug: 'moreculling', category: 'Performance' },
+  // Lowers FPS while Minecraft is in the background or minimised (saves CPU, GPU and battery).
+  { slug: 'dynamic-fps', category: 'Performance' },
   { slug: 'sound', category: 'Visuals' },
   { slug: 'particle-interactions', category: 'Visuals' },
   { slug: 'fallingleaves', category: 'Visuals' },

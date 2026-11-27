@@ -33,11 +33,10 @@ InputConstants.isKeyDown(mc.getWindow(), => InputConstants.isKeyDown(mc.getWindo
 if (mc.debugEntries != null && Modules.HITBOXES.enabled() != hitboxesApplied) { => if (Modules.HITBOXES.enabled() != hitboxesApplied) {
 var id = net.minecraft.client.gui.components.debug.DebugScreenEntries.ENTITY_HITBOXES; => // (no debug entries before 1.21.9)
 if (mc.debugEntries.isCurrentlyEnabled(id) != hitboxesApplied) mc.debugEntries.toggleStatus(id); => mc.getEntityRenderDispatcher().setRenderHitBoxes(hitboxesApplied);
-# Players: PlayerRenderer / PlayerRenderState. Hats and wings aren't drawn on 1.21.8.
+# Players: PlayerRenderer / PlayerRenderState.
 net.minecraft.client.renderer.entity.player.AvatarRenderer<?> avatar => net.minecraft.client.renderer.entity.player.PlayerRenderer avatar
 net.minecraft.client.renderer.entity.state.AvatarRenderState => net.minecraft.client.renderer.entity.state.PlayerRenderState
 net.minecraft.client.renderer.entity.player.AvatarRenderer => net.minecraft.client.renderer.entity.player.PlayerRenderer
-helper.register(new com.pandaclient.mod.cosmetics.AccessoryLayer(pandaclient$parent(avatar))); => {}
 # 1.7 animations: items were drawn straight into buffers.
 import net.minecraft.client.renderer.SubmitNodeCollector; => import net.minecraft.client.renderer.MultiBufferSource;
 SubmitNodeCollector collector => MultiBufferSource collector
@@ -45,3 +44,7 @@ InputConstants.getKey(e) => InputConstants.getKey(e.key(), e.scancode())
 Keys.MENU.matches(e) => Keys.MENU.matches(e.key(), e.scancode())
 # Fire overlay took no sprite before 1.21.9.
 PoseStack pose, MultiBufferSource buffers, TextureAtlasSprite sprite, CallbackInfo ci => PoseStack pose, MultiBufferSource buffers, CallbackInfo ci
+# Hats and wings: layers drew straight into buffers before 1.21.9.
+AvatarRenderState => PlayerRenderState
+public void submit(PoseStack pose, MultiBufferSource collector, int light, PlayerRenderState state, float yRot, float xRot) { => public void render(PoseStack pose, MultiBufferSource collector, int light, PlayerRenderState state, float yRot, float xRot) {
+collector.submitCustomGeometry(pose, RenderType.entitySolid(white()), (p, vc) -> cube(p, vc, x1, y1, z1, x2, y2, z2, argb, light)); => cube(pose.last(), collector.getBuffer(RenderType.entitySolid(white())), x1, y1, z1, x2, y2, z2, argb, light);

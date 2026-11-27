@@ -25,8 +25,23 @@ public abstract class TextHud extends HudModule {
     /** The value text; {@code preview} = sample data for the editor. */
     protected abstract String value(boolean preview);
 
+    // Work the text out at most 20 times a second instead of several times every frame.
+    private String cached;
+    private long cachedAt;
+    private boolean cachedPreview;
+
+    private String cachedValue(boolean preview) {
+        long now = System.nanoTime();
+        if (cached == null || preview != cachedPreview || now - cachedAt > 50_000_000L) {
+            cached = value(preview);
+            cachedAt = now;
+            cachedPreview = preview;
+        }
+        return cached;
+    }
+
     private String text(boolean preview) {
-        String v = value(preview);
+        String v = cachedValue(preview);
         String l = showLabel.on() && !label().isEmpty() ? label() + ": " : "";
         return brackets.on() ? "[" + l + v + "]" : l + v;
     }
@@ -35,7 +50,7 @@ public abstract class TextHud extends HudModule {
     @Override public int height() { return background.on() ? 16 : 9; }
 
     @Override public void render(Draw d, boolean preview) {
-        String v = value(preview);
+        String v = cachedValue(preview);
         String l = showLabel.on() && !label().isEmpty() ? label() + ": " : "";
         int w = Draw.textWidth((brackets.on() ? "[]" : "") + l + v) + (background.on() ? 10 : 0);
         int x = 0, y = 0;

@@ -23,6 +23,8 @@ public final class ModConfigs {
 
     private static final Set<String> SKIP = Set.of("pandaclient", "modmenu", "minecraft", "fabricloader", "java");
     private static List<Entry> cache;
+    /** Ids of every mod Mod Menu integration was found for (for the CI check). */
+    public static final List<String> seen = new ArrayList<>();
 
     public static List<Entry> all() {
         if (cache != null) return cache;
@@ -33,6 +35,7 @@ public final class ModConfigs {
                 try {
                     Object api = c.getEntrypoint();
                     String id = c.getProvider().getMetadata().getId();
+                    seen.add(id);
                     Method m = api.getClass().getMethod("getModConfigScreenFactory");
                     // The interface's default returns no screen: only count mods that really have settings.
                     if (!m.getDeclaringClass().isInterface()) add(out, seen, id, m.invoke(api));

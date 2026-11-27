@@ -68,10 +68,15 @@ public final class Modules {
 
     public static List<Module> all() { return ALL; }
 
+    private static List<HudModule> HUD;
+    /** HUD mods (built once: this is called every frame). */
     public static List<HudModule> hud() {
-        List<HudModule> l = new ArrayList<>();
-        for (Module m : ALL) if (m instanceof HudModule h) l.add(h);
-        return l;
+        if (HUD == null) {
+            List<HudModule> l = new ArrayList<>();
+            for (Module m : ALL) if (m instanceof HudModule h) l.add(h);
+            HUD = Collections.unmodifiableList(l);
+        }
+        return HUD;
     }
 
     public static int accent() {

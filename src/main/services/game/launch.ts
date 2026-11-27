@@ -84,7 +84,7 @@ export function buildCommand(
     is_quick_play_realms: false
   }
 
-  const jvm = [`-Xmx${opts.ramMb}M`, `-Xms${Math.min(512, opts.ramMb)}M`]
+  const jvm = [`-Xmx${opts.ramMb}M`, `-Xms${Math.min(1024, opts.ramMb)}M`, ...tunedJvmArgs(opts.jvmArgs)]
   if (v.arguments?.jvm?.length) jvm.push(...expand(v.arguments.jvm, vars, features))
   else jvm.push(`-Djava.library.path=${installed.nativesDir}`, '-cp', classpath)
   const log = v.logging?.client
@@ -101,6 +101,26 @@ export function buildCommand(
   }
 
   return { java, args: [...jvm, v.mainClass, ...game], cwd: inst.path }
+}
+
+/**
+ * Garbage collector settings tuned for smooth FPS (short pauses instead of big lag spikes), the same
+ * kind of flags performance-focused clients ship. Skipped when the player set their own GC flags.
+ */
+export function tunedJvmArgs(userArgs: string): string[] {
+  if (/-XX:\+Use\w+GC|-XX:\+UnlockExperimentalVMOptions/.test(userArgs)) return []
+  return [
+    '-XX:+UnlockExperimentalVMOptions',
+    '-XX:+UseG1GC',
+    '-XX:MaxGCPauseMillis=37',
+    '-XX:G1NewSizePercent=20',
+    '-XX:G1ReservePercent=20',
+    '-XX:G1HeapRegionSize=16M',
+    '-XX:+ParallelRefProcEnabled',
+    '-XX:+DisableExplicitGC',
+    '-XX:+AlwaysActAsServerClassMachine',
+    '-XX:+UseStringDeduplication'
+  ]
 }
 
 /** Never write the access token to a log. */
