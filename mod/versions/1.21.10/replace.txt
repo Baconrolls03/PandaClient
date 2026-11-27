@@ -4,3 +4,5 @@ Identifier => ResourceLocation
 net.minecraft.client.model.player.PlayerModel => net.minecraft.client.model.PlayerModel
 import net.minecraft.client.renderer.rendertype.RenderTypes; => import net.minecraft.client.renderer.RenderType;
 RenderTypes.entitySolid => RenderType.entitySolid
+# SkyRenderer.extractRenderState took the camera position before 1.21.11.
+ClientLevel level, float partial, Camera camera, SkyRenderState state => ClientLevel level, float partial, net.minecraft.world.phys.Vec3 camera, SkyRenderState state
