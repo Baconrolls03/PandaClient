@@ -40,7 +40,8 @@ public final class CiCheck {
                     if (screen != null) mc.setScreen(screen);
                 }
             }
-            case 340 -> finish(mc);
+            case 320 -> { mc.setScreen(new com.pandaclient.mod.gui.WelcomeScreen(new com.pandaclient.mod.gui.PandaTitleScreen())); log("shot welcome"); }
+            case 360 -> finish(mc);
             default -> {}
         }
     }
@@ -92,7 +93,7 @@ public final class CiCheck {
             case 480 -> {
                 StringBuilder b = new StringBuilder();
                 for (var w : net.fabricmc.fabric.api.client.screen.v1.Screens.getButtons(mc.screen)) b.append('[').append(w.getMessage().getString()).append(" @").append(w.getX()).append(',').append(w.getY()).append("] ");
-                log("pause menu (" + mc.screen.getClass().getSimpleName() + ") buttons: " + b);
+                log("pause menu (" + mc.screen.getClass().getSimpleName() + ") buttons: " + b + " primary=" + (com.pandaclient.mod.gui.PauseLayout.primary != null ? com.pandaclient.mod.gui.PauseLayout.primary.getMessage().getString() : "none"));
             }
             case 500 -> { mc.setScreen(null); log("freelook restored camera=" + mc.options.getCameraType()); }
             case 520 -> finish(mc);

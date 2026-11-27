@@ -49,8 +49,21 @@ public final class PandaClientMod implements ClientModInitializer {
             for (var b : buttons) if (b.getWidth() >= 150 && (top == null || b.getY() < top.getY())) top = b;
             int bx = top != null ? top.getX() - 78 : 4, by = top != null ? top.getY() : 4;
             if (bx < 2) { bx = 4; by = 4; }
-            buttons.add(net.minecraft.client.gui.components.Button.builder(net.minecraft.network.chat.Component.literal("PandaClient"),
-                b -> client.setScreen(new MenuScreen(screen))).bounds(bx, by, 74, 20).build());
+            var panda = net.minecraft.client.gui.components.Button.builder(net.minecraft.network.chat.Component.literal("PandaClient"),
+                b -> client.setScreen(new MenuScreen(screen))).bounds(bx, by, 74, 20).build();
+            buttons.add(panda);
+            // PandaClient pause menu: player on the left, the menu as a list on the right.
+            if (screen instanceof net.minecraft.client.gui.screens.PauseScreen ps && ps.showsPauseMenu()
+                    && Modules.TITLE_SCREEN.enabled() && Modules.TITLE_SCREEN.pauseMenu.on()) {
+                if (Modules.TITLE_SCREEN.lobbyFromWorld.on()) com.pandaclient.mod.util.LobbySnapshot.capture(client);
+                try {
+                    com.pandaclient.mod.gui.PauseLayout.apply(buttons, panda, w, h);
+                    net.fabricmc.fabric.api.client.screen.v1.ScreenEvents.afterRender(screen).register((s2, g, mx, my, delta) ->
+                        com.pandaclient.mod.gui.PauseLayout.render(g, s2.width, s2.height, mx, my));
+                } catch (Throwable t) {
+                    System.err.println("[PandaClient] Pause menu layout failed: " + t);
+                }
+            }
         });
         Runtime.getRuntime().addShutdownHook(new Thread(Config::save, "PandaClient config save"));
         System.out.println("[PandaClient] " + VERSION + " loaded with " + Modules.all().size() + " mods");
@@ -98,7 +111,9 @@ public final class PandaClientMod implements ClientModInitializer {
         }
         // PandaClient title screen instead of the vanilla one.
         if (Modules.TITLE_SCREEN.enabled() && mc.screen != null && mc.screen.getClass() == net.minecraft.client.gui.screens.TitleScreen.class)
-            mc.setScreen(new com.pandaclient.mod.gui.PandaTitleScreen());
+            mc.setScreen(com.pandaclient.mod.gui.WelcomeScreen.done() || com.pandaclient.mod.util.CiCheck.ON
+                ? new com.pandaclient.mod.gui.PandaTitleScreen()
+                : new com.pandaclient.mod.gui.WelcomeScreen(new com.pandaclient.mod.gui.PandaTitleScreen()));
         if (Modules.COSMETICS.enabled()) {
             com.pandaclient.mod.cosmetics.CosmeticsApi.loadCatalog();
             if (mc.level != null && mc.level.getGameTime() % 40 == 0) {
