@@ -26,6 +26,10 @@ jobs:
     runs-on: windows-latest
     permissions:
       contents: write
+      actions: read
+    env:
+      # Code signing turns on by itself once the SignPath secrets are added (see docs/SIGNING.md).
+      SIGNPATH: ${{ secrets.SIGNPATH_API_TOKEN != '' }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -46,7 +50,7 @@ jobs:
         run: |
           mkdir -p build/mods
           # One jar per supported Minecraft version (see mod/versions/)
-          for mc in 1.21.11 1.21.10 1.21.9; do
+          for mc in 1.21.11 1.21.10 1.21.9 1.21.8; do
             rm -rf mod/build/libs
             gradle -p mod build -Pmc=$mc --no-daemon -q
             cp "$(ls mod/build/libs/pandaclient-*.jar | grep -v sources | head -1)" "build/mods/pandaclient-$mc.jar"
@@ -54,6 +58,37 @@ jobs:
           done
           ls -la build/mods
       - run: npx electron-vite build && npx electron-builder --win --publish never
+      # ── Code signing (SignPath Foundation, free for open source) ──
+      - name: Upload the unsigned installer for signing
+        if: env.SIGNPATH == 'true'
+        id: unsigned
+        uses: actions/upload-artifact@v4
+        with:
+          name: unsigned-installer
+          path: release/PandaClient-Setup-*.exe
+      - name: Sign the installer
+        if: env.SIGNPATH == 'true'
+        uses: signpath/github-action-submit-signing-request@v1
+        with:
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          organization-id: ${{ secrets.SIGNPATH_ORGANIZATION_ID }}
+          project-slug: pandaclient
+          signing-policy-slug: release-signing
+          github-artifact-id: ${{ steps.unsigned.outputs.artifact-id }}
+          wait-for-completion: true
+          output-artifact-directory: release/signed
+      - name: Use the signed installer
+        if: env.SIGNPATH == 'true'
+        shell: bash
+        run: |
+          version=$(node -p "require('./package.json').version")
+          cp "release/signed/PandaClient-Setup-$version.exe" "release/PandaClient-Setup-$version.exe"
+          # The updater checks the file's hash: write the signed one into latest.yml. The old blockmap no longer matches.
+          node -e "
+            const fs=require('fs'),c=require('crypto');const f='release/PandaClient-Setup-$version.exe';const b=fs.readFileSync(f);
+            const sha=c.createHash('sha512').update(b).digest('base64');let y=fs.readFileSync('release/latest.yml','utf8');
+            y=y.replace(/sha512: .*/g,'sha512: '+sha).replace(/size: \\d+/g,'size: '+b.length);fs.writeFileSync('release/latest.yml',y)"
+          rm -f "release/PandaClient-Setup-$version.exe.blockmap"
       # Pushes to main publish a GitHub Release (once per version); the app's updater reads latest.yml from it.
       - name: Publish release
         if: github.ref == 'refs/heads/main'
@@ -68,7 +103,7 @@ jobs:
           fi
           gh release create "v$version" \
             "release/PandaClient-Setup-$version.exe" \
-            "release/PandaClient-Setup-$version.exe.blockmap" \
+            $(ls release/PandaClient-Setup-$version.exe.blockmap 2>/dev/null) \
             release/latest.yml \
           build/pandaclient-mod-*.jar \
             --target "$GITHUB_SHA" \

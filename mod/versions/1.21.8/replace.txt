@@ -43,3 +43,5 @@ import net.minecraft.client.renderer.SubmitNodeCollector; => import net.minecraf
 SubmitNodeCollector collector => MultiBufferSource collector
 InputConstants.getKey(e) => InputConstants.getKey(e.key(), e.scancode())
 Keys.MENU.matches(e) => Keys.MENU.matches(e.key(), e.scancode())
+# Fire overlay took no sprite before 1.21.9.
+PoseStack pose, MultiBufferSource buffers, TextureAtlasSprite sprite, CallbackInfo ci => PoseStack pose, MultiBufferSource buffers, CallbackInfo ci

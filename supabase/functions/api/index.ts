@@ -108,6 +108,27 @@ Deno.serve(async (req) => {
       return json({ online: await onlineCount() })
     }
 
+    // ── Settings sync ──────────────────────────────────────────────────────
+    if (req.method === 'GET' && path === '/settings') {
+      const { data } = await db.from('player_settings').select('files, updated_at').eq('uuid', me.uuid).maybeSingle()
+      return json({ files: data?.files ?? {}, updatedAt: data?.updated_at ?? null })
+    }
+    if (req.method === 'PUT' && path === '/settings') {
+      const { files } = await req.json().catch(() => ({}))
+      if (typeof files !== 'object' || !files) return fail(400, 'Bad settings')
+      const clean: Record<string, string> = {}
+      let size = 0
+      for (const [name, text] of Object.entries(files)) {
+        if (!/^pandaclient[a-z0-9_.-]*\.json$/i.test(name) || typeof text !== 'string') continue
+        size += text.length
+        clean[name] = text
+      }
+      if (size > 512_000) return fail(413, 'Settings too large')
+      const updatedAt = new Date().toISOString()
+      await db.from('player_settings').upsert({ uuid: me.uuid, files: clean, updated_at: updatedAt })
+      return json({ updatedAt })
+    }
+
     // ── Friends ────────────────────────────────────────────────────────────
     if (req.method === 'GET' && path === '/friends') {
       const { data: rows } = await db.from('friends').select('a, b, status').or(`a.eq.${me.uuid},b.eq.${me.uuid}`)

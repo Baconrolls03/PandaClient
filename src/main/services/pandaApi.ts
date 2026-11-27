@@ -1,6 +1,7 @@
 // Talks to the PandaClient backend (Supabase edge function "api") for cosmetics and the online count.
 import { net } from 'electron'
 import { existsSync, readFileSync } from 'node:fs'
+import { readdir, readFile, stat, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import type { Cosmetic, Friend, IncomingShare, Instance, Invite, Loadout, SharePlayer } from '@shared/types'
 import { getSettings } from './settings'
@@ -204,3 +205,50 @@ export async function dismissInvite(id: string): Promise<void> {
   inviteListeners.forEach((l) => l(invites))
 }
 export const myServer = () => currentServer()
+
+/* ───────────── Settings sync ───────────── */
+
+/** PandaClient's in-game settings files in the game folder (shared by every profile). */
+async function settingsFiles(): Promise<{ name: string; path: string; mtime: number }[]> {
+  const dir = getSettings().gameDir
+  if (!existsSync(dir)) return []
+  const out = []
+  for (const name of await readdir(dir)) {
+    if (!/^pandaclient[a-z0-9_.-]*\.json$/i.test(name) || name === 'pandaclient-presence.json') continue
+    const s = await stat(join(dir, name)).catch(() => null)
+    if (s?.isFile() && s.size < 256_000) out.push({ name, path: join(dir, name), mtime: s.mtimeMs })
+  }
+  return out
+}
+const syncStamp = () => join(getSettings().gameDir, '.pandaclient-sync')
+async function lastSync(): Promise<number> {
+  return Number(await readFile(syncStamp(), 'utf8').catch(() => '0')) || 0
+}
+
+/** Before launch: take the cloud copy if it's newer than what's on this PC. */
+export async function pullSettings(): Promise<boolean> {
+  if (!getSettings().cloudSync) return false
+  const remote = await authed<{ files: Record<string, string>; updatedAt: string | null }>('/settings')
+  if (!remote.updatedAt) return false
+  const at = Date.parse(remote.updatedAt)
+  const local = await settingsFiles()
+  const newestLocal = Math.max(0, ...local.map((f) => f.mtime))
+  if (at <= (await lastSync()) || at <= newestLocal) return false
+  for (const [name, text] of Object.entries(remote.files)) {
+    if (/^pandaclient[a-z0-9_.-]*\.json$/i.test(name)) await writeFile(join(getSettings().gameDir, name), text)
+  }
+  await writeFile(syncStamp(), String(Date.now()))
+  return true
+}
+
+/** After playing: upload the settings if they changed. */
+export async function pushSettings(): Promise<boolean> {
+  if (!getSettings().cloudSync) return false
+  const local = await settingsFiles()
+  if (!local.length || Math.max(...local.map((f) => f.mtime)) <= (await lastSync())) return false
+  const files: Record<string, string> = {}
+  for (const f of local) files[f.name] = await readFile(f.path, 'utf8')
+  await authed('/settings', { method: 'PUT', body: JSON.stringify({ files }) })
+  await writeFile(syncStamp(), String(Date.now()))
+  return true
+}

@@ -153,6 +153,11 @@ export async function launchGame(id: string, emit: Emit, quickPlay?: QuickPlay, 
     emit({ ...base, stage: 'preparing', progress: null, message: `Preparing ${inst.name}…` })
     const auth = await launchAuth()
     const installed = await install(inst.mcVersion, inst.loaderVersion, proxy)
+    if (!opts.quiet) {
+      // Cloud sync: your PandaClient HUD and settings from your other PCs.
+      const { pullSettings } = await import('../pandaApi')
+      if (await pullSettings().catch(() => false)) progress('Got your PandaClient settings from the cloud', null, 'preparing')
+    }
     await ensurePandaMod(inst, true, (m) => progress(m, null, 'preparing'))
     if (!opts.quiet) await ensureBundledMods(inst, (m) => progress(m, null, 'preparing')).catch(() => {})
     // Two copies of the same mod always crash Fabric: keep the newest one.
@@ -223,6 +228,7 @@ export async function launchGame(id: string, emit: Emit, quickPlay?: QuickPlay, 
         const latest = await getInstance(id).catch(() => null)
         if (latest) await updateInstance(id, { playtimeSec: latest.playtimeSec + played }).catch(() => {})
         await recordSession(id, inst.name, started, played).catch(() => {})
+        void import('../pandaApi').then((p) => p.pushSettings()).catch(() => {})
         if (hooks.postExit.trim()) runHook(hooks.postExit, inst.path, env).catch(() => {})
       }
       if (s.refocusOnExit && !opts.quiet && win && !win.isDestroyed()) {
