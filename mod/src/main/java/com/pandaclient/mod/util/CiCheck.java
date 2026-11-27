@@ -74,8 +74,17 @@ public final class CiCheck {
         }
     }
 
+    private static boolean leftForLobby;
+    private static int lobbyTicks;
+
     private static void worldTick(Minecraft mc) {
         if (mc.player == null || mc.level == null) {
+            if (leftForLobby) {
+                lobbyTicks++;
+                if (lobbyTicks == 40) { log("back in the lobby on " + (mc.screen == null ? "nothing" : mc.screen.getClass().getSimpleName())); log("shot lobby-world"); }
+                if (lobbyTicks == 90) finish(mc);
+                return;
+            }
             if (worldTicks >= 0) { log("left the world unexpectedly"); finish(mc); }
             return;
         }
@@ -123,9 +132,13 @@ public final class CiCheck {
                 for (var w : net.fabricmc.fabric.api.client.screen.v1.Screens.getButtons(mc.screen)) b.append('[').append(w.getMessage().getString()).append(" @").append(w.getX()).append(',').append(w.getY()).append("] ");
                 log("pause menu (" + mc.screen.getClass().getSimpleName() + ") buttons: " + b + " primary=" + (com.pandaclient.mod.gui.PauseLayout.primary != null ? com.pandaclient.mod.gui.PauseLayout.primary.getMessage().getString() : "none"));
             }
-            case 500 -> { mc.setScreen(new com.pandaclient.mod.gui.PandaTitleScreen()); log("lobby panorama captured: " + com.pandaclient.mod.util.LobbyPanorama.available()); log("shot lobby-world"); }
             case 545 -> { mc.setScreen(null); log("freelook restored camera=" + mc.options.getCameraType()); }
-            case 565 -> finish(mc);
+            case 565 -> {
+                // leave the world like a player would: the lobby should show where you were
+                log("lobby panorama captured: " + com.pandaclient.mod.util.LobbyPanorama.available());
+                leftForLobby = true;
+                mc.disconnect(new com.pandaclient.mod.gui.PandaTitleScreen(), false);
+            }
             default -> {}
         }
     }
