@@ -25,7 +25,7 @@ public final class ModuleIcons {
             case "combo" -> Items.BLAZE_POWDER;
             case "coords" -> Items.COMPASS;
             case "cosmetics" -> Items.ELYTRA;
-            case "cps" -> Items.STONE_BUTTON;
+            case "cps" -> Items.COMPARATOR;
             case "crosshair" -> Items.TARGET;
             case "day" -> Items.SUNFLOWER;
             case "direction" -> Items.RECOVERY_COMPASS;
@@ -37,7 +37,7 @@ public final class ModuleIcons {
             case "hitcolor" -> Items.RED_DYE;
             case "hitsounds" -> Items.NOTE_BLOCK;
             case "itemcounter" -> Items.CHEST;
-            case "keystrokes" -> Items.OAK_BUTTON;
+            case "keystrokes" -> Items.LEVER;
             case "lowfire" -> Items.FLINT_AND_STEEL;
             case "memory" -> Items.COMPARATOR;
             case "nametags" -> Items.NAME_TAG;

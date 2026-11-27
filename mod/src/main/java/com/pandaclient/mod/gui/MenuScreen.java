@@ -179,10 +179,8 @@ public final class MenuScreen extends Screen {
         int bottom = py + ph - 8;
         int bw = SIDEBAR - 13;
         Widgets.button(d, x + 6, bottom - 16, bw, 16, "Edit HUD", Widgets.in(mx, my, x + 6, bottom - 16, bw, 16), true);
-        String keyLabel = waitingKey == Keys.MENU ? "Press a key..." : "Menu: " + Keys.name(Keys.MENU);
-        Widgets.button(d, x + 6, bottom - 35, bw, 16, Widgets.ellipsize(keyLabel, bw - 6), Widgets.in(mx, my, x + 6, bottom - 35, bw, 16), false);
-        Widgets.button(d, x + 6, bottom - 54, bw, 16, "Accent: " + Modules.THEME.get(), Widgets.in(mx, my, x + 6, bottom - 54, bw, 16), false);
-        Widgets.button(d, x + 6, bottom - 73, bw, 16, Widgets.ellipsize("Profile: " + Config.profile, bw - 6), Widgets.in(mx, my, x + 6, bottom - 73, bw, 16), false);
+        Widgets.button(d, x + 6, bottom - 35, bw, 16, "Accent: " + Modules.THEME.get(), Widgets.in(mx, my, x + 6, bottom - 35, bw, 16), false);
+        Widgets.button(d, x + 6, bottom - 54, bw, 16, Widgets.ellipsize("Profile: " + Config.profile, bw - 6), Widgets.in(mx, my, x + 6, bottom - 54, bw, 16), false);
     }
 
     private int cols() { return contentW() >= 280 ? 2 : 1; }
@@ -467,9 +465,8 @@ public final class MenuScreen extends Screen {
         }
         int bottom = py + ph - 8, bw = SIDEBAR - 13;
         if (Widgets.in(mx, my, px + 6, bottom - 16, bw, 16)) { minecraft.setScreen(new HudEditorScreen(this)); return true; }
-        if (Widgets.in(mx, my, px + 6, bottom - 35, bw, 16)) { waitingKey = Keys.MENU; return true; }
-        if (Widgets.in(mx, my, px + 6, bottom - 54, bw, 16)) { Modules.THEME.cycle(button == 1 ? -1 : 1); Config.markDirty(); return true; }
-        if (Widgets.in(mx, my, px + 6, bottom - 73, bw, 16)) {
+        if (Widgets.in(mx, my, px + 6, bottom - 35, bw, 16)) { Modules.THEME.cycle(button == 1 ? -1 : 1); Config.markDirty(); return true; }
+        if (Widgets.in(mx, my, px + 6, bottom - 54, bw, 16)) {
             int i = java.util.Arrays.asList(Config.PROFILES).indexOf(Config.profile);
             Config.switchProfile(Config.PROFILES[Math.floorMod(i + (button == 1 ? -1 : 1), Config.PROFILES.length)]);
             return true;

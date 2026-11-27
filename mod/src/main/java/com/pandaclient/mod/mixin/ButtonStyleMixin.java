@@ -24,7 +24,8 @@ public abstract class ButtonStyleMixin {
         if (!(self instanceof Button) || self instanceof PlainTextButton || self instanceof SpriteIconButton || self instanceof ImageButton) return;
         if (!Modules.TITLE_SCREEN.enabled() || !Modules.TITLE_SCREEN.buttons.is("PandaClient")) return;
         AbstractWidget w = (AbstractWidget) self;
-        int kind = w == com.pandaclient.mod.gui.PauseLayout.primary ? 1 : w == com.pandaclient.mod.gui.PauseLayout.danger ? 2 : 0;
+        int kind = w == com.pandaclient.mod.gui.PauseLayout.primary ? 5 : w == com.pandaclient.mod.gui.PauseLayout.danger ? 4
+            : com.pandaclient.mod.gui.PauseLayout.rows.contains(w) ? 3 : 0;
         ButtonStyle.draw(new Draw(g), w.getX(), w.getY(), w.getWidth(), w.getHeight(), w.getMessage(), w.isActive(), w.isHoveredOrFocused(), kind);
         ci.cancel();
     }

@@ -7,10 +7,6 @@ import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.Gui;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.renderer.RenderPipelines;
-import net.minecraft.network.chat.Component;
-
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * Thin wrapper over GuiGraphics so the mods don't depend on Minecraft's drawing API directly.
@@ -31,30 +27,14 @@ public final class Draw {
 
     static boolean smooth() {
         if (hud) return false;
-        try { return Modules.TITLE_SCREEN.smoothFont.on(); } catch (Throwable t) { return false; }
+        try { return Modules.TITLE_SCREEN.smoothFont.on() && SmoothText.ready(); } catch (Throwable t) { return false; }
     }
+    private static boolean smooth(String s) { return smooth() && SmoothText.canShow(s); }
 
-    private static final Map<String, Integer> WIDTHS = new HashMap<>(), BOLD_WIDTHS = new HashMap<>();
-
-    static Component ui(String s, boolean bold) { return Component.literal(s).withStyle(bold ? UiFont.BOLD : UiFont.REGULAR); }
-
-    public static int textWidth(String s) {
-        if (!smooth()) return font().width(s);
-        return cachedWidth(WIDTHS, s, false);
-    }
-    public static int boldWidth(String s) {
-        if (!smooth()) return font().width(s);
-        return cachedWidth(BOLD_WIDTHS, s, true);
-    }
-    private static int cachedWidth(Map<String, Integer> cache, String s, boolean bold) {
-        Integer w = cache.get(s);
-        if (w == null) {
-            if (cache.size() > 4000) cache.clear();
-            w = font().width(ui(s, bold));
-            cache.put(s, w);
-        }
-        return w;
-    }
+    public static int textWidth(String s) { return smooth(s) ? Math.round(SmoothText.width(s, 8, false)) : font().width(s); }
+    public static int boldWidth(String s) { return smooth(s) ? Math.round(SmoothText.width(s, 8, true)) : font().width(s); }
+    /** Exact width at font size 8 (Minecraft's size), for layouts that scale text. */
+    public static float widthF(String s, boolean bold) { return smooth(s) ? SmoothText.width(s, 8, bold) : font().width(s); }
 
     public void rect(int x1, int y1, int x2, int y2, int argb) { if ((argb >>> 24) != 0) g.fill(x1, y1, x2, y2, argb); }
 
@@ -151,8 +131,8 @@ public final class Draw {
 
     /** Draws text and returns the x just after it. */
     public int text(String s, int x, int y, int argb, boolean shadow) {
-        if (smooth()) {
-            g.drawString(font(), ui(s, false), x, y, argb, shadow);
+        if (smooth(s)) {
+            SmoothText.draw(g, s, x, y, 8, argb, false);
             return x + textWidth(s);
         }
         g.drawString(font(), s, x, y, argb, shadow);
@@ -160,8 +140,8 @@ public final class Draw {
     }
     /** Semi-bold text (Minecraft's font when the smooth font is off). */
     public int bold(String s, int x, int y, int argb) {
-        if (smooth()) {
-            g.drawString(font(), ui(s, true), x, y, argb, false);
+        if (smooth(s)) {
+            SmoothText.draw(g, s, x, y, 8, argb, true);
             return x + boldWidth(s);
         }
         g.drawString(font(), s, x, y, argb, false);

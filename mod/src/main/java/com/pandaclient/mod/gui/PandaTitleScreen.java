@@ -178,7 +178,7 @@ public final class PandaTitleScreen extends Screen {
     private static final String[] TABS = {"Play", "Mods", "Cosmetics", "Options"};
     private static final int CARD_FILL = 0x9E0E1117, CARD_LINE = 0x24FFFFFF, MUTED = 0xFFA3AAB6, DIM = 0xFF7D8592;
     /** Where the middle of a line of text sits below its top, as a share of the font size. */
-    private static final float MID = 0.5f;
+    private static final float MID = 0.52f;
 
     private float k = 1f;           // GUI pixels per canvas unit
     private float vw = 1280, vh = 720;
@@ -196,7 +196,7 @@ public final class PandaTitleScreen extends Screen {
     private void txt(String s, float x, float cy, float size, int argb, boolean bold) {
         d.textScaled(s, x, cy - size * MID, size / 8f, col(argb), bold);
     }
-    private float tw(String s, float size, boolean bold) { return (bold ? Draw.boldWidth(s) : Draw.textWidth(s)) * size / 8f; }
+    private float tw(String s, float size, boolean bold) { return Draw.widthF(s, bold) * size / 8f; }
     private void txtR(String s, float right, float cy, float size, int argb, boolean bold) { txt(s, right - tw(s, size, bold), cy, size, argb, bold); }
     private void txtC(String s, float cx, float cy, float size, int argb, boolean bold) { txt(s, cx - tw(s, size, bold) / 2, cy, size, argb, bold); }
 
