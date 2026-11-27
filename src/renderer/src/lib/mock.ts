@@ -176,7 +176,7 @@ export function createMock(): PandaApi {
     showSnapshots: false,
     maxDownloads: 8,
     theme: 'default',
-    accent: '#6EE08F',
+    accent: '#4C6FFF',
     uiScale: 100,
     effects: true,
     reduceMotion: false,

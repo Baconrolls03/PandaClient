@@ -29,7 +29,7 @@ export function UpdatePill() {
       className="no-drag mr-2 flex h-7 animate-pop items-center gap-2 rounded-full bg-mint px-3 text-xs font-semibold text-ink shadow-mint transition-all hover:brightness-110"
       title="Restart PandaClient to finish updating"
     >
-      <RefreshCw size={13} /> Restart to update to {s.version}
+      <RefreshCw size={13} /> Update<span className="sr-only"> to {s.version}</span>
     </button>
   )
 }
