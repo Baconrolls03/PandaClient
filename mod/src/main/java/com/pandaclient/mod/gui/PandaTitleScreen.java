@@ -53,7 +53,7 @@ public final class PandaTitleScreen extends Screen {
         if (card()) {
             // A real 3D world behind you: the place you last paused in (six pictures all around, like Minecraft's
             // own title panorama), slowly turning and following the mouse; Minecraft's panorama until then.
-            float yaw = t * 2.4f + (mouseX - 0.5f) * 34f, pitch = 5f + (mouseY - 0.5f) * 10f;
+            float yaw = t * 2.4f + (mouseX - 0.5f) * 34f, pitch = 11f + (mouseY - 0.5f) * 10f;
             boolean own = Modules.TITLE_SCREEN.lobbyFromWorld.on() && com.pandaclient.mod.util.LobbyPanorama.render(minecraft, pitch, yaw);
             if (!own) renderPanorama(g, delta);
             renderBlurredBackground(g);
