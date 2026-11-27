@@ -35,6 +35,8 @@ public final class PandaTitleScreen extends Screen {
     @Override public boolean isPauseScreen() { return false; }
 
     private float t() { return (System.currentTimeMillis() - start) / 1000f; }
+    /** Length of each cinematic shot and of the dip to black between shots (seconds). */
+    private static final float SHOT = 11f, CUT = 0.9f;
 
     private static float hash(int a, int b) {
         int h = a * 374761393 + b * 668265263;
@@ -53,8 +55,19 @@ public final class PandaTitleScreen extends Screen {
         if (card()) {
             // A real 3D world behind you: the place you last paused in (six pictures all around, like Minecraft's
             // own title panorama), slowly turning and following the mouse; Minecraft's panorama until then.
-            float yaw = t * 2.4f + (mouseX - 0.5f) * 34f, pitch = 11f + (mouseY - 0.5f) * 10f;
-            boolean own = Modules.TITLE_SCREEN.lobbyFromWorld.on() && com.pandaclient.mod.util.LobbyPanorama.render(minecraft, pitch, yaw);
+            // Cinematic: a series of slow camera moves, cutting between places (where you've played, newest
+            // first, and Minecraft's own panorama) and angles, with a dip to black between shots.
+            int[] scenes = Modules.TITLE_SCREEN.lobbyFromWorld.on() ? com.pandaclient.mod.util.LobbyPanorama.scenes() : new int[0];
+            int count = scenes.length + 1;
+            int shot = (int) (t / SHOT);
+            float local = t - shot * SHOT, p = local / SHOT, ease = p * p * (3 - 2 * p);
+            int scene = shot % count;
+            float startYaw = (shot * 137.5f + 20) % 360, sweep = (shot % 2 == 0 ? 1 : -1) * 32;
+            float yaw = startYaw + sweep * ease + (mouseX - 0.5f) * 12f;
+            float pitch = 8f + 5f * (float) Math.sin(shot * 1.7f) + (ease - 0.5f) * 5f + (mouseY - 0.5f) * 6f;
+            boolean own = scene < scenes.length
+                ? com.pandaclient.mod.util.LobbyPanorama.render(minecraft, scenes[scene], pitch, yaw)
+                : com.pandaclient.mod.util.LobbyPanorama.renderVanilla(minecraft, pitch, yaw);
             if (!own) renderPanorama(g, delta);
             renderBlurredBackground(g);
             // a gentle grade so the cards read: darker at the top and bottom
@@ -62,6 +75,11 @@ public final class PandaTitleScreen extends Screen {
                 int a1 = 60 - i * 6, h1 = height * i / 40, h2 = height * (i + 1) / 40;
                 d.rect(0, h1, width, h2, Draw.alpha(0xFF070A10, a1));
                 d.rect(0, height - h2, width, height - h1, Draw.alpha(0xFF070A10, a1 + 20));
+            }
+            // dip to black between shots
+            if (shot > 0 || local > SHOT - CUT) {
+                float dip = local < CUT ? 1 - local / CUT : local > SHOT - CUT ? (local - (SHOT - CUT)) / CUT : 0;
+                if (dip > 0) d.rect(0, 0, width, height, Draw.alpha(0xFF000000, Math.round(255 * dip * dip * (3 - 2 * dip))));
             }
             drawShadow(g);
             float fadeIn = Math.min(1f, t / 0.8f);
@@ -246,13 +264,13 @@ public final class PandaTitleScreen extends Screen {
 
     /** Canvas box of the character: x, y, w, h. */
     private float[] playerBox() {
-        float ph = 190, pw = ph * 0.55f;
-        float feet = vh * 0.80f;
-        return new float[]{vw * 0.55f - pw / 2, feet - ph, pw, ph};
+        float ph = 335, pw = ph * 0.55f;
+        float feet = vh * 0.885f;
+        return new float[]{vw * 0.5f - pw / 2, feet - ph, pw, ph};
     }
 
     /** Where party member i stands: canvas x offset from you and how much smaller (further back) they are. */
-    private static final float[] MATE_DX = {-125, 125, -235, 235};
+    private static final float[] MATE_DX = {-190, 190, -340, 340}, MATE_SCALE = {0.88f, 0.88f, 0.76f, 0.76f};
 
     private java.util.List<com.pandaclient.mod.util.Party.Member> mateList() {
         var others = com.pandaclient.mod.util.Party.others(name());
@@ -261,8 +279,8 @@ public final class PandaTitleScreen extends Screen {
 
     private float[] mateBox(int i) {
         float[] b = playerBox();
-        float h = b[3] * 0.92f, w = h * 0.55f;
-        float cx = b[0] + b[2] / 2 + MATE_DX[i], feet = b[1] + b[3] - 10;
+        float h = b[3] * MATE_SCALE[i], w = h * 0.55f;
+        float cx = b[0] + b[2] / 2 + MATE_DX[i], feet = b[1] + b[3] - (i < 2 ? 14 : 30);
         return new float[]{cx - w / 2, feet - h, w, h};
     }
 
@@ -415,7 +433,9 @@ public final class PandaTitleScreen extends Screen {
         mouseCY = grabbed != null ? mouseCY : mouseY / k;
         physics();
         float time = t();
-        for (Body b : bodies()) {
+        java.util.List<Body> order = new java.util.ArrayList<>(bodies());
+        java.util.Collections.reverse(order);
+        for (Body b : order) {
             float box = b.height * 1.7f;
             int x0 = Math.round((b.cx() - box / 2) * k), y0 = Math.round((b.cy() - box / 2) * k);
             int x1 = Math.round((b.cx() + box / 2) * k), y1 = Math.round((b.cy() + box / 2) * k);
