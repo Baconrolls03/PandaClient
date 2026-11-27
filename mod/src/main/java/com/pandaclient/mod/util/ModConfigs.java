@@ -30,6 +30,23 @@ public final class ModConfigs {
         if (cache != null) return cache;
         List<Entry> out = new ArrayList<>();
         Set<String> seen = new HashSet<>();
+        // Best source: Mod Menu's own list (it already loaded every mod's settings screen, and skips broken ones).
+        try {
+            Class<?> mm = Class.forName("com.terraformersmc.modmenu.ModMenu");
+            Object map = mm.getField("configScreenFactories").get(null);
+            Method open = mm.getMethod("getConfigScreen", String.class, Screen.class);
+            if (map instanceof Map<?, ?> m) for (Object k : m.keySet()) {
+                String id = String.valueOf(k);
+                ModConfigs.seen.add(id);
+                if (SKIP.contains(id) || !seen.add(id)) continue;
+                String name = FabricLoader.getInstance().getModContainer(id).map(c -> c.getMetadata().getName()).orElse(id);
+                out.add(new Entry(id, name, parent -> {
+                    try { return (Screen) open.invoke(null, id, parent); } catch (Throwable t) { System.err.println("[PandaClient] Couldn't open " + id + " settings: " + t); return null; }
+                }));
+            }
+        } catch (Throwable t) {
+            ModConfigs.seen.add("(Mod Menu list unavailable: " + t + ")");
+        }
         try {
             for (var c : FabricLoader.getInstance().getEntrypointContainers("modmenu", Object.class)) {
                 try {
@@ -45,8 +62,8 @@ public final class ModConfigs {
                     // a mod whose integration doesn't load: skip it
                 }
             }
-        } catch (Throwable ignored) {
-            // Mod Menu's API isn't installed
+        } catch (Throwable t) {
+            ModConfigs.seen.add("(entry points unavailable: " + t + ")");
         }
         out.sort(Comparator.comparing(e -> e.name().toLowerCase(java.util.Locale.ROOT)));
         cache = out;

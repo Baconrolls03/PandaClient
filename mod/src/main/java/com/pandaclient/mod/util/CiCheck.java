@@ -32,6 +32,7 @@ public final class CiCheck {
             case 300 -> {
                 // One settings menu: every mod's own settings screen, found through Mod Menu's entry point.
                 var cfgs = ModConfigs.all();
+                log("modmenu loaded=" + net.fabricmc.loader.api.FabricLoader.getInstance().isModLoaded("modmenu") + " dynamic_fps loaded=" + net.fabricmc.loader.api.FabricLoader.getInstance().isModLoaded("dynamic_fps"));
                 log("mod settings found: " + cfgs.size() + " " + cfgs.stream().map(ModConfigs.Entry::name).toList() + " (entry points seen: " + ModConfigs.seen + ")");
                 if (!cfgs.isEmpty()) {
                     var screen = cfgs.get(0).open().apply(new MenuScreen(null));
