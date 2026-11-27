@@ -175,3 +175,16 @@
 15|net.minecraft.client.resources.SkinManager|-|get|getOrLoad|lookup
 15|net.minecraft.world.entity.player.PlayerSkin|-|.
 15|net.minecraft.client.gui.components.PlayerFaceRenderer|-|draw
+16|FIND:CubeMap|-|.
+16|FIND:Panorama|-|.
+16|net.minecraft.client.Minecraft|c|grabPanoramixScreenshot
+16|net.minecraft.client.renderer.CubeMap|p|.
+16|net.minecraft.client.renderer.CubeMap|c|render\(
+16|net.minecraft.client.renderer.texture.CubeMapTexture|c|.
+16|net.minecraft.client.renderer.PanoramaRenderer|p|.
+16|net.minecraft.client.renderer.texture.ReloadableTexture|p|.
+16|net.minecraft.client.renderer.texture.TextureContents|p|.
+16|net.minecraft.client.gui.screens.Screen|p|anorama|CUBE_MAP|PANORAMA|renderBackground|renderBlurred
+16|net.minecraft.client.renderer.GameRenderer|p|anoram|renderLevel|BlockOutline|getPanorama
+16|net.minecraft.client.gui.screens.inventory.InventoryScreen|p|renderEntityInInventory
+16|net.minecraft.client.gui.GuiGraphics|p|submitEntity|submitSkin|PictureInPicture|blurBeforeThisStratum|nextStratum

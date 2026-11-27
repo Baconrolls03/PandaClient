@@ -17,6 +17,13 @@ grep -v '^#' mod/tools/api.txt | grep "^$GROUP|" | while IFS='|' read -r g cls p
     continue
   fi
   echo "== $cls"
+  if [ "$priv" = c ]; then
+    # bytecode of the methods whose signature matches the filter
+    javap -cp "$CP" -c -p "$cls" 2>&1 | awk -v re="$filter" '
+      /^  [a-zA-Z].*\(.*\).*;$|^  [a-zA-Z].*\(.*\).*\{?$/ { show = ($0 ~ re) }
+      show { print }' | sed -E 's/net\/minecraft\///g; s/com\/mojang\///g; s/^ +//' | grep -v '^$' | head -260
+    continue
+  fi
   flag=-public; [ "$priv" = p ] && flag=-p
   javap -cp "$CP" $flag "$cls" 2>&1 | grep -E "$filter" | sed -E 's/^  //; s/(public|final|java\.lang\.|net\.minecraft\.|com\.mojang\.) ?//g' | head -90
 done
