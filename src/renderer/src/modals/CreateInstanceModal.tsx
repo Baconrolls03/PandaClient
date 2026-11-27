@@ -12,24 +12,25 @@ import { VersionSelect } from '@/components/VersionSelect'
 const BUNDLE_ICON: Record<BundleId, typeof Sword> = { pvp: Sword, performance: Gauge, survival: Trees, recording: Camera, none: Package }
 
 /** Pick a play style: a ready-made set of mods. */
-export function BundlePicker({ value, onChange }: { value: BundleId; onChange: (b: BundleId) => void }) {
+export function BundlePicker({ value, onChange, compact }: { value: BundleId; onChange: (b: BundleId) => void; compact?: boolean }) {
   return (
-    <div className="grid grid-cols-2 gap-2">
+    <div className={`grid gap-2 ${compact ? 'grid-cols-3' : 'grid-cols-2'}`}>
       {BUNDLES.map((b) => {
         const Icon = BUNDLE_ICON[b.id]
         const on = value === b.id
         return (
           <button
             key={b.id}
+            title={b.description}
             onClick={() => onChange(b.id)}
-            className={`flex items-start gap-3 rounded-2xl border p-3 text-left transition-colors ${on ? 'border-mint/60 bg-mint/10' : 'border-border bg-bg hover:bg-raised'} ${b.id === 'none' ? 'col-span-2' : ''}`}
+            className={`flex gap-3 rounded-2xl border text-left transition-colors ${compact ? 'items-center p-2' : 'items-start p-3'} ${on ? 'border-mint/60 bg-mint/10' : 'border-border bg-bg hover:bg-raised'} ${b.id === 'none' && !compact ? 'col-span-2' : ''}`}
           >
             <span className={`grid size-9 shrink-0 place-items-center rounded-xl ${on ? 'bg-mint/20 text-mint' : 'bg-raised text-muted'}`}>
               <Icon size={17} />
             </span>
             <span>
               <span className="block text-sm font-semibold">{b.name}</span>
-              <span className="block text-xs leading-snug text-muted">{b.description}</span>
+              {!compact && <span className="block text-xs leading-snug text-muted">{b.description}</span>}
             </span>
           </button>
         )
@@ -118,7 +119,7 @@ export function CreateInstanceModal() {
         </>
       }
     >
-      <div className="flex flex-col gap-6">
+      <div className="flex flex-col gap-4">
         <div className="flex items-center gap-4">
           <button onClick={() => setEditingIcon(true)} className="group relative" title="Customise icon">
             {icon.kind === 'preset' ? (
@@ -173,17 +174,17 @@ export function CreateInstanceModal() {
 
         <div>
           <label className="mb-1.5 block text-xs font-medium text-muted">Play style</label>
-          <BundlePicker value={bundle} onChange={setBundle} />
+          <BundlePicker value={bundle} onChange={setBundle} compact />
         </div>
 
         {instances.length > 0 && (
-          <div className="flex items-center gap-4 rounded-2xl border border-border bg-bg p-4">
-            <div className="grid size-10 shrink-0 place-items-center rounded-xl bg-blue/15 text-blue">
+          <div className="flex items-center gap-3 rounded-2xl border border-border bg-bg p-3">
+            <div className="grid size-9 shrink-0 place-items-center rounded-xl bg-blue/15 text-blue">
               <Copy size={18} />
             </div>
             <div className="min-w-0 flex-1">
               <div className="text-sm font-semibold">Move my mods from another profile</div>
-              <div className="text-xs text-muted">Mods are updated to {mc || 'this version'}. Any that aren't out for it yet are left out, and you'll see which.</div>
+              <div className="truncate text-xs text-muted" title="Any mods not out for this version yet are left out, and you'll see which.">Updated to {mc || 'this version'} automatically</div>
             </div>
             <Select
               value={copyFrom}

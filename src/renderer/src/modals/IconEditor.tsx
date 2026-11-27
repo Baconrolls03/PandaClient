@@ -53,7 +53,7 @@ export function IconEditor({ initial, onSave, onClose }: { initial: IconChoice; 
       footer={
         <>
           <span className="mr-auto flex items-center gap-2 text-xs text-muted">
-            <Info size={14} /> Pick a PandaClient icon, mix a colour and a symbol, or upload your own image.
+            <Info size={14} /> Pick a PandaClient icon or upload your own image.
           </span>
           <Button variant="ghost" onClick={onClose}>
             Cancel
@@ -115,7 +115,7 @@ export function IconEditor({ initial, onSave, onClose }: { initial: IconChoice; 
         <div className="flex min-w-0 flex-col gap-5">
           <section>
             <h3 className="mb-2.5 text-sm font-semibold">PandaClient icons</h3>
-            <div className="grid grid-cols-8 gap-2">
+            <div className="grid grid-cols-4 gap-3">
               {ART_ICONS.map((a) => {
                 const active = choice.kind === 'preset' && preset.symbol === a.id
                 return (
@@ -129,57 +129,6 @@ export function IconEditor({ initial, onSave, onClose }: { initial: IconChoice; 
                   </button>
                 )
               })}
-            </div>
-          </section>
-          <section>
-            <h3 className="mb-2.5 text-sm font-semibold">Background</h3>
-            <div className="grid grid-cols-8 gap-2">
-              {ICON_BACKGROUNDS.map((b) => {
-                const active = choice.kind === 'preset' && preset.bg === b.id
-                return (
-                  <button
-                    key={b.id}
-                    title={b.name}
-                    onClick={() => setPreset({ bg: b.id })}
-                    className={`relative aspect-square rounded-xl transition-all hover:scale-105 ${active ? 'ring-2 ring-text ring-offset-2 ring-offset-surface' : ''}`}
-                    style={{ background: `linear-gradient(145deg, ${b.from}, ${b.to})` }}
-                  >
-                    {active && <Check size={16} className="absolute inset-0 m-auto" color={b.dark ? '#141B24' : '#fff'} />}
-                  </button>
-                )
-              })}
-            </div>
-          </section>
-          <section className="min-h-0">
-            <div className="mb-2.5 flex items-center justify-between gap-3">
-              <h3 className="text-sm font-semibold">Symbol</h3>
-              <label className="flex h-8 w-48 items-center gap-2 rounded-lg bg-bg px-2.5">
-                <Search size={13} className="text-muted" />
-                <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search symbols" className="w-full bg-transparent text-xs outline-none placeholder:text-muted" />
-              </label>
-            </div>
-            <div className="max-h-[300px] overflow-y-auto pr-1">
-              {groups.map((g) => (
-                <div key={g.name} className="mb-3">
-                  <h4 className="mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted">{g.name}</h4>
-                  <div className="grid grid-cols-9 gap-1.5">
-                    {g.icons.map(([id, Icon]) => {
-                      const active = choice.kind === 'preset' && preset.symbol === id
-                      return (
-                        <button
-                          key={id}
-                          title={id}
-                          onClick={() => setPreset({ symbol: id })}
-                          className={`grid aspect-square place-items-center rounded-lg border transition-all hover:-translate-y-px hover:bg-raised ${active ? 'border-mint bg-mint/10 text-mint' : 'border-border text-muted hover:text-text'}`}
-                        >
-                          <Icon size={18} />
-                        </button>
-                      )
-                    })}
-                  </div>
-                </div>
-              ))}
-              {groups.length === 0 && <p className="py-6 text-center text-sm text-muted">No symbols match.</p>}
             </div>
           </section>
         </div>

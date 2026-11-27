@@ -58,9 +58,25 @@ export function randomPreset(): IconPreset {
   return { bg: ICON_BACKGROUNDS[Math.floor(Math.random() * ICON_BACKGROUNDS.length)].id, symbol: symbols[Math.floor(Math.random() * symbols.length)] }
 }
 
+const ART_FOR: [RegExp, string][] = [
+  [/sword|target|bomb|skull|ghost|zap|medal/, 'art:swords'],
+  [/pickaxe|axe|shovel|hammer|mountain|snowy|cpu|magnet|anchor/, 'art:pickaxe'],
+  [/panda|cat|dog|rabbit|squirrel|rat|bird|fish|turtle|snail|bug|paw|bone|egg|feather|shell|bot/, 'art:panda'],
+  [/shield|castle|house|key|crown|pyramid/, 'art:shield'],
+  [/flask|wand|gem|diamond|potion|atom|orbit|telescope|satellite|moon|sparkles|star|infinity|lightbulb/, 'art:potion'],
+  [/box|package|gift|trophy|map|compass|scroll|hourglass|dice|puzzle|joystick|gamepad|rocket|ship/, 'art:chest'],
+  [/flame|sun|tent|cookie|cake|pizza|candy|carrot|wheat|apple|citrus/, 'art:campfire'],
+  [/tree|leaf|sprout|flower|clover|cherry|grape|waves|cloud|snowflake|tornado|globe|heart|music|palette|brush/, 'art:blossom']
+]
+/** The PandaClient artwork closest to an older symbol icon. */
+function artForSymbol(symbol: string): string {
+  for (const [re, id] of ART_FOR) if (re.test(symbol)) return id
+  return ART_ICONS[Math.abs([...symbol].reduce((h, c) => (h * 31 + c.charCodeAt(0)) | 0, 0)) % ART_ICONS.length].id
+}
+
 /** Draws a preset icon: gradient tile with a symbol, sized like an image. */
 export function PresetIcon({ preset, size, className = '' }: { preset: IconPreset; size: number; className?: string }) {
-  const art = artIcon(preset.symbol)
+  const art = artIcon(preset.symbol) ?? artIcon(artForSymbol(preset.symbol))
   if (art)
     return (
       <div className={`shrink-0 overflow-hidden rounded-xl shadow-[0_4px_12px_-4px_rgb(0_0_0/0.5)] ${className}`} style={{ width: size, height: size }}>

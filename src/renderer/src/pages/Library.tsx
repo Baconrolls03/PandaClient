@@ -27,7 +27,7 @@ export function Library() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Library</h1>
           <p className="mt-1 text-sm text-muted">
-            {instances.length} instance{instances.length === 1 ? '' : 's'}. Each one keeps its own mods, worlds and settings.
+            {instances.length} profile{instances.length === 1 ? '' : 's'}. Each one keeps its own mods, worlds and settings.
           </p>
         </div>
         <div className="flex gap-2">
