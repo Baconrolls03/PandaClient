@@ -14,13 +14,13 @@ function ProfileCard({ inst, active, onClick, delay }: { inst: Instance; active:
     <button
       onClick={onClick}
       style={{ animationDelay: `${delay}ms` }}
-      className={`group relative h-28 w-52 shrink-0 animate-rise overflow-hidden rounded-2xl border-2 text-left shadow-lift transition-all duration-200 hover:-translate-y-1 ${active ? 'border-blue' : 'border-white/10 hover:border-white/30'}`}
+      className={`group relative aspect-[16/10] w-[min(19rem,26vw)] shrink-0 animate-rise overflow-hidden rounded-2xl border-2 text-left shadow-lift transition-all duration-200 hover:-translate-y-1 ${active ? 'border-mint' : 'border-transparent hover:border-white/25'}`}
     >
       <img src={artFor(inst.id)} alt="" className="absolute inset-0 size-full object-cover transition-transform duration-500 group-hover:scale-110" />
       <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent" />
-      <div className="absolute inset-x-3 bottom-2.5">
-        <div className="truncate text-[15px] font-bold text-white drop-shadow">{inst.name}</div>
-        <div className="truncate text-[11px] text-white/70">Minecraft {inst.mcVersion}</div>
+      <div className="absolute inset-x-5 bottom-4">
+        <div className="truncate text-2xl font-extrabold tracking-tight text-white drop-shadow-lg">{inst.name}</div>
+        <div className="truncate text-xs font-medium text-white/70">Minecraft {inst.mcVersion}</div>
       </div>
     </button>
   )
@@ -66,7 +66,7 @@ export function Home() {
   }
 
   const art = artFor(selected?.id)
-  const recent = [...instances].sort((a, b) => (b.lastPlayed ?? b.created).localeCompare(a.lastPlayed ?? a.created)).slice(0, 6)
+  const recent = [...instances].sort((a, b) => (b.lastPlayed ?? b.created).localeCompare(a.lastPlayed ?? a.created)).slice(0, 3)
 
   return (
     <div onMouseMove={onMove} className="relative flex h-full min-h-[560px] flex-col overflow-hidden bg-black">
@@ -85,24 +85,24 @@ export function Home() {
               {selected.lastPlayed ? 'Continue playing' : 'Ready to play'}
               {online != null && <span className="ml-3 rounded-full bg-white/10 px-2 py-0.5 normal-case tracking-normal text-white/80">{online.toLocaleString()} online</span>}
             </p>
-            <h1 className="mt-2 animate-rise text-5xl font-extrabold tracking-tight text-white drop-shadow-lg [animation-delay:60ms]">{selected.name}</h1>
+            <h1 className="mt-2 animate-rise text-6xl font-extrabold tracking-tight text-white drop-shadow-lg [animation-delay:60ms]">{selected.name}</h1>
             <p className="mt-2 animate-rise text-sm text-white/70 [animation-delay:120ms]">
               Minecraft {selected.mcVersion} · Fabric · {selected.lastPlayed ? `Played ${timeAgo(selected.lastPlayed)}` : 'Never played'}
               {settings.showPlayTime && selected.playtimeSec > 0 && ` · ${playtime(selected.playtimeSec)} played`}
             </p>
             <div className="mt-6 flex animate-rise items-center gap-3 [animation-delay:180ms]">
-              <PlayButton instanceId={selected.id} label="Launch" />
+              <PlayButton instanceId={selected.id} label="Launch" size="md" />
               <button
                 title="Manage profile"
                 onClick={() => navigate({ name: 'instance', id: selected.id })}
-                className="grid size-14 place-items-center rounded-2xl border border-white/15 bg-white/10 text-white backdrop-blur transition-colors hover:bg-white/20"
+                className="grid size-11 place-items-center rounded-xl text-white/80 transition-colors hover:bg-white/10 hover:text-white"
               >
                 <Settings2 size={20} />
               </button>
               <button
                 title="Add mods"
                 onClick={() => navigate({ name: 'discover', type: 'mod', instanceId: selected.id })}
-                className="grid size-14 place-items-center rounded-2xl border border-white/15 bg-white/10 text-white backdrop-blur transition-colors hover:bg-white/20"
+                className="grid size-11 place-items-center rounded-xl text-white/80 transition-colors hover:bg-white/10 hover:text-white"
               >
                 <Plus size={20} />
               </button>
@@ -152,17 +152,9 @@ export function Home() {
             title="All profiles"
             onClick={() => navigate({ name: 'library' })}
             style={{ animationDelay: `${260 + recent.length * 50}ms` }}
-            className="grid h-28 w-20 shrink-0 animate-rise place-items-center rounded-2xl border-2 border-white/10 bg-black/40 text-white/80 backdrop-blur transition-all hover:-translate-y-1 hover:border-white/30 hover:text-white"
+            className="grid aspect-[10/21] w-[min(6rem,8vw)] shrink-0 animate-rise place-items-center self-stretch rounded-2xl bg-white/10 text-white backdrop-blur transition-all hover:-translate-y-1 hover:bg-white/20"
           >
-            <LayoutGrid size={22} />
-          </button>
-          <button
-            title="New profile"
-            onClick={() => openModal({ kind: 'create-instance' })}
-            style={{ animationDelay: `${310 + recent.length * 50}ms` }}
-            className="grid h-28 w-20 shrink-0 animate-rise place-items-center rounded-2xl border-2 border-dashed border-white/15 bg-black/30 text-white/70 backdrop-blur transition-all hover:-translate-y-1 hover:border-blue hover:text-white"
-          >
-            <Plus size={22} />
+            <LayoutGrid size={26} />
           </button>
         </div>
       )}

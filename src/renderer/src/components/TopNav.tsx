@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { BarChart3, ChevronLeft, Copy as RestoreIcon, Download, FolderOpen, Globe, LogIn, LogOut, Minus, Plus, Square, Settings as SettingsIcon, Users, X } from 'lucide-react'
+import { BarChart3, ChevronLeft, Download, FolderOpen, Globe, LogIn, LogOut, Maximize2, Minimize2, Minus, Plus, Settings as SettingsIcon, Users, X } from 'lucide-react'
 import { api } from '@/lib/api'
 import { useStore, type Route } from '@/lib/store'
 import { Logo } from './Logo'
@@ -184,7 +184,7 @@ export function TopNav() {
             onClick={() => (win.fullscreen ? api.window.fullscreen() : api.window.maximize())}
             className="grid h-full w-11 place-items-center text-muted transition-colors hover:bg-raised hover:text-text"
           >
-            {win.maximized || win.fullscreen ? <RestoreIcon size={13} /> : <Square size={13} />}
+            {win.maximized || win.fullscreen ? <Minimize2 size={15} /> : <Maximize2 size={15} />}
           </button>
           <button aria-label="Close" onClick={() => api.window.close()} className="grid h-full w-11 place-items-center text-muted transition-colors hover:bg-danger hover:text-white">
             <X size={16} />

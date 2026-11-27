@@ -36,7 +36,7 @@ public final class PandaTitleScreen extends Screen {
     /** Your character in the lobby (drag to spin), between the menu and the server card. */
     private void placePlayer(Draw d) {
         if (!card() || !Modules.TITLE_SCREEN.lobbyPlayer.on() || t() < 0.4f) return;
-        int ph = Math.min(height - 90, 180), pw = Math.round(ph * 0.55f);
+        int ph = Math.min(height - 120, Math.round(height * 0.45f)), pw = Math.round(ph * 0.55f);
         int px = width / 2 - pw / 2, py = height / 2 - ph / 2 + 12;
         if (player == null) {
             player = LobbyPlayer.create(minecraft, pw, ph);
@@ -88,6 +88,12 @@ public final class PandaTitleScreen extends Screen {
         g.blit(RenderPipelines.GUI_TEXTURED, bgTex, 0, 0, 0f, 0f, BG_W, BG_H, BG_W, BG_H);
         g.pose().popMatrix();
 
+        if (snap != null && card()) {
+            d.rect(0, 0, width, height, 0x330B0F16);
+            float fadeIn = Math.min(1f, t / 0.8f);
+            if (fadeIn < 1) d.rect(0, 0, width, height, Draw.alpha(0xFF000000, (int) ((1 - fadeIn) * 255)));
+            return;
+        }
         // soft vignette: darker top and bottom so the logo and buttons read clearly
         int bands = 24;
         for (int i = 0; i < bands; i++) {
@@ -177,12 +183,55 @@ public final class PandaTitleScreen extends Screen {
         placePlayer(d);
         if (card()) drawCard(d, mx, my, ease);
 
+        if (card()) { drawLobbyWidgets(d, ease); return; }
         // footer
         int mods = FabricLoader.getInstance().getAllMods().size();
         int fa = (int) (170 * ease);
         d.text("Minecraft " + FabricLoader.getInstance().getModContainer("minecraft").map(c -> c.getMetadata().getVersion().getFriendlyString()).orElse("") + "  ·  " + mods + " mods", 6, height - 12, Draw.alpha(0xFFFFFFFF, fa), true);
         String who = minecraft.getUser() != null ? "Signed in as " + minecraft.getUser().getName() : "PandaClient";
         d.text(who, width - Draw.textWidth(who) - 6, height - 12, Draw.alpha(0xFFFFFFFF, fa), true);
+    }
+
+    /** Frosted-glass panel like OneClient's lobby cards. */
+    private static void glass(Draw d, int x1, int y1, int x2, int y2, int a) {
+        d.round(x1, y1, x2, y2, Draw.alpha(0xFF101622, (int) (190 * a / 255f)));
+        d.rect(x1 + 3, y1, x2 - 3, y1 + 1, Draw.alpha(0xFFFFFFFF, (int) (28 * a / 255f)));
+    }
+
+    private void drawLobbyWidgets(Draw d, float ease) {
+        int a = (int) (255 * ease);
+        int x = 10, w = Math.min(150, width / 4);
+        // performance
+        int y = height / 2 - 44;
+        glass(d, x, y, x + w, y + 20, a);
+        d.rect(x + 7, y + 8, x + 11, y + 12, Draw.alpha(0xFF6EE08F, a));
+        d.text(minecraft.getFps() + " FPS", x + 15, y + 6, Draw.alpha(0xFFFFFFFF, a), false);
+        String ver = "Minecraft " + FabricLoader.getInstance().getModContainer("minecraft").map(c -> c.getMetadata().getVersion().getFriendlyString()).orElse("");
+        d.push(); d.translate(x + w - 6 - Draw.textWidth(ver) * 0.7f, y + 7.5f); d.scale(0.7f);
+        d.text(ver, 0, 0, Draw.alpha(0xFF9AA4B2, a), false);
+        d.pop();
+        // party
+        y += 26;
+        glass(d, x, y, x + w, y + 66, a);
+        d.round(x + 6, y + 6, x + 34, y + 17, Draw.alpha(0xFF4C6FFF, a));
+        d.text("Party", x + 9, y + 8, Draw.alpha(0xFFFFFFFF, a), false);
+        String me = minecraft.getUser() != null ? minecraft.getUser().getName() : "You";
+        d.text(Widgets.ellipsize(me, w - 16), x + 8, y + 24, Draw.alpha(0xFFE3E9F1, a), false);
+        d.push(); d.translate(x + 8, y + 36); d.scale(0.7f);
+        for (String line : Widgets.wrap("Invite friends from the PandaClient launcher (Friends) and join their server in one click.", (int) ((w - 16) / 0.7f), 3)) {
+            d.text(line, 0, 0, Draw.alpha(0xFF9AA4B2, a), false);
+            d.translate(0, 10);
+        }
+        d.pop();
+        // bottom bar
+        d.rect(0, height - 12, width, height, Draw.alpha(0xFF070A12, (int) (170 * ease)));
+        d.push(); d.translate(6, height - 9); d.scale(0.7f);
+        d.text("PANDACLIENT  ·  Fabric  ·  " + FabricLoader.getInstance().getAllMods().size() + " mods", 0, 0, Draw.alpha(0xFFB7C0CC, a), false);
+        d.pop();
+        String c = "Not affiliated with Mojang or Microsoft";
+        d.push(); d.translate(width - 6 - Draw.textWidth(c) * 0.7f, height - 9); d.scale(0.7f);
+        d.text(c, 0, 0, Draw.alpha(0xFF7C8796, a), false);
+        d.pop();
     }
 
     // ---------------------------------------------------------------- top bar (OneClient style)
@@ -253,15 +302,16 @@ public final class PandaTitleScreen extends Screen {
 
     private void drawCard(Draw d, int mx, int my, float ease) {
         int[] c = cardBox();
-        int x = c[0], y = c[1] + Math.round((1 - ease) * 12), w = c[2], h = c[3];
         int a = (int) (255 * ease);
-        d.round(x, y, x + w, y + h, Draw.alpha(0xFF0E1420, (int) (215 * ease)));
+        int x = c[0], y = c[1] + Math.round((1 - ease) * 12), w = c[2], h = c[3];
+        glass(d, x, y, x + w, y + h, a);
+        d.round(x + 4, y + 4, x + w - 4, y + 18, Draw.alpha(0xFF0A0E16, (int) (160 * ease)));
         // tabs
         int tw = (w - 8) / 2;
         for (int i = 0; i < 2; i++) {
             boolean on = (i == 1) == multiplayerTab;
             int tx = x + 4 + i * tw;
-            if (on) d.round(tx, y + 4, tx + tw, y + 18, Draw.alpha(0xFF253247, a));
+            if (on) d.round(tx, y + 4, tx + tw, y + 18, Draw.alpha(0xFF4C6FFF, a));
             d.centered(i == 0 ? "Singleplayer" : "Multiplayer", tx + tw / 2, y + 7, Draw.alpha(on ? 0xFFFFFFFF : 0xFF8C97A6, a), false);
         }
         int iy = y + 26;
@@ -271,8 +321,8 @@ public final class PandaTitleScreen extends Screen {
             if (list.size() > 0) { var sd = list.get(0); title = sd.name; sub = sd.ip; }
             else { title = "No servers yet"; sub = "Add one to start playing"; }
         } else { title = "Your worlds"; sub = "Pick a world or make a new one"; }
-        d.round(x + 8, iy, x + 36, iy + 28, Draw.alpha(Theme.accent(), (int) (60 * ease)));
-        d.centered(title.isEmpty() ? "?" : title.substring(0, 1).toUpperCase(java.util.Locale.ROOT), x + 22, iy + 10, Draw.alpha(Theme.accent(), a), false);
+        d.round(x + 8, iy, x + 36, iy + 28, Draw.alpha(0xFF4C6FFF, a));
+        d.centered(title.isEmpty() ? "?" : title.substring(0, 1).toUpperCase(java.util.Locale.ROOT), x + 22, iy + 10, Draw.alpha(0xFFFFFFFF, a), false);
         d.text(Widgets.ellipsize(title, w - 50), x + 42, iy + 5, Draw.alpha(0xFFFFFFFF, a), false);
         d.push(); d.translate(x + 42, iy + 17); d.scale(0.75f);
         d.text(Widgets.ellipsize(sub, (int) ((w - 50) / 0.75f)), 0, 0, Draw.alpha(0xFF9AA4B2, a), false);
