@@ -544,6 +544,21 @@ export function createMock(): PandaApi {
       onInvites: () => () => {},
       dismissInvite: async () => {}
     },
+    party: {
+      get: async () => ({
+        party: { id: 'p1', leader: 'me', members: [
+          { uuid: 'me', username: 'You', leader: true, online: true, server: null },
+          { uuid: '069a79f4-44e9-4726-a5be-fca90e38aaf5', username: 'Notch', leader: false, online: true, server: null }
+        ] },
+        invites: []
+      }),
+      onChanged: () => () => {},
+      invite: async () => {},
+      accept: async () => {},
+      decline: async () => {},
+      leave: async () => {},
+      kick: async () => {}
+    },
     servers: {
       ping: async () => ({ online: 31250, max: 200000, motd: 'A Minecraft server', icon: null, version: '1.8-1.21', pingMs: 42 })
     },

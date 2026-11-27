@@ -680,6 +680,15 @@ export interface PandaApi {
     onInvites(cb: (i: Invite[]) => void): () => void
     dismissInvite(id: string): Promise<void>
   }
+  party: {
+    get(): Promise<PartyState>
+    onChanged(cb: (p: PartyState) => void): () => void
+    invite(uuid: string): Promise<void>
+    accept(id: string): Promise<void>
+    decline(id: string): Promise<void>
+    leave(): Promise<void>
+    kick(uuid: string): Promise<void>
+  }
   servers: {
     ping(address: string): Promise<ServerStatus>
   }
@@ -750,6 +759,20 @@ export interface ServerStatus {
   icon: string | null
   version: string
   pingMs: number
+}
+
+export interface PartyMember {
+  uuid: string
+  username: string
+  leader: boolean
+  online: boolean
+  server: string | null
+}
+
+/** Your lobby party: friends whose characters stand beside yours in the in-game lobby. */
+export interface PartyState {
+  party: { id: string; leader: string | null; members: PartyMember[] } | null
+  invites: { id: string; from: string; createdAt: string }[]
 }
 
 export interface Invite {

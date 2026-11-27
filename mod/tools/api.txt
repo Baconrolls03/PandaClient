@@ -166,3 +166,12 @@
 14|net.minecraft.network.chat.FontDescription|-|.
 14|net.minecraft.network.chat.FontDescription$Resource|-|.
 14|net.minecraft.client.gui.Font|-|width\(|lineHeight
+15|net.minecraft.client.Minecraft|-|services|Session|session|getProfileKeyPairManager|getMinecraftSessionService|profile
+15|FIND:MinecraftSessionService|-|.
+15|com.mojang.authlib.minecraft.MinecraftSessionService|-|fetchProfile|getPackedTextures|getTextures
+15|FIND:Services|-|.
+15|net.minecraft.server.Services|-|sessionService|profileResolver|class
+15|com.mojang.authlib.yggdrasil.ProfileResult|-|profile|class
+15|net.minecraft.client.resources.SkinManager|-|get|getOrLoad|lookup
+15|net.minecraft.world.entity.player.PlayerSkin|-|.
+15|net.minecraft.client.gui.components.PlayerFaceRenderer|-|draw

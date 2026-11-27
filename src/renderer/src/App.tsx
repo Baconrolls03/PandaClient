@@ -23,7 +23,7 @@ import { ImportModal } from '@/modals/ImportModal'
 import { IncomingShares } from '@/components/IncomingShares'
 import { CrashHelper } from '@/components/CrashHelper'
 import { TransferReportPopup } from '@/components/TransferReportPopup'
-import { InvitePopup } from '@/components/InvitePopup'
+import { InvitePopup, PartyInvitePopup } from '@/components/InvitePopup'
 import { useAppearance } from '@/lib/appearance'
 
 function Shell() {
@@ -55,6 +55,7 @@ function Shell() {
       <FirstRun />
       <TransferReportPopup />
       <InvitePopup />
+      <PartyInvitePopup />
       <Toasts />
     </div>
   )

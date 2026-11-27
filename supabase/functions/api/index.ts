@@ -32,6 +32,21 @@ async function onlineCount(): Promise<number> {
   return (data as number) ?? 0
 }
 
+/** Leave your party; the next player becomes leader, and a party of one is closed. */
+async function leaveParty(uuid: string) {
+  const { data: mine } = await db.from('party_members').select('party_id').eq('uuid', uuid).maybeSingle()
+  if (!mine) return
+  await db.from('party_members').delete().eq('uuid', uuid)
+  await tidyParty(mine.party_id)
+}
+
+async function tidyParty(partyId: string) {
+  const { data: rest } = await db.from('party_members').select('uuid').eq('party_id', partyId).order('joined_at')
+  if (!rest || rest.length <= 1) { await db.from('parties').delete().eq('id', partyId); return }
+  const { data: party } = await db.from('parties').select('leader').eq('id', partyId).maybeSingle()
+  if (party && !rest.some((r) => r.uuid === party.leader)) await db.from('parties').update({ leader: rest[0].uuid }).eq('id', partyId)
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors })
   const path = new URL(req.url).pathname.replace(/^.*\/api/, '') || '/'
@@ -197,6 +212,76 @@ Deno.serve(async (req) => {
       const { id } = await req.json()
       if (typeof id !== 'string' || !UUID.test(id)) return fail(400, 'Bad request')
       await db.from('invites').update({ dismissed: true }).eq('id', id).eq('to_uuid', me.uuid)
+      return json({ ok: true })
+    }
+
+    // ── Lobby parties ──────────────────────────────────────────────────────
+    // A party is a group of friends who show up in each other's lobby (their characters stand beside yours).
+    if (req.method === 'GET' && path === '/party') {
+      const since = new Date(Date.now() - 10 * 60_000).toISOString()
+      const { data: inv } = await db.from('party_invites').select('id, created_at, players!party_invites_from_uuid_fkey(username)').eq('to_uuid', me.uuid).eq('dismissed', false).gte('created_at', since).order('created_at', { ascending: false }).limit(5)
+      const invites = (inv ?? []).map((r) => ({ id: r.id, createdAt: r.created_at, from: (r.players as { username: string } | null)?.username ?? 'A friend' }))
+      const { data: mine } = await db.from('party_members').select('party_id').eq('uuid', me.uuid).maybeSingle()
+      if (!mine) return json({ party: null, invites })
+      const { data: party } = await db.from('parties').select('id, leader').eq('id', mine.party_id).maybeSingle()
+      const { data: rows } = await db.from('party_members').select('uuid, joined_at, players(username, last_seen, server)').eq('party_id', mine.party_id).order('joined_at')
+      const members = (rows ?? []).map((r) => {
+        const p = r.players as { username: string; last_seen: string; server: string | null } | null
+        return { uuid: r.uuid, username: p?.username ?? '?', leader: r.uuid === party?.leader, online: !!p && Date.now() - new Date(p.last_seen).getTime() < 3 * 60_000, server: p?.server ?? null }
+      })
+      return json({ party: { id: mine.party_id, leader: party?.leader ?? null, members }, invites })
+    }
+
+    if (req.method === 'POST' && path === '/party/invite') {
+      const { to } = await req.json()
+      if (typeof to !== 'string' || !UUID.test(to)) return fail(400, 'Bad request')
+      const { data: f } = await db.from('friends').select('status').or(`and(a.eq.${me.uuid},b.eq.${to}),and(a.eq.${to},b.eq.${me.uuid})`).eq('status', 'accepted').maybeSingle()
+      if (!f) return fail(403, 'You can only invite friends')
+      let { data: mine } = await db.from('party_members').select('party_id').eq('uuid', me.uuid).maybeSingle()
+      if (!mine) {
+        const { data: created } = await db.from('parties').insert({ leader: me.uuid }).select('id').single()
+        await db.from('party_members').insert({ uuid: me.uuid, party_id: created!.id })
+        mine = { party_id: created!.id }
+      }
+      const { count } = await db.from('party_members').select('uuid', { count: 'exact', head: true }).eq('party_id', mine.party_id)
+      if ((count ?? 0) >= 8) return fail(400, 'Your party is full (8 players)')
+      await db.from('party_invites').insert({ party_id: mine.party_id, from_uuid: me.uuid, to_uuid: to })
+      return json({ ok: true })
+    }
+
+    if (req.method === 'POST' && path === '/party/accept') {
+      const { id } = await req.json()
+      if (typeof id !== 'string' || !UUID.test(id)) return fail(400, 'Bad request')
+      const since = new Date(Date.now() - 10 * 60_000).toISOString()
+      const { data: inv } = await db.from('party_invites').select('party_id').eq('id', id).eq('to_uuid', me.uuid).eq('dismissed', false).gte('created_at', since).maybeSingle()
+      if (!inv) return fail(404, 'That invite has expired')
+      const { count } = await db.from('party_members').select('uuid', { count: 'exact', head: true }).eq('party_id', inv.party_id)
+      if ((count ?? 0) >= 8) return fail(400, 'That party is full')
+      await leaveParty(me.uuid)
+      await db.from('party_members').insert({ uuid: me.uuid, party_id: inv.party_id })
+      await db.from('party_invites').update({ dismissed: true }).eq('id', id)
+      return json({ ok: true })
+    }
+
+    if (req.method === 'POST' && path === '/party/decline') {
+      const { id } = await req.json()
+      if (typeof id !== 'string' || !UUID.test(id)) return fail(400, 'Bad request')
+      await db.from('party_invites').update({ dismissed: true }).eq('id', id).eq('to_uuid', me.uuid)
+      return json({ ok: true })
+    }
+
+    if (req.method === 'POST' && path === '/party/leave') {
+      await leaveParty(me.uuid)
+      return json({ ok: true })
+    }
+
+    if (req.method === 'POST' && path === '/party/kick') {
+      const { uuid } = await req.json()
+      if (typeof uuid !== 'string' || !UUID.test(uuid) || uuid === me.uuid) return fail(400, 'Bad request')
+      const { data: party } = await db.from('parties').select('id').eq('leader', me.uuid).maybeSingle()
+      if (!party) return fail(403, 'Only the party leader can remove players')
+      await db.from('party_members').delete().eq('uuid', uuid).eq('party_id', party.id)
+      await tidyParty(party.id)
       return json({ ok: true })
     }
 

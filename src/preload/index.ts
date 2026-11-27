@@ -133,6 +133,15 @@ const api: PandaApi = {
     onInvites: (cb) => subscribe('friends:invites', cb),
     dismissInvite: (id) => invoke('friends:dismissInvite', id)
   },
+  party: {
+    get: () => invoke('party:get'),
+    onChanged: (cb) => subscribe('party:changed', cb),
+    invite: (u) => invoke('party:invite', u),
+    accept: (id) => invoke('party:accept', id),
+    decline: (id) => invoke('party:decline', id),
+    leave: () => invoke('party:leave'),
+    kick: (u) => invoke('party:kick', u)
+  },
   servers: {
     ping: (a) => invoke('servers:ping', a)
   },

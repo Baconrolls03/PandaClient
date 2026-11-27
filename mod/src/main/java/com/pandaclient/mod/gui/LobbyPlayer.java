@@ -30,4 +30,37 @@ public final class LobbyPlayer {
         if (skin == null) return null;
         try { return new PlayerSkinWidget(w, h, mc.getEntityModels(), () -> skin); } catch (Throwable t) { return null; }
     }
+
+    // ---------------------------------------------------------------- party members
+
+    private static final java.util.Map<java.util.UUID, PlayerSkin> SKINS = new java.util.concurrent.ConcurrentHashMap<>();
+    private static final java.util.Set<java.util.UUID> ASKED = java.util.concurrent.ConcurrentHashMap.newKeySet();
+
+    private static PlayerSkin skinOf(Minecraft mc, java.util.UUID id, String name) {
+        if (ASKED.add(id)) {
+            PlayerSkin fallback = net.minecraft.client.resources.DefaultPlayerSkin.get(id);
+            try {
+                mc.getSkinManager().get(new com.mojang.authlib.GameProfile(id, name))
+                    .thenAccept(o -> SKINS.put(id, o.orElse(fallback)))
+                    .exceptionally(t -> { SKINS.put(id, fallback); return null; });
+            } catch (Throwable t) {
+                SKINS.put(id, fallback);
+            }
+        }
+        return SKINS.get(id);
+    }
+
+    /** A party member's character (null until their skin is ready). */
+    public static AbstractWidget createFor(Minecraft mc, java.util.UUID id, String name, int w, int h) {
+        PlayerSkin s = skinOf(mc, id, name);
+        if (s == null) return null;
+        try { return new PlayerSkinWidget(w, h, mc.getEntityModels(), () -> s); } catch (Throwable t) { return null; }
+    }
+
+    /** A party member's face; false until their skin is ready. */
+    public static boolean faceOf(Minecraft mc, net.minecraft.client.gui.GuiGraphics g, java.util.UUID id, String name, int x, int y, int size) {
+        PlayerSkin s = skinOf(mc, id, name);
+        if (s == null) return false;
+        try { net.minecraft.client.gui.components.PlayerFaceRenderer.draw(g, s, x, y, size); return true; } catch (Throwable t) { return false; }
+    }
 }

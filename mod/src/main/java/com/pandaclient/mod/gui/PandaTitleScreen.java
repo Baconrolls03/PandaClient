@@ -31,7 +31,8 @@ public final class PandaTitleScreen extends Screen {
     @Override public boolean shouldCloseOnEsc() { return false; }
 
     private net.minecraft.client.gui.components.AbstractWidget player;
-    @Override protected void init() { player = null; }
+    @Override protected void init() { player = null; mates.clear(); }
+    private final java.util.Map<java.util.UUID, net.minecraft.client.gui.components.AbstractWidget> mates = new java.util.HashMap<>();
 
     @Override public boolean isPauseScreen() { return false; }
 
@@ -234,7 +235,47 @@ public final class PandaTitleScreen extends Screen {
         return new float[]{vw * 0.55f - pw / 2, feet - ph, pw, ph};
     }
 
+    /** Where party member i stands: canvas x offset from you and how much smaller (further back) they are. */
+    private static final float[] MATE_DX = {-125, 125, -235, 235};
+
+    private java.util.List<com.pandaclient.mod.util.Party.Member> mateList() {
+        var others = com.pandaclient.mod.util.Party.others(name());
+        return others.size() > MATE_DX.length ? others.subList(0, MATE_DX.length) : others;
+    }
+
+    private float[] mateBox(int i) {
+        float[] b = playerBox();
+        float h = b[3] * 0.92f, w = h * 0.55f;
+        float cx = b[0] + b[2] / 2 + MATE_DX[i], feet = b[1] + b[3] - 10;
+        return new float[]{cx - w / 2, feet - h, w, h};
+    }
+
+    private void placeMates() {
+        var list = mateList();
+        java.util.Set<java.util.UUID> keep = new java.util.HashSet<>();
+        for (var m : list) keep.add(m.uuid());
+        mates.entrySet().removeIf(e -> {
+            if (keep.contains(e.getKey())) return false;
+            removeWidget(e.getValue());
+            return true;
+        });
+        for (int i = 0; i < list.size(); i++) {
+            var m = list.get(i);
+            float[] b = mateBox(i);
+            var w = mates.get(m.uuid());
+            if (w == null) {
+                w = LobbyPlayer.createFor(minecraft, m.uuid(), m.name(), Math.round(b[2] * k), Math.round(b[3] * k));
+                if (w == null) continue;
+                mates.put(m.uuid(), w);
+                addRenderableWidget(w);
+            }
+            w.setX(Math.round(b[0] * k));
+            w.setY(Math.round(b[1] * k));
+        }
+    }
+
     private void placePlayer() {
+        if (card() && Modules.TITLE_SCREEN.lobbyPlayer.on() && t() >= 0.4f) { zoom(); placeMates(); }
         if (!card() || !Modules.TITLE_SCREEN.lobbyPlayer.on() || t() < 0.4f || player != null) return;
         zoom();
         float[] b = playerBox();
@@ -257,11 +298,29 @@ public final class PandaTitleScreen extends Screen {
             float rx = 34 - i * 5, ry = 8 - i * 1.2f;
             sd.rounded(cx - rx, cy - ry, cx + rx, cy + ry, ry, 0x1A000000);
         }
+        for (int j = 0; j < mateList().size(); j++) {
+            float[] mb = mateBox(j);
+            float mx = mb[0] + mb[2] / 2, my = mb[1] + mb[3] - 4;
+            for (int i = 0; i < 5; i++) {
+                float rx = 31 - i * 4.6f, ry = 7.4f - i * 1.1f;
+                sd.rounded(mx - rx, my - ry, mx + rx, my + ry, ry, 0x17000000);
+            }
+        }
         sd.pop();
     }
 
     private void drawNametag() {
         if (!Modules.TITLE_SCREEN.lobbyPlayer.on()) return;
+        var list = mateList();
+        for (int i = 0; i < list.size(); i++) {
+            var m = list.get(i);
+            if (!mates.containsKey(m.uuid())) continue;
+            float[] mb = mateBox(i);
+            float w = tw(m.name(), 11, true) + (m.leader() ? 18 : 0) + 16, cx = mb[0] + mb[2] / 2, y = mb[1] - 24;
+            d.rounded(cx - w / 2, y, cx + w / 2, y + 19, 5, col(0xC70B0E16), col(0x26FFFFFF));
+            txt(m.name(), cx - w / 2 + 8, y + 9.5f, 11, m.online() ? 0xFFFFFFFF : 0xFFA3AAB6, true);
+            if (m.leader()) d.icon(Draw.I_CROWN, cx + w / 2 - 14, y + 9.5f, 10, col(0xFFF5C451));
+        }
         float[] b = playerBox();
         String n = name();
         float w = tw(n, 12, true) + tw("You", 10, false) + 22;
@@ -361,22 +420,39 @@ public final class PandaTitleScreen extends Screen {
         float pw = tw("Party", 12, false) + 20;
         d.rounded(x1 + 10, py1 + 9, x1 + 10 + pw, py1 + 32, 6, col(Theme.accent()));
         txt("Party", x1 + 20, py1 + 20.5f, 12, 0xFFFFFFFF, false);
-        txtR("1 / 8", x2 - 12, py1 + 20.5f, 11, DIM, false);
-        // you, the party leader
-        float ry = py1 + 48;
-        d.rounded(x1 + 10, ry, x1 + 34, ry + 24, 5, col(0x33FFFFFF));
-        boolean face = a > 0.98f && LobbyPlayer.face(minecraft, d.g, Math.round(x1 + 12), Math.round(ry + 2), 20);
-        if (!face) txtC(name().substring(0, 1).toUpperCase(java.util.Locale.ROOT), x1 + 22, ry + 12, 12, 0xFFFFFFFF, true);
-        txt(name(), x1 + 44, ry + 12, 12, 0xFFFFFFFF, true);
-        d.icon(Draw.I_CROWN, x1 + 52 + tw(name(), 12, true), ry + 12, 11, col(0xFFF5C451));
-        txtR("Online", x2 - 12, ry + 12, 10, 0xFF6EE08F, false);
+        var party = com.pandaclient.mod.util.Party.members();
+        txtR((party.isEmpty() ? 1 : party.size()) + " / 8", x2 - 12, py1 + 20.5f, 11, DIM, false);
+        if (party.isEmpty()) {
+            // just you, the party leader
+            float ry = py1 + 48;
+            d.rounded(x1 + 10, ry, x1 + 34, ry + 24, 5, col(0x33FFFFFF));
+            boolean face = a > 0.98f && LobbyPlayer.face(minecraft, d.g, Math.round(x1 + 12), Math.round(ry + 2), 20);
+            if (!face) txtC(name().substring(0, 1).toUpperCase(java.util.Locale.ROOT), x1 + 22, ry + 12, 12, 0xFFFFFFFF, true);
+            txt(name(), x1 + 44, ry + 12, 12, 0xFFFFFFFF, true);
+            d.icon(Draw.I_CROWN, x1 + 52 + tw(name(), 12, true), ry + 12, 11, col(0xFFF5C451));
+            txtR("Online", x2 - 12, ry + 12, 10, 0xFF6EE08F, false);
+        } else {
+            float ry = py1 + 42;
+            for (int i = 0; i < Math.min(4, party.size()); i++, ry += 25) {
+                var m = party.get(i);
+                boolean me = m.name().equalsIgnoreCase(name());
+                d.rounded(x1 + 10, ry, x1 + 30, ry + 20, 4, col(0x33FFFFFF));
+                boolean face = a > 0.98f && (me ? LobbyPlayer.face(minecraft, d.g, Math.round(x1 + 12), Math.round(ry + 2), 16)
+                    : LobbyPlayer.faceOf(minecraft, d.g, m.uuid(), m.name(), Math.round(x1 + 12), Math.round(ry + 2), 16));
+                if (!face) txtC(m.name().substring(0, 1).toUpperCase(java.util.Locale.ROOT), x1 + 20, ry + 10, 10, 0xFFFFFFFF, true);
+                txt(m.name(), x1 + 38, ry + 10, 11.5f, 0xFFFFFFFF, true);
+                if (m.leader()) d.icon(Draw.I_CROWN, x1 + 46 + tw(m.name(), 11.5f, true), ry + 10, 10, col(0xFFF5C451));
+                txtR(me ? "You" : m.online() ? "Online" : "Offline", x2 - 12, ry + 10, 10, me ? Theme.accent() : m.online() ? 0xFF6EE08F : DIM, false);
+            }
+            if (party.size() > 4) txt("+" + (party.size() - 4) + " more", x1 + 12, ry + 4, 10, DIM, false);
+        }
         // invite row, shaped like OneClient's message box
         float iy = py2 - 38;
         d.rounded(x1 + 10, iy, x2 - 40, iy + 28, 7, col(0x40000000), col(0x1FFFFFFF));
         txt("Invite friends from the launcher", x1 + 20, iy + 14, 11, DIM, false);
         d.rounded(x2 - 34, iy, x2 - 10, iy + 28, 7, col(0x40000000), col(0x1FFFFFFF));
         d.icon(Draw.I_INVITE, x2 - 22, iy + 14, 13, col(0xFFDDE2EA));
-        txt("Join your friends' servers in one click", x1 + 12, iy - 14, 10, DIM, false);
+        if (party.isEmpty()) txt("Party up with friends in the launcher", x1 + 12, iy - 14, 10, DIM, false);
 
         // performance
         float fy2 = py1 - 9, fy1 = fy2 - 38;

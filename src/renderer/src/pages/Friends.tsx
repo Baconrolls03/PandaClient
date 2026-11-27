@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Check, LogIn, Send, UserPlus, Users, X } from 'lucide-react'
-import type { Friend } from '@shared/types'
+import { Check, Crown, LogIn, LogOut, PartyPopper, Send, UserPlus, Users, X } from 'lucide-react'
+import type { Friend, PartyState } from '@shared/types'
 import { api } from '@/lib/api'
 import { useStore } from '@/lib/store'
 import { Button, Empty, Spinner, TextField } from '@/components/ui'
@@ -13,6 +13,11 @@ export function Friends() {
   const [adding, setAdding] = useState(false)
   const [error, setError] = useState('')
   const [myServer, setMyServer] = useState<string | null>(null)
+  const [party, setParty] = useState<PartyState | null>(null)
+  useEffect(() => {
+    api.party.get().then(setParty).catch(() => {})
+    return api.party.onChanged(setParty)
+  }, [])
 
   const refresh = useCallback(() => {
     api.friends.myServer().then(setMyServer).catch(() => {})
@@ -68,6 +73,32 @@ export function Friends() {
 
       {list === null && <Spinner className="mx-auto mt-10" />}
 
+      {party?.party && (
+        <section className="mt-8">
+          <div className="mb-2 flex items-center justify-between">
+            <h2 className="text-xs font-semibold uppercase tracking-wide text-muted">Your party · {party.party.members.length} / 8</h2>
+            <Button size="sm" variant="ghost" onClick={() => attempt(() => api.party.leave(), 'You left the party')}>
+              <LogOut size={13} /> Leave
+            </Button>
+          </div>
+          <p className="mb-3 text-xs text-muted">Your party stands next to you in the PandaClient lobby in game.</p>
+          <div className="flex flex-wrap gap-2">
+            {party.party.members.map((m) => (
+              <div key={m.uuid} className="group flex items-center gap-2 rounded-xl border border-border bg-surface py-2 pl-2 pr-3">
+                <img src={head(m.uuid)} className={`size-8 rounded-lg ${m.online ? '' : 'opacity-50 grayscale'}`} alt="" />
+                <span className="text-sm font-medium">{m.username}</span>
+                {m.leader && <Crown size={13} className="text-yellow-400" />}
+                {!m.leader && party.party!.members.some((x) => x.leader && x.uuid !== m.uuid) && (
+                  <button title="Remove from party" className="hidden text-muted hover:text-danger group-hover:block" onClick={() => attempt(() => api.party.kick(m.uuid))}>
+                    <X size={13} />
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
       {incoming.length > 0 && (
         <section className="mt-8">
           <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted">Friend requests</h2>
@@ -102,6 +133,11 @@ export function Friends() {
                 <p className="font-medium">{f.username}</p>
                 <p className="truncate text-xs text-muted">{f.online ? (f.server ? `Playing on ${f.server}` : 'Online') : 'Offline'}</p>
               </div>
+              {!party?.party?.members.some((m) => m.uuid === f.uuid) && (
+                <Button size="sm" variant="secondary" onClick={() => attempt(() => api.party.invite(f.uuid), `Invited ${f.username} to your party`)}>
+                  <PartyPopper size={13} /> Party
+                </Button>
+              )}
               {f.online && myServer && myServer !== 'Singleplayer' && f.server !== myServer && (
                 <Button size="sm" variant="secondary" onClick={() => attempt(() => api.friends.invite(f.uuid), `Invited ${f.username} to ${myServer}`)}>
                   <Send size={13} /> Invite

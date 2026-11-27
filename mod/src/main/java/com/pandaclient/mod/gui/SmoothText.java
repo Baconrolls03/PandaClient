@@ -111,6 +111,7 @@ final class SmoothText {
             Graphics2D pg = probe.createGraphics();
             pg.setFont(f);
             pg.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_ON);
+            pg.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
             FontMetrics fm = pg.getFontMetrics();
             int w = (int) Math.ceil(f.getStringBounds(s, pg.getFontRenderContext()).getWidth()) + PAD * 2;
             int ascent = fm.getAscent(), h = ascent + fm.getDescent() + PAD * 2;
@@ -121,6 +122,7 @@ final class SmoothText {
             g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
             g2.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_ON);
             g2.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+            g2.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL, RenderingHints.VALUE_STROKE_PURE);
             g2.setColor(java.awt.Color.WHITE);
             g2.setFont(f);
             g2.drawString(s, PAD, PAD + ascent);

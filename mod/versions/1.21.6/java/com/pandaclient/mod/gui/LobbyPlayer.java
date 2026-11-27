@@ -8,4 +8,6 @@ public final class LobbyPlayer {
     private LobbyPlayer() {}
     public static boolean face(Minecraft mc, net.minecraft.client.gui.GuiGraphics g, int x, int y, int size) { return false; }
     public static AbstractWidget create(Minecraft mc, int w, int h) { return null; }
+    public static AbstractWidget createFor(Minecraft mc, java.util.UUID id, String name, int w, int h) { return null; }
+    public static boolean faceOf(Minecraft mc, net.minecraft.client.gui.GuiGraphics g, java.util.UUID id, String name, int x, int y, int size) { return false; }
 }

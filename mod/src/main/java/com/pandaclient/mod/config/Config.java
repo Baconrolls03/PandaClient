@@ -65,6 +65,9 @@ public final class Config {
         }
     }
 
+    /** A file next to PandaClient's settings (shared with the launcher). */
+    public static Path sibling(String name) { return FILE.resolveSibling(name); }
+
     private static String presence = "";
     /** Tell the launcher which server you're on (friends can see it and join). */
     public static void writePresence(String server) {

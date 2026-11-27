@@ -1,9 +1,9 @@
 // Talks to the PandaClient backend (Supabase edge function "api") for cosmetics and the online count.
 import { net } from 'electron'
-import { existsSync, readFileSync } from 'node:fs'
+import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { readdir, readFile, stat, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
-import type { Cosmetic, Friend, IncomingShare, Instance, Invite, Loadout, SharePlayer } from '@shared/types'
+import type { Cosmetic, Friend, IncomingShare, Instance, Invite, Loadout, PartyState, SharePlayer } from '@shared/types'
 import { getSettings } from './settings'
 import { runningInstances } from './game/launch'
 import { getInstance } from './instances'
@@ -90,7 +90,7 @@ async function beat(): Promise<void> {
       .then((r) => r.online)
       .catch(() => null)
   }
-  if (next !== null) void pollShares().then(pollInvites)
+  if (next !== null) void pollShares().then(pollInvites).then(pollParty)
   if (next !== online) {
     online = next
     listeners.forEach((l) => l(online))
@@ -206,6 +206,63 @@ export async function dismissInvite(id: string): Promise<void> {
 }
 export const myServer = () => currentServer()
 
+/* ───────────── Lobby party ───────────── */
+
+let party: PartyState = { party: null, invites: [] }
+const partyListeners = new Set<(p: PartyState) => void>()
+export const partyState = () => party
+export const onPartyChanged = (fn: (p: PartyState) => void) => (partyListeners.add(fn), () => partyListeners.delete(fn))
+
+/** The in-game lobby reads this file to show your party (names and their characters). */
+function writePartyFile(): void {
+  try {
+    const dir = getSettings().gameDir
+    if (!existsSync(dir)) return
+    const members = (party.party?.members ?? []).map((m) => ({ uuid: m.uuid, name: m.username, leader: m.leader, online: m.online }))
+    writeFileSync(join(dir, 'pandaclient-party.json'), JSON.stringify({ updated: Date.now(), members }))
+  } catch {
+    /* game folder not ready */
+  }
+}
+
+export async function pollParty(): Promise<PartyState> {
+  try {
+    const next = await authed<PartyState>('/party')
+    const changed = JSON.stringify(next) !== JSON.stringify(party)
+    party = next
+    if (changed) {
+      partyListeners.forEach((l) => l(party))
+      writePartyFile()
+    }
+  } catch {
+    /* offline or signed out */
+  }
+  return party
+}
+// While the game is open, keep the lobby's party fresh.
+setInterval(() => { if (runningInstances().length) void pollParty().then(writePartyFile) }, 15_000)
+
+export async function partyInvite(uuid: string): Promise<void> {
+  await authed('/party/invite', { method: 'POST', body: JSON.stringify({ to: uuid }) })
+  await pollParty()
+}
+export async function partyAccept(id: string): Promise<void> {
+  await authed('/party/accept', { method: 'POST', body: JSON.stringify({ id }) })
+  await pollParty()
+}
+export async function partyDecline(id: string): Promise<void> {
+  await authed('/party/decline', { method: 'POST', body: JSON.stringify({ id }) })
+  await pollParty()
+}
+export async function partyLeave(): Promise<void> {
+  await authed('/party/leave', { method: 'POST', body: '{}' })
+  await pollParty()
+}
+export async function partyKick(uuid: string): Promise<void> {
+  await authed('/party/kick', { method: 'POST', body: JSON.stringify({ uuid }) })
+  await pollParty()
+}
+
 /* ───────────── Settings sync ───────────── */
 
 /** PandaClient's in-game settings files in the game folder (shared by every profile). */
@@ -214,7 +271,7 @@ async function settingsFiles(): Promise<{ name: string; path: string; mtime: num
   if (!existsSync(dir)) return []
   const out = []
   for (const name of await readdir(dir)) {
-    if (!/^pandaclient[a-z0-9_.-]*\.json$/i.test(name) || name === 'pandaclient-presence.json') continue
+    if (!/^pandaclient[a-z0-9_.-]*\.json$/i.test(name) || name === 'pandaclient-presence.json' || name === 'pandaclient-party.json') continue
     const s = await stat(join(dir, name)).catch(() => null)
     if (s?.isFile() && s.size < 256_000) out.push({ name, path: join(dir, name), mtime: s.mtimeMs })
   }
