@@ -21,11 +21,13 @@ public final class CiCheck {
 
     public static void tick(Minecraft mc) {
         if (!ON || mc.getOverlay() != null) return;
+        captureIfDue(mc);
         if (expectWorld) { worldTick(mc); return; }
         if (mc.screen == null && ticks < 0) return;
         if (ticks < 0) log("game ready on " + mc.screen.getClass().getSimpleName());
         ticks = Math.max(ticks, 0) + 1;
         switch (ticks) {
+            case 8 -> log("shot lobby");
             case 40 -> { mc.setScreen(new MenuScreen(null)); log("shot menu"); }
             case 140 -> { mc.setScreen(MenuScreen.openAt(null, Modules.KEYSTROKES)); log("shot settings"); }
             case 240 -> { mc.setScreen(new HudEditorScreen(null)); log("shot hud"); }
@@ -89,7 +91,7 @@ public final class CiCheck {
             case 285 -> log("shot freelook");
             case 340 -> { forceFreelook = false; Modules.TOGGLE_SPRINT.sprinting = false; mc.setScreen(MenuScreen.openAt(null, Modules.CROSSHAIR)); log("shot crosshair-settings"); }
             case 420 -> { mc.setScreen(new HudEditorScreen(null)); log("shot hud-world"); }
-            case 470 -> mc.setScreen(new net.minecraft.client.gui.screens.PauseScreen(true));
+            case 470 -> { mc.setScreen(new net.minecraft.client.gui.screens.PauseScreen(true)); log("shot pause"); }
             case 480 -> {
                 StringBuilder b = new StringBuilder();
                 for (var w : net.fabricmc.fabric.api.client.screen.v1.Screens.getButtons(mc.screen)) b.append('[').append(w.getMessage().getString()).append(" @").append(w.getX()).append(',').append(w.getY()).append("] ");
@@ -115,5 +117,26 @@ public final class CiCheck {
         mc.stop();
     }
 
-    private static void log(String s) { System.out.println("[PandaClient CI] " + s); System.out.flush(); }
+    private static void log(String s) {
+        System.out.println("[PandaClient CI] " + s);
+        System.out.flush();
+        if (s.startsWith("shot ")) { pendingShot = s.substring(5).trim(); shotAt = System.currentTimeMillis() + 1300; }
+    }
+
+    // Real screenshots from inside the game (the X server's own capture comes out black with software OpenGL).
+    private static String pendingShot;
+    private static long shotAt;
+
+    private static void captureIfDue(Minecraft mc) {
+        if (pendingShot == null || System.currentTimeMillis() < shotAt) return;
+        String name = pendingShot;
+        pendingShot = null;
+        try {
+            java.nio.file.Path dir = net.fabricmc.loader.api.FabricLoader.getInstance().getGameDir().resolve("ci-shots");
+            java.nio.file.Files.createDirectories(dir);
+            net.minecraft.client.Screenshot.takeScreenshot(mc.getMainRenderTarget(), img -> {
+                try (img) { img.writeToFile(dir.resolve(name + ".png")); } catch (Exception e) { System.out.println("[PandaClient CI] screenshot failed: " + e); }
+            });
+        } catch (Throwable t) { System.out.println("[PandaClient CI] screenshot failed: " + t); }
+    }
 }

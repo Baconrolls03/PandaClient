@@ -15,8 +15,10 @@ shoot() { # wait for "[PandaClient CI] shot NAME" lines in $1 and screenshot eac
   local log=$1; shift
   for name in "$@"; do
     for i in $(seq 1 240); do grep -q "\[PandaClient CI\] shot $name" "$log" 2>/dev/null && break; grep -q "^exit " "$log" && return; sleep 1; done
-    sleep 2
-    import -window root -resize 800x450 -quality 55 "shots/$name.jpg" 2>/dev/null || echo "no screenshot for $name"
+    # The game saves its own screenshot (mod/run/ci-shots); fall back to grabbing the X screen.
+    for j in $(seq 1 10); do [ -f "$RUN/ci-shots/$name.png" ] && break; sleep 0.5; done
+    if [ -f "$RUN/ci-shots/$name.png" ]; then convert "$RUN/ci-shots/$name.png" -resize 960x540 -quality 70 "shots/$name.jpg"
+    else import -window root -resize 800x450 -quality 55 "shots/$name.jpg" 2>/dev/null || echo "no screenshot for $name"; fi
   done
 }
 wait_exit() { for i in $(seq 1 300); do grep -qE "^exit [0-9]+" "$1" && return; sleep 1; done; }
@@ -30,7 +32,7 @@ done
 echo "=== 1. title screen"
 MC_ARG=${SMOKE_MC:+-Pmc=$SMOKE_MC}
 ( gradle -p mod runClient $MC_ARG --no-daemon > game.log 2>&1; echo "exit $?" >> game.log ) &
-shoot game.log menu settings hud
+shoot game.log lobby menu settings hud welcome
 wait_exit game.log
 
 [ -n "${SMOKE_TITLE_ONLY:-}" ] && exit 0
@@ -43,6 +45,6 @@ for i in $(seq 1 300); do grep -q "Done (" server.log && break; grep -q "^exit "
 grep -E "Done \(|ERROR|Exception" server.log | head -5
 export PANDACLIENT_CI_WORLD=1
 ( gradle -p mod runClient --no-daemon --args="--username PandaTester --quickPlayMultiplayer localhost:25565" > world.log 2>&1; echo "exit $?" >> world.log ) &
-shoot world.log ingame zoom freelook crosshair-settings hud-world
+shoot world.log ingame zoom freelook crosshair-settings hud-world pause
 wait_exit world.log
 pkill -f "net.fabricmc.devlaunchinjector" 2>/dev/null; pkill -f runServer 2>/dev/null; true
