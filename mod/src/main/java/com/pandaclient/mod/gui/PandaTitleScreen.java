@@ -264,13 +264,13 @@ public final class PandaTitleScreen extends Screen {
 
     /** Canvas box of the character: x, y, w, h. */
     private float[] playerBox() {
-        float ph = 335, pw = ph * 0.55f;
-        float feet = vh * 0.885f;
+        float ph = 370, pw = ph * 0.55f;
+        float feet = vh * 0.9f;
         return new float[]{vw * 0.5f - pw / 2, feet - ph, pw, ph};
     }
 
     /** Where party member i stands: canvas x offset from you and how much smaller (further back) they are. */
-    private static final float[] MATE_DX = {-190, 190, -340, 340}, MATE_SCALE = {0.88f, 0.88f, 0.76f, 0.76f};
+    private static final float[] MATE_DX = {-170, 170, -300, 300}, MATE_SCALE = {0.88f, 0.88f, 0.74f, 0.74f};
 
     private java.util.List<com.pandaclient.mod.util.Party.Member> mateList() {
         var others = com.pandaclient.mod.util.Party.others(name());
@@ -299,7 +299,7 @@ public final class PandaTitleScreen extends Screen {
         float cx() { return homeX + dx; }
         float cy() { return feet - height / 2 + dy; }
         float neckX() { return cx(); }
-        float neckY() { return cy() - height * 0.25f; }
+        float neckY() { return cy() - height * 0.228f; }
     }
 
     private final java.util.Map<String, Body> bodies = new java.util.LinkedHashMap<>();
@@ -344,7 +344,7 @@ public final class PandaTitleScreen extends Screen {
                 b.lastAx = b.lastAx * 0.6f + ax * 0.4f;
                 b.vx = nvx; b.vy = nvy;
                 b.dx = nx - b.homeX;
-                b.dy = ny + b.height * 0.25f - (b.feet - b.height / 2);
+                b.dy = ny + b.height * 0.228f - (b.feet - b.height / 2);
                 float len = b.height * 0.55f;
                 float alpha = -(G / len) * (float) Math.sin(b.ang) - (b.lastAx / len) * (float) Math.cos(b.ang) - 3.2f * b.angV;
                 b.angV += alpha * dt;
@@ -437,8 +437,8 @@ public final class PandaTitleScreen extends Screen {
         java.util.Collections.reverse(order);
         for (Body b : order) {
             float box = b.height * 1.7f;
-            int x0 = Math.round((b.cx() - box / 2) * k), y0 = Math.round((b.cy() - box / 2) * k);
-            int x1 = Math.round((b.cx() + box / 2) * k), y1 = Math.round((b.cy() + box / 2) * k);
+            int x0 = Math.round((b.cx() - box / 2) * k), y0 = Math.round((b.cy() - b.height * 1.25f) * k);
+            int x1 = Math.round((b.cx() + box / 2) * k), y1 = Math.round((b.cy() + b.height * 0.53f) * k);
             float look = Math.max(-0.6f, Math.min(0.6f, (mouseX / k - b.cx()) / vw * 1.8f));
             float pitch = Math.max(-0.45f, Math.min(0.5f, (mouseY / k - (b.cy() - b.height * 0.4f)) / vh * 1.4f));
             float yaw = b.face - 12 + (mouseX / k / vw - 0.5f) * 16;
@@ -454,7 +454,7 @@ public final class PandaTitleScreen extends Screen {
         Draw sd = new Draw(g);
         sd.push(); sd.scale(k); sd.zoom = k;
         for (Body b : bodies()) {
-            float cx = b.cx(), cy = b.feet - 4;
+            float cx = b.cx(), cy = b.feet - b.height * 0.044f - 2;
             float sh = 1f / (1f - b.dy / 260f);
             float size = b.height / 190f;
             for (int i = 0; i < 5; i++) {
@@ -468,8 +468,8 @@ public final class PandaTitleScreen extends Screen {
     private void drawNametag() {
         for (Body b : bodies()) {
             // above the head, following the swing
-            float headX = b.neckX() - (float) Math.sin(b.ang) * b.height * 0.25f;
-            float headY = b.neckY() - (float) Math.cos(b.ang) * b.height * 0.25f;
+            float headX = b.neckX() - (float) Math.sin(b.ang) * b.height * 0.228f;
+            float headY = b.neckY() - (float) Math.cos(b.ang) * b.height * 0.228f;
             boolean you = b.id == null;
             float w = you ? tw(b.name, 12, true) + tw("You", 10, false) + 22 : tw(b.name, 11, true) + (b.leader ? 18 : 0) + 16;
             float h = you ? 21 : 19, y = headY - h - 6;
