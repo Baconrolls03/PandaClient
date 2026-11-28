@@ -102,7 +102,7 @@ public final class PauseLayout {
         try {
             var n = new net.minecraft.client.gui.narration.NarrationElementOutput() {
                 public void add(net.minecraft.client.gui.narration.NarratedElementType type, net.minecraft.client.gui.narration.NarrationThunk<?> thunk) {
-                    t.append(' ').append(thunk.getText());
+                    thunk.getText(x -> t.append(' ').append(x));
                 }
                 public net.minecraft.client.gui.narration.NarrationElementOutput nest() { return this; }
             };
