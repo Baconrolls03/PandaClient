@@ -70,12 +70,6 @@ public final class PandaTitleScreen extends Screen {
                 : com.pandaclient.mod.util.LobbyPanorama.renderVanilla(minecraft, pitch, yaw);
             if (!own) renderPanorama(g, delta);
             renderBlurredBackground(g);
-            // a gentle grade so the cards read: darker at the top and bottom
-            for (int i = 0; i < 10; i++) {
-                int a1 = 60 - i * 6, h1 = height * i / 40, h2 = height * (i + 1) / 40;
-                d.rect(0, h1, width, h2, Draw.alpha(0xFF070A10, a1));
-                d.rect(0, height - h2, width, height - h1, Draw.alpha(0xFF070A10, a1 + 20));
-            }
             // dip to black between shots
             if (shot > 0 || local > SHOT - CUT) {
                 float dip = local < CUT ? 1 - local / CUT : local > SHOT - CUT ? (local - (SHOT - CUT)) / CUT : 0;
