@@ -21,8 +21,8 @@ public final class WelcomeScreen extends Screen {
 
     private static final Step[] STEPS = {
         new Step("Welcome to", "PANDACLIENT", "A few quick choices and you're ready to play. You can change all of them later from the PandaClient menu.", new String[]{"Let's go"}, null),
-        new Step("Let's configure the", "Look & Feel", "Pick how the buttons in every menu look.", new String[]{"PandaClient", "Minecraft"},
-            new String[]{"Smooth, rounded and modern", "Blocky, like the vanilla menus"}),
+        new Step("Let's configure the", "Look & Feel", "Pick how the main menu, pause menu and buttons look.", new String[]{"PandaClient", "Minecraft"},
+            new String[]{"3D lobby, modern menus and buttons", "Normal Minecraft menus and buttons"}),
         new Step("Continuing with", "Menu Font", "The font PandaClient's menus use.", new String[]{"Smooth", "Minecraft"}, null),
         new Step("Continuing with", "Toggle Sprint", "Sprint stays on after you let go of the key.", new String[]{"Enabled", "Disabled"}, null),
         new Step("Continuing with", "PvP HUD", "FPS, CPS and keystrokes on screen. Move them any time in Edit HUD.", new String[]{"Show", "Hide"}, null),
@@ -48,7 +48,7 @@ public final class WelcomeScreen extends Screen {
 
     private int choice(int s) {
         return switch (s) {
-            case 1 -> Modules.TITLE_SCREEN.buttons.is("PandaClient") ? 0 : 1;
+            case 1 -> Modules.TITLE_SCREEN.enabled() ? 0 : 1;
             case 2 -> Modules.TITLE_SCREEN.smoothFont.on() ? 0 : 1;
             case 3 -> Modules.TOGGLE_SPRINT.enabled() ? 0 : 1;
             case 4 -> Modules.FPS.enabled() && Modules.KEYSTROKES.enabled() ? 0 : 1;
@@ -59,7 +59,11 @@ public final class WelcomeScreen extends Screen {
 
     private void pick(int s, int i) {
         switch (s) {
-            case 1 -> Modules.TITLE_SCREEN.buttons.set(i == 0 ? "PandaClient" : "Minecraft");
+            case 1 -> {
+                // "Minecraft": the normal menus everywhere (PandaClient's mods stay on; Right Shift still opens them)
+                Modules.TITLE_SCREEN.setEnabled(i == 0);
+                Modules.TITLE_SCREEN.buttons.set(i == 0 ? "PandaClient" : "Minecraft");
+            }
             case 2 -> Modules.TITLE_SCREEN.smoothFont.set(i == 0);
             case 3 -> Modules.TOGGLE_SPRINT.setEnabled(i == 0);
             case 4 -> { for (Module m : new Module[]{Modules.FPS, Modules.CPS, Modules.KEYSTROKES}) m.setEnabled(i == 0); }
@@ -72,7 +76,7 @@ public final class WelcomeScreen extends Screen {
     private void finish() {
         try { Files.writeString(marker(), "done"); } catch (Exception ignored) {}
         Config.save();
-        minecraft.setScreen(next);
+        minecraft.setScreen(Modules.TITLE_SCREEN.enabled() ? next : new net.minecraft.client.gui.screens.TitleScreen());
     }
 
     // ---------------------------------------------------------------- layout (canvas units, 720 tall)
