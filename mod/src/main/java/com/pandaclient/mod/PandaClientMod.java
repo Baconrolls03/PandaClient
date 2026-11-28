@@ -62,7 +62,10 @@ public final class PandaClientMod implements ClientModInitializer {
                     var hud = net.minecraft.client.gui.components.Button.builder(net.minecraft.network.chat.Component.literal("Edit HUD"),
                         b -> client.setScreen(new com.pandaclient.mod.gui.HudEditorScreen(screen))).bounds(0, 0, 200, 20).build();
                     buttons.add(hud);
-                    com.pandaclient.mod.gui.PauseLayout.apply(buttons, java.util.List.of(panda, hud), w, h);
+                    var more = net.minecraft.client.gui.components.Button.builder(net.minecraft.network.chat.Component.literal("More..."),
+                        b -> com.pandaclient.mod.gui.PauseLayout.toggleMore()).bounds(0, 0, 100, 20).build();
+                    buttons.add(more);
+                    com.pandaclient.mod.gui.PauseLayout.apply(buttons, java.util.List.of(panda, hud), more, w, h);
                     net.fabricmc.fabric.api.client.screen.v1.ScreenEvents.beforeRender(screen).register((s2, g, mx, my, delta) ->
                         com.pandaclient.mod.gui.PauseLayout.renderShade(g, s2.width, s2.height));
                     net.fabricmc.fabric.api.client.screen.v1.ScreenEvents.afterRender(screen).register((s2, g, mx, my, delta) ->

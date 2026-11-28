@@ -33,14 +33,28 @@ public final class PauseLayout {
     /** Canvas y of the top of the button column (the header sits above it). */
     private static float listTop = 262;
 
+    // what apply() found, kept so "More..." can re-lay the menu out
+    private static AbstractWidget back, leave, moreButton;
+    private static final List<AbstractWidget> main = new ArrayList<>(), extra = new ArrayList<>(), icons = new ArrayList<>();
+    private static boolean expanded;
+    private static int screenW, screenH;
+
+    /** Buttons people use; the rest go behind "More...". */
+    private static boolean isMain(AbstractWidget b) {
+        String s = b.getMessage().getString().toLowerCase(Locale.ROOT);
+        return s.contains("option") || s.contains("advancement") || s.contains("statistic");
+    }
+
     /**
-     * Lays the menu out as a column of normal-sized buttons on the right. Small icon buttons other mods or
-     * the server add keep their size and sit in a row under the column.
+     * A short, tidy menu: Back to Game, then pairs of buttons (Options, PandaClient Mods, Advancements,
+     * Statistics, Edit HUD, More...), then Disconnect. Everything else (reporting, feedback, server links,
+     * other mods' buttons) is behind More... Small icon buttons keep their size in a row underneath.
      */
-    public static void apply(List<AbstractWidget> buttons, List<AbstractWidget> ours, int w, int h) {
-        List<AbstractWidget> list = new ArrayList<>(), icons = new ArrayList<>();
+    public static void apply(List<AbstractWidget> buttons, List<AbstractWidget> ours, AbstractWidget more, int w, int h) {
+        List<AbstractWidget> list = new ArrayList<>();
+        main.clear(); extra.clear(); icons.clear();
         for (AbstractWidget b : buttons) {
-            if (ours.contains(b) || !b.visible) continue;
+            if (ours.contains(b) || b == more || !b.visible) continue;
             if (b instanceof net.minecraft.client.gui.components.AbstractButton) (b.getWidth() < 90 ? icons : list).add(b);
             else if (b instanceof net.minecraft.client.gui.components.StringWidget) b.visible = false; // the "Game Menu" title: our header replaces it
         }
@@ -48,45 +62,80 @@ public final class PauseLayout {
         java.util.Comparator<AbstractWidget> order = Comparator.comparingInt(AbstractWidget::getY).thenComparingInt(AbstractWidget::getX);
         list.sort(order);
         icons.sort(order);
-        // PandaClient's buttons go just above Disconnect
-        list.addAll(list.size() > 1 ? list.size() - 1 : list.size(), ours);
+        back = list.get(0);
+        leave = list.size() > 1 ? list.get(list.size() - 1) : null;
+        for (int i = 1; i < list.size() - 1; i++) (isMain(list.get(i)) ? main : extra).add(list.get(i));
+        // order: Options, PandaClient Mods, Advancements, Statistics, Edit HUD
+        main.sort(Comparator.comparingInt(b -> { String s = b.getMessage().getString().toLowerCase(Locale.ROOT); return s.contains("option") ? 0 : s.contains("advancement") ? 2 : 3; }));
+        if (!ours.isEmpty()) main.add(Math.min(1, main.size()), ours.get(0));
+        for (int i = 1; i < ours.size(); i++) main.add(ours.get(i));
+        moreButton = more;
+        expanded = false;
+        screenW = w; screenH = h;
+        layout();
+    }
+
+    /** Show or hide the less-used buttons. */
+    public static void toggleMore() {
+        expanded = !expanded;
+        layout();
+    }
+
+    private static void layout() {
+        int w = screenW, h = screenH;
         k = Canvas.scaleFor(h);
+        List<AbstractWidget> half = new ArrayList<>(main);
+        if (moreButton != null && (!extra.isEmpty() || !icons.isEmpty())) {
+            moreButton.visible = true;
+            moreButton.setMessage(net.minecraft.network.chat.Component.literal(expanded ? "Less" : "More..."));
+            half.add(moreButton);
+        } else if (moreButton != null) moreButton.visible = false;
+        if (expanded) half.addAll(extra);
+        for (AbstractWidget b : extra) b.visible = expanded;
+        for (AbstractWidget b : icons) b.visible = expanded;
+
         int cw = Math.min(204, Math.max(150, w / 3)), x = w - cw - Math.max(16, Math.round(w * 0.06f));
-        int row = 20, gap = 4, first = 24, iconsH = icons.isEmpty() ? 0 : 6 + 20;
+        int pairs = (half.size() + 1) / 2;
+        int row = 20, gap = 4, first = 24, iconsH = expanded && !icons.isEmpty() ? 26 : 0;
         int top = Math.max(Math.round(110 * k), 36), bottom = h - Math.max(10, Math.round(40 * k));
-        // shrink the rows to fit small windows (all buttons always on screen)
-        int n = list.size();
-        while (first + 6 + (n - 1) * (row + gap) + iconsH > bottom - top && (row > 14 || gap > 2)) {
+        int rows = pairs + (leave != null ? 1 : 0);
+        while (first + 6 + rows * (row + gap) + iconsH > bottom - top && (row > 14 || gap > 2)) {
             if (gap > 2) gap--; else row--;
             first = Math.max(row, Math.min(24, row + 4));
         }
-        int total = first + 6 + (n - 1) * (row + gap) + iconsH;
+        int total = first + 6 + rows * (row + gap) + iconsH;
         int y = Math.max(top, Math.min((h - total) / 2 + Math.round(30 * k), bottom - total));
         listTop = y / k;
         colX = x / k;
         colW = cw / k;
-        rows.clear();
-        for (int i = 0; i < list.size(); i++) {
-            AbstractWidget b = list.get(i);
-            int bh = i == 0 ? first : row;
-            b.setX(x);
-            b.setWidth(cw);
-            b.setY(y);
-            b.setHeight(bh);
-            if (i > 0) rows.add(b);
-            y += bh + (i == 0 ? 6 : gap);
+        PauseLayout.rows.clear();
+
+        place(back, x, y, cw, first);
+        y += first + 6;
+        int hw = (cw - gap) / 2;
+        for (int i = 0; i < half.size(); i++) {
+            AbstractWidget b = half.get(i);
+            boolean alone = i == half.size() - 1 && half.size() % 2 == 1;
+            place(b, alone ? x : x + (i % 2) * (hw + gap), y, alone ? cw : hw, row);
+            PauseLayout.rows.add(b);
+            if (i % 2 == 1 || alone) y += row + gap;
         }
-        // icon buttons (other mods, server links): a row under the column, at their own size
-        int ix = x;
-        y += 2;
-        for (AbstractWidget b : icons) {
-            b.setX(ix);
-            b.setY(y);
-            ix += b.getWidth() + 4;
-            if (ix > x + cw) { ix = x; y += b.getHeight() + 4; }
+        if (leave != null) { place(leave, x, y, cw, row); y += row + gap; }
+        if (expanded) {
+            int ix = x;
+            y += 2;
+            for (AbstractWidget b : icons) {
+                b.setX(ix); b.setY(y);
+                ix += b.getWidth() + 4;
+                if (ix > x + cw) { ix = x; y += b.getHeight() + 4; }
+            }
         }
-        primary = list.get(0);
-        danger = list.get(list.size() - 1);
+        primary = back;
+        danger = leave;
+    }
+
+    private static void place(AbstractWidget b, int x, int y, int w, int h) {
+        b.setX(x); b.setY(y); b.setWidth(w); b.setHeight(h);
     }
 
     /** Line icon for a pause menu button, or -1 for the PandaClient logo. */
