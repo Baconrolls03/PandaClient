@@ -15,7 +15,17 @@ export function useUpdateState(): UpdateState | null {
 /** Title-bar pill: shows download progress, then "Restart to update". */
 export function UpdatePill() {
   const s = useUpdateState()
-  if (!s || (s.status !== 'downloading' && s.status !== 'ready')) return null
+  if (!s || (s.status !== 'downloading' && s.status !== 'ready' && s.status !== 'available')) return null
+  if (s.status === 'available')
+    return (
+      <button
+        onClick={() => api.updater.install()}
+        className="no-drag mr-2 flex h-7 animate-pop items-center gap-2 rounded-full bg-mint px-3 text-xs font-semibold text-ink shadow-mint transition-all hover:brightness-110"
+        title={`PandaClient ${s.version} is out: download the installer`}
+      >
+        <Download size={13} /> Update {s.version}
+      </button>
+    )
   if (s.status === 'downloading')
     return (
       <div className="no-drag mr-2 flex h-7 items-center gap-2 rounded-full border border-border bg-surface px-3 text-xs text-muted" title={`Downloading PandaClient ${s.version}`}>

@@ -427,6 +427,8 @@ function UpdateBox() {
           ? `Downloading ${s.version}… ${Math.round((s.progress ?? 0) * 100)}%`
           : s.status === 'ready'
             ? `Version ${s.version} is ready to install.`
+            : s.status === 'available'
+              ? `Version ${s.version} is out. Download it to update.`
             : s.status === 'error'
               ? `Couldn't check for updates (${s.error}).`
               : s.status === 'none'
@@ -436,8 +438,8 @@ function UpdateBox() {
     <div className="mt-5 flex w-full max-w-md items-center gap-3 rounded-xl border border-border bg-bg/50 p-3 text-left">
       <RefreshCw size={18} className={`shrink-0 text-mint ${s.status === 'checking' || checking ? 'animate-spin' : ''}`} />
       <span className="flex-1 text-[13px]">{text}</span>
-      {s.status === 'ready' ? (
-        <Button size="sm" variant="primary" onClick={() => api.updater.install()}>Restart</Button>
+      {s.status === 'ready' || s.status === 'available' ? (
+        <Button size="sm" variant="primary" onClick={() => api.updater.install()}>{s.status === 'ready' ? 'Restart' : 'Download'}</Button>
       ) : (
         s.status !== 'unsupported' && (
           <Button size="sm" disabled={s.status === 'downloading'} onClick={async () => { setChecking(true); await api.updater.check(); setChecking(false) }}>

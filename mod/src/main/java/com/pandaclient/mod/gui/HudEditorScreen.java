@@ -69,6 +69,9 @@ public final class HudEditorScreen extends Screen {
 
     @Override
     public void renderBackground(GuiGraphics g, int mouseX, int mouseY, float delta) {
+        // Not in a world: show what the game looks like (the view from where you last played, a hotbar,
+        // hearts and hunger) so you can place your HUD against it.
+        if (minecraft.level == null) { HudPreview.draw(minecraft, g, width, height); return; }
         g.fill(0, 0, width, height, 0x55000000);
     }
 

@@ -7,6 +7,7 @@ public final class LobbyPanorama {
     private LobbyPanorama() {}
     public static void capture(Minecraft mc) {}
     public static boolean available() { return false; }
+    public static java.nio.file.Path previewFace() { return null; }
     public static final int SLOTS = 0;
     public static int[] scenes() { return new int[0]; }
     public static boolean render(Minecraft mc, int slot, float pitch, float yaw) { return false; }

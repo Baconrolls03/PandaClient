@@ -67,6 +67,7 @@ export function registerIpc(win: BrowserWindow): void {
   panda.startHeartbeat()
   updater.onUpdateChanged((s) => send('updater:changed', s))
   updater.startUpdater()
+  win.on('focus', () => updater.checkSoon())
 
   ipcMain.on('window:minimize', () => win.minimize())
   ipcMain.on('window:close', () => win.close())

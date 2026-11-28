@@ -494,7 +494,8 @@ export interface MojangProfile {
 /* ───────────── Self-update ───────────── */
 
 export interface UpdateState {
-  status: 'idle' | 'checking' | 'none' | 'downloading' | 'ready' | 'error' | 'unsupported'
+  /** available = a newer version exists but couldn't update automatically: `url` downloads the installer. */
+  status: 'idle' | 'checking' | 'none' | 'downloading' | 'ready' | 'available' | 'error' | 'unsupported'
   /** Version running now. */
   current: string
   /** Version being downloaded / ready to install. */
@@ -503,6 +504,8 @@ export interface UpdateState {
   notes?: string
   error?: string
   checkedAt?: number
+  /** Installer download (status 'available'). */
+  url?: string
 }
 
 /* ───────────── Importing from other launchers ───────────── */

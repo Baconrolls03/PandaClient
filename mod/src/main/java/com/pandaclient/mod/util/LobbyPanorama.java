@@ -142,6 +142,12 @@ public final class LobbyPanorama {
 
     public static boolean available() { return scenes().length > 0; }
 
+    /** The straight-ahead picture of the newest place you played (for the HUD editor), or null. */
+    public static Path previewFace() {
+        int[] sc = scenes();
+        return sc.length == 0 ? null : face(sc[0], 0);
+    }
+
     private static void clearDepth(Minecraft mc) {
         // over a world (the lobby opened in game), clear its depth so the panorama isn't hidden behind it
         if (mc.level == null) return;
