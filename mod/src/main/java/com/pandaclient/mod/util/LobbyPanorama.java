@@ -88,7 +88,7 @@ public final class LobbyPanorama {
     /** Vertical field of view of Minecraft's panorama (degrees). */
     private static final double FOV = 85;
     /** Which way the panorama turns for positive yaw and pitch (checked in CI with a marker block). */
-    public static float yawSign = 1f, pitchSign = 1f;
+    public static float yawSign = -1f, pitchSign = 1f;
 
     /**
      * Where a point {@code right}, {@code up} and {@code forward} blocks from a place's camera shows on screen

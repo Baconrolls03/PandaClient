@@ -25,7 +25,6 @@ public final class CiScenes {
         {"minecraft:meadow", "23300"},
         {"minecraft:jagged_peaks", "11800"},
         {"minecraft:beach", "12450"},
-        {"minecraft:savanna_plateau", "23450"},
         {"minecraft:snowy_slopes", "12200"},
     };
     private static final Pattern AT = Pattern.compile("\\[(-?\\d+), (?:-?\\d+|~), (-?\\d+)\\]");

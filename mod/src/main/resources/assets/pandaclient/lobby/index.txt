@@ -1,6 +1,5 @@
+meadow
 beach
 cherry_grove
 jagged_peaks
-meadow
-savanna_plateau
 snowy_slopes
