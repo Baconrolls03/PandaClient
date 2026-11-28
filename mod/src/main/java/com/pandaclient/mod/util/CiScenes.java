@@ -28,7 +28,7 @@ public final class CiScenes {
         {"minecraft:savanna_plateau", "23450"},
         {"minecraft:snowy_slopes", "12200"},
     };
-    private static final Pattern AT = Pattern.compile("(-?\\d+), ~, (-?\\d+)");
+    private static final Pattern AT = Pattern.compile("\\[(-?\\d+), (?:-?\\d+|~), (-?\\d+)\\]");
 
     private static int spot, step, wait, slot = -1, found, lastChunks, stable, tries;
     private static int fx, fz;
@@ -49,6 +49,8 @@ public final class CiScenes {
             registered = true;
             net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents.GAME.register((msg, overlay) -> heard(msg.getString()));
             net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents.CHAT.register((msg, signed, sender, params, time) -> heard(msg.getString()));
+            mc.player.connection.sendCommand("gamerule advance_time false");
+            mc.player.connection.sendCommand("gamerule advance_weather false");
             mc.player.connection.sendCommand("gamerule doDaylightCycle false");
             mc.player.connection.sendCommand("gamerule doWeatherCycle false");
             mc.player.connection.sendCommand("weather clear");
@@ -82,14 +84,16 @@ public final class CiScenes {
                 lastChunks = chunks;
                 if (stable > 60 || ++tries > 1200) {
                     int y = mc.level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, fx, fz);
-                    // look out over the most open direction (lowest ground 20 to 60 blocks away)
+                    // look out over the most open direction (lowest ground 20 to 60 blocks away), with level
+                    // ground just in front to stand everyone on
                     int best = 0; double bestH = Double.MAX_VALUE;
                     for (int d = 0; d < 16; d++) {
                         double yaw = d * 22.5, h = 0;
-                        for (int r = 20; r <= 60; r += 8) {
-                            int x = fx + (int) Math.round(-Math.sin(Math.toRadians(yaw)) * r), z = fz + (int) Math.round(Math.cos(Math.toRadians(yaw)) * r);
-                            h += mc.level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z);
-                        }
+                        double sx = -Math.sin(Math.toRadians(yaw)), sz = Math.cos(Math.toRadians(yaw));
+                        int near = mc.level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, fx + (int) Math.round(sx * 3), fz + (int) Math.round(sz * 3));
+                        if (Math.abs(near - y) > 1) h += 10_000;
+                        for (int r = 20; r <= 60; r += 8)
+                            h += mc.level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, fx + (int) Math.round(sx * r), fz + (int) Math.round(sz * r));
                         if (h < bestH) { bestH = h; best = d; }
                     }
                     float yaw = best * 22.5f;
