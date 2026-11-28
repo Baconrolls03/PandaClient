@@ -52,9 +52,16 @@ public final class PauseLayout {
         list.addAll(list.size() > 1 ? list.size() - 1 : list.size(), ours);
         k = Canvas.scaleFor(h);
         int cw = Math.min(204, Math.max(150, w / 3)), x = w - cw - Math.max(16, Math.round(w * 0.06f));
-        int row = 20, gap = 4, first = 24;
-        int total = first + 6 + (list.size() - 1) * (row + gap) + (icons.isEmpty() ? 0 : 6 + 20);
-        int y = Math.max(Math.round(110 * k), (h - total) / 2 + Math.round(30 * k));
+        int row = 20, gap = 4, first = 24, iconsH = icons.isEmpty() ? 0 : 6 + 20;
+        int top = Math.max(Math.round(110 * k), 36), bottom = h - Math.max(10, Math.round(40 * k));
+        // shrink the rows to fit small windows (all buttons always on screen)
+        int n = list.size();
+        while (first + 6 + (n - 1) * (row + gap) + iconsH > bottom - top && (row > 14 || gap > 2)) {
+            if (gap > 2) gap--; else row--;
+            first = Math.max(row, Math.min(24, row + 4));
+        }
+        int total = first + 6 + (n - 1) * (row + gap) + iconsH;
+        int y = Math.max(top, Math.min((h - total) / 2 + Math.round(30 * k), bottom - total));
         listTop = y / k;
         colX = x / k;
         colW = cw / k;
