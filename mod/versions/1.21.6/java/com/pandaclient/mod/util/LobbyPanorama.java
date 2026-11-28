@@ -6,6 +6,7 @@ import net.minecraft.client.Minecraft;
 public final class LobbyPanorama {
     private LobbyPanorama() {}
     public static void capture(Minecraft mc) {}
+    public static void allowNow() {}
     public static boolean available() { return false; }
     public static java.nio.file.Path previewFace() { return null; }
     public static final int SLOTS = 0;

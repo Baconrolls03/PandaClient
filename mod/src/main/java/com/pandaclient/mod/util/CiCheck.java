@@ -130,6 +130,7 @@ public final class CiCheck {
                 // a gold pillar 2 blocks to your right, in daylight: the lobby's red cross should land on it
                 cmd.sendCommand("time set noon");
                 cmd.sendCommand("execute rotated ~ 0 run fill ^-2 ^ ^ ^-2 ^2 ^ minecraft:gold_block");
+                com.pandaclient.mod.util.LobbyPanorama.allowNow();
                 log("stage test: onGround=" + mc.player.onGround() + " yaw=" + mc.player.getYRot());
             }
             case 470 -> { mc.setScreen(new net.minecraft.client.gui.screens.PauseScreen(true)); log("shot pause"); }

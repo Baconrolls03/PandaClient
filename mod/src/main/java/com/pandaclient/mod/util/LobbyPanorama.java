@@ -121,6 +121,9 @@ public final class LobbyPanorama {
         return best;
     }
 
+    /** Lets the next pause capture straight away (CI). */
+    public static void allowNow() { lastCapture = 0; }
+
     /** Takes the six pictures around you. Called when the pause menu opens. */
     public static void capture(Minecraft mc) {
         if (mc.player == null || mc.level == null || System.currentTimeMillis() - lastCapture < 45_000) return;
