@@ -28,7 +28,7 @@ public final class CiScenes {
         {"minecraft:savanna_plateau", "23450"},
         {"minecraft:snowy_slopes", "12200"},
     };
-    private static final Pattern AT = Pattern.compile("\\[(-?\\d+), ~, (-?\\d+)\\]");
+    private static final Pattern AT = Pattern.compile("(-?\\d+), ~, (-?\\d+)");
 
     private static int spot, step, wait, slot = -1, found, lastChunks, stable, tries;
     private static int fx, fz;
@@ -37,14 +37,18 @@ public final class CiScenes {
 
     private static void log(String s) { System.out.println("[PandaClient CI] scenes: " + s); System.out.flush(); }
 
+    private static void heard(String text) {
+        log("heard: " + (text.length() > 160 ? text.substring(0, 160) : text));
+        Matcher m = AT.matcher(text);
+        if (m.find()) located = m.group(1) + " " + m.group(2);
+    }
+
     public static void tick(Minecraft mc) {
         if (!ON || mc.player == null || mc.level == null || mc.getOverlay() != null) return;
         if (!registered) {
             registered = true;
-            net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents.GAME.register((msg, overlay) -> {
-                Matcher m = AT.matcher(msg.getString());
-                if (m.find()) located = m.group(1) + " " + m.group(2);
-            });
+            net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents.GAME.register((msg, overlay) -> heard(msg.getString()));
+            net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents.CHAT.register((msg, signed, sender, params, time) -> heard(msg.getString()));
             mc.player.connection.sendCommand("gamerule doDaylightCycle false");
             mc.player.connection.sendCommand("gamerule doWeatherCycle false");
             mc.player.connection.sendCommand("weather clear");

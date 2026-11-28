@@ -17,7 +17,7 @@ for i in $(seq 1 600); do grep -q "Done (" server.log && break; grep -q "^exit "
 grep -E "Done \(|ERROR" server.log | head -5
 ( gradle -p mod runClient --no-daemon --args="--username PandaTester --quickPlayMultiplayer localhost:25565" > scenes.log 2>&1; echo "exit $?" >> scenes.log ) &
 for i in $(seq 1 2400); do grep -qE "^exit [0-9]+" scenes.log && break; sleep 1; done
-grep -E "\[PandaClient CI\]|Exception|Crash" scenes.log | head -80
+grep -E "\[PandaClient CI\]|Exception|Crash" scenes.log | head -120
 pkill -f "net.fabricmc.devlaunchinjector" 2>/dev/null; pkill -f runServer 2>/dev/null
 
 OUT=mod/src/main/resources/assets/pandaclient/lobby
@@ -34,3 +34,5 @@ echo "scenes:"; cat $OUT/index.txt
 for s in $(cat $OUT/index.txt); do
   convert "$OUT/${s}_3.jpg" "$OUT/${s}_0.jpg" "$OUT/${s}_1.jpg" "$OUT/${s}_2.jpg" +append -resize 1600x "shots/scene-$s.jpg"
 done
+grep -iE "locate|nearest|Could not find" server.log | head -20
+true
