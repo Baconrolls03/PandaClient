@@ -11,7 +11,7 @@ import { getSettings } from '../settings'
 import { type TaskHandle, startTask } from '../tasks'
 import { ensureRuntime } from './javaRuntime'
 import { assetsDir, install, librariesDir, rulesAllow, type Arg, type Installed } from './mojang'
-import { ensurePandaMod } from '../pandaMod'
+import { ensurePandaMod, supportsPandaMod } from '../pandaMod'
 import { diagnose, fixDuplicates } from '../crashDoctor'
 import { recordSession } from '../stats'
 import { ensureBundledMods } from '../bundledMods'
@@ -178,6 +178,8 @@ export async function launchGame(id: string, emit: Emit, quickPlay?: QuickPlay, 
       const { pullSettings } = await import('../pandaApi')
       if (await pullSettings().catch(() => false)) progress('Got your PandaClient settings from the cloud', null, 'preparing')
     }
+    if (!supportsPandaMod(inst))
+      progress(`PandaClient runs on Minecraft 1.21.6 to 1.21.11, so this ${inst.mcVersion} profile starts without it. Use "Move to 1.21.11" on the profile page.`, null, 'preparing')
     await ensurePandaMod(inst, true, (m) => progress(m, null, 'preparing'))
     if (!opts.quiet) await ensureBundledMods(inst, (m) => progress(m, null, 'preparing')).catch(() => {})
     // Two copies of the same mod always crash Fabric: keep the newest one.

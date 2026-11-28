@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { AlertTriangle, ArrowLeft, Check, ChevronDown, FileArchive, FolderSearch, Loader2, PackageOpen, RefreshCw, Sparkles } from 'lucide-react'
 import type { ImportInput, ImportResult, ImportSource, LauncherId, VersionList } from '@shared/types'
 import { api } from '@/lib/api'
+import { PANDA_VERSIONS } from '@shared/bundles'
 import { useStore } from '@/lib/store'
 import { errorMessage, LOADER_NAMES } from '@/lib/format'
 import { randomPreset } from '@/lib/icons'
@@ -45,6 +46,7 @@ export function ImportModal() {
   const [name, setName] = useState('')
   const [mc, setMc] = useState('')
   const [detecting, setDetecting] = useState(false)
+  const [fromVersion, setFromVersion] = useState<string | null>(null)
   const [include, setInclude] = useState<ImportInput['include']>({ mods: true, resourcepacks: true, shaderpacks: true, saves: true, config: true, options: true, servers: true, screenshots: false })
   const [showSkipped, setShowSkipped] = useState(false)
 
@@ -63,13 +65,19 @@ export function ImportModal() {
   async function choose(source: ImportSource) {
     setStep({ kind: 'configure', source })
     setName(source.name.replace(/^(Lunar Client|Feather|Dawn) · /, '').replace(/ \/ /g, ' ') || 'Imported')
-    const supported = (v: string | null) => (v && fabricVersions.some((f) => f.id === v) ? v : null)
-    setMc(supported(source.mcVersion) ?? fabricVersions.find((v) => v.type === 'release')?.id ?? '')
-    if (!supported(source.mcVersion) && source.counts.mods) {
+    // PandaClient (its menu, lobby and HUD) runs on PANDA_VERSIONS: keep the mods' version when it's one of
+    // them, otherwise move the profile to the newest one and update the mods to it.
+    const pick = (v: string | null) => (v && PANDA_VERSIONS.includes(v) ? v : PANDA_VERSIONS[0])
+    setFromVersion(source.mcVersion)
+    setMc(pick(source.mcVersion))
+    if (source.counts.mods && (!source.mcVersion || !PANDA_VERSIONS.includes(source.mcVersion))) {
       setDetecting(true)
       const detected = await api.importer.detectVersion(source.path).catch(() => null)
       setDetecting(false)
-      if (supported(detected)) setMc(detected!)
+      if (detected) {
+        setFromVersion(detected)
+        setMc(pick(detected))
+      }
     }
   }
 
@@ -91,7 +99,7 @@ export function ImportModal() {
   async function run(source: ImportSource) {
     setStep({ kind: 'running' })
     try {
-      const result = await api.importer.run({ path: source.path, name: name.trim() || source.name, mcVersion: mc, include, iconPreset: randomPreset() })
+      const result = await api.importer.run({ path: source.path, name: name.trim() || source.name, mcVersion: mc, fromVersion, include, iconPreset: randomPreset() })
       update({ selectedInstance: result.instanceId })
       setStep({ kind: 'done', result, name: name.trim() || source.name })
     } catch (e) {
@@ -223,7 +231,15 @@ export function ImportModal() {
             <VersionSelect versions={fabricVersions} value={mc} onChange={setMc} showSnapshots={settings.showSnapshots} onShowSnapshots={(v) => update({ showSnapshots: v })} loading={!versions} showBadges={false} className="w-full" />
           </div>
         </div>
-        <p className="mt-2 text-xs text-muted">Mods made for a different version can be updated after importing with “Check updates”.</p>
+        {!PANDA_VERSIONS.includes(mc) ? (
+          <p className="mt-2 flex gap-2 rounded-xl border border-amber-400/30 bg-amber-400/8 p-2.5 text-xs text-amber-200">
+            <AlertTriangle size={14} className="mt-px shrink-0" /> PandaClient (its menu, lobby and HUD) only runs on Minecraft {PANDA_VERSIONS[PANDA_VERSIONS.length - 1]} to {PANDA_VERSIONS[0]}. Pick one of those to use it with this profile.
+          </p>
+        ) : fromVersion && fromVersion !== mc && include.mods ? (
+          <p className="mt-2 text-xs text-muted">Your mods are for Minecraft {fromVersion}. PandaClient gets each one for {mc} from Modrinth; any that don't have a {mc} version yet are listed after importing.</p>
+        ) : (
+          <p className="mt-2 text-xs text-muted">PandaClient is added to this profile automatically.</p>
+        )}
         <h3 className="mb-2 mt-5 text-sm font-semibold">What to bring</h3>
         <div className="grid grid-cols-2 gap-2">
           {rows.map((r) => {

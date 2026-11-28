@@ -10,6 +10,7 @@ import { unzipSync } from 'fflate'
 import type { ImportInput, ImportResult, ImportSource, LauncherId } from '@shared/types'
 import { sha1File } from './http'
 import { createInstance, emitInstancesChanged, getInstance } from './instances'
+import { installMany } from './content'
 import * as mr from './modrinth'
 import { isInside } from './paths'
 import { getSettings } from './settings'
@@ -228,14 +229,37 @@ export async function importSource(input: ImportInput): Promise<ImportResult> {
     if (input.include.mods) {
       const dir = join(src, 'mods')
       const jars = (await list(dir)).filter((f) => /\.jar(\.disabled)?$/i.test(f))
+      const fabric: string[] = []
       for (const [i, f] of jars.entries()) {
-        task.update(`Checking mods (${i + 1}/${jars.length})`, (i / Math.max(1, jars.length)) * 0.4)
+        task.update(`Checking mods (${i + 1}/${jars.length})`, (i / Math.max(1, jars.length)) * 0.3)
+        // PandaClient adds its own mod and the right Fabric API for this version on launch.
+        if (/^pandaclient.*\.jar/i.test(f) || /^fabric-api/i.test(f)) continue
         const kind = jarKind(new Uint8Array(await readFile(join(dir, f))))
-        if (kind === 'fabric') {
+        if (kind === 'fabric') fabric.push(f)
+        else result.skipped.push({ file: f, reason: kind === 'unknown' ? 'Not a Fabric mod' : `${kind === 'neoforge' ? 'NeoForge' : kind[0].toUpperCase() + kind.slice(1)} mod` })
+      }
+      const from = input.fromVersion ?? null
+      if (from && from !== input.mcVersion && fabric.length) {
+        // Mods made for another Minecraft version: get each one for this version from Modrinth.
+        task.update(`Finding your mods for Minecraft ${input.mcVersion}`, 0.32)
+        const hashes = await Promise.all(fabric.map((f) => sha1File(join(dir, f))))
+        const byHash = await mr.versionsFromHashes(hashes).catch(() => ({}) as Record<string, { project_id: string }>)
+        const projects = new Map<string, string>()
+        fabric.forEach((f, i) => {
+          const v = (byHash as Record<string, { project_id: string }>)[hashes[i]]
+          if (v?.project_id) projects.set(v.project_id, f)
+          else if (!f.endsWith('.disabled')) result.skipped.push({ file: f, reason: `Not on Modrinth, so it can't be updated to ${input.mcVersion}` })
+        })
+        const ids = [...projects.keys()]
+        const missing = new Set(ids.length ? await installMany(inst.id, ids, `Updating your mods to Minecraft ${input.mcVersion}`) : [])
+        for (const id of ids) {
+          if (missing.has(id)) result.skipped.push({ file: projects.get(id)!, reason: `No version for Minecraft ${input.mcVersion} yet` })
+          else result.mods++
+        }
+      } else {
+        for (const f of fabric) {
           await copyFile(join(dir, f), join(inst.path, 'mods', f))
           result.mods++
-        } else {
-          result.skipped.push({ file: f, reason: kind === 'unknown' ? 'Not a Fabric mod' : `${kind === 'neoforge' ? 'NeoForge' : kind[0].toUpperCase() + kind.slice(1)} mod` })
         }
       }
     }

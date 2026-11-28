@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
-import { CalendarDays, Clock, Copy, FileArchive, FileText, Folder, FolderOpen, Globe, History, Image, Package, ScrollText, Search, Settings2, Trash2 } from 'lucide-react'
+import { AlertTriangle, ArrowRight, CalendarDays, Clock, Copy, FileArchive, FileText, Folder, FolderOpen, Globe, History, Image, Package, ScrollText, Search, Settings2, Trash2 } from 'lucide-react'
 import { api } from '@/lib/api'
+import { PANDA_VERSIONS } from '@shared/bundles'
 import { useStore, type InstanceTab } from '@/lib/store'
 import { ExportModal } from '@/modals/ExportModal'
 import { CrashFinderModal } from '@/modals/CrashFinderModal'
@@ -133,6 +134,30 @@ export function Instance({ id, tab = 'content' }: { id: string; tab?: InstanceTa
 
       {/* Right: tabs */}
       <div className="flex min-w-0 flex-col gap-5">
+        {!PANDA_VERSIONS.includes(inst.mcVersion) && (
+          <div className="flex items-center gap-3 rounded-2xl border border-amber-400/30 bg-amber-400/8 p-4">
+            <AlertTriangle size={18} className="shrink-0 text-amber-300" />
+            <p className="min-w-0 flex-1 text-sm text-amber-100">
+              <span className="font-semibold">PandaClient isn't on this profile.</span> It runs on Minecraft {PANDA_VERSIONS[PANDA_VERSIONS.length - 1]} to {PANDA_VERSIONS[0]}, and this profile is Minecraft {inst.mcVersion}.
+              <span className="block text-xs text-amber-200/80">Moving makes a {PANDA_VERSIONS[0]} copy with your mods updated, worlds, packs and settings. Mods without a {PANDA_VERSIONS[0]} version are listed.</span>
+            </p>
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={async () => {
+                const copy = await attempt(() =>
+                  api.instances.create({ name: `${inst.name} (${PANDA_VERSIONS[0]})`, mcVersion: PANDA_VERSIONS[0], loaderVersion: null, copyFrom: inst.id })
+                )
+                if (copy) {
+                  toast(`Made ${copy.name}. Moving your mods over…`, 'success')
+                  navigate({ name: 'instance', id: copy.id })
+                }
+              }}
+            >
+              Move to {PANDA_VERSIONS[0]} <ArrowRight size={14} />
+            </Button>
+          </div>
+        )}
         <Tabs tabs={TABS} value={tab} onChange={setTab} />
         <div key={tab} className="animate-pop">
           {tab === 'content' && <ContentTab inst={inst} />}

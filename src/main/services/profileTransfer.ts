@@ -1,7 +1,7 @@
 // Moves the mods, packs and settings of one profile into another, getting each mod for the
 // new profile's Minecraft version from Modrinth. Mods with no version for it are left out and listed.
 import { existsSync } from 'node:fs'
-import { copyFile, cp, mkdir } from 'node:fs/promises'
+import { copyFile, cp, mkdir, readdir } from 'node:fs/promises'
 import { join } from 'node:path'
 import { CONTENT_FOLDERS, type TransferReport } from '@shared/types'
 import { getInstance } from './instances'
@@ -45,6 +45,12 @@ export async function transferProfile(fromId: string, toId: string): Promise<Tra
     }
   }
 
+  // Worlds (Minecraft upgrades them to the new version when they're opened).
+  const worlds = existsSync(join(from.path, 'saves')) ? (await readdir(join(from.path, 'saves'))).filter((f) => !f.startsWith('.')) : []
+  if (worlds.length) {
+    await cp(join(from.path, 'saves'), join(to.path, 'saves'), { recursive: true, force: false, errorOnExist: false }).catch(() => {})
+    report.moved.push(worlds.length === 1 ? '1 world' : `${worlds.length} worlds`)
+  }
   // Mod settings, keybinds and video settings.
   if (existsSync(join(from.path, 'config'))) await cp(join(from.path, 'config'), join(to.path, 'config'), { recursive: true, force: true }).catch(() => {})
   for (const f of ['options.txt', 'servers.dat'])

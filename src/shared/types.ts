@@ -524,7 +524,10 @@ export interface ImportSource {
 export interface ImportInput {
   path: string
   name: string
+  /** The Minecraft version of the new profile. */
   mcVersion: string
+  /** The version the source's mods were made for, if known: they are updated when it differs. */
+  fromVersion?: string | null
   iconPreset?: IconPreset | null
   include: { mods: boolean; resourcepacks: boolean; shaderpacks: boolean; saves: boolean; config: boolean; options: boolean; servers: boolean; screenshots: boolean }
 }
