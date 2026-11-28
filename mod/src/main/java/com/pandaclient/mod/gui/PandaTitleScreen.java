@@ -790,7 +790,7 @@ public final class PandaTitleScreen extends Screen {
         if (!invites.isEmpty()) {
             var inv = invites.get(0);
             d.rounded(x1 + 10, y, x2 - 10, y + 28, 7, col(Draw.alpha(Theme.accent(), 60)), col(Draw.alpha(Theme.accent(), 140)));
-            txt(clip(inv.from() + " invited you", 120, 11, true, this), x1 + 18, y + 14, 11, 0xFFFFFFFF, true);
+            txt(clip(inv.from() + " invited you", x2 - x1 - 112, 11, true, this), x1 + 18, y + 14, 11, 0xFFFFFFFF, true);
             float ax2 = x2 - 44, ax1 = ax2 - tw("Join", 10.5f, true) - 18;
             boolean ha = in(mx, my, ax1, y + 4, ax2, y + 24), hd = in(mx, my, x2 - 38, y + 4, x2 - 16, y + 24);
             d.rounded(ax1, y + 4, ax2, y + 24, 5, col(ha ? Draw.lerpColor(Theme.accent(), 0xFFFFFFFF, 0.2f) : Theme.accent()));

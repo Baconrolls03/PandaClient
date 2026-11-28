@@ -51,15 +51,15 @@ public final class CiCheck {
                 if (mc.screen instanceof com.pandaclient.mod.gui.PandaTitleScreen p) p.ciPose();
                 log("shot lobby-throw");
             }
-            case 88 -> {
+            case 100 -> {
                 writeTestParty(mc);
                 if (mc.screen instanceof com.pandaclient.mod.gui.PandaTitleScreen p) p.ciParty();
                 log("party connected=" + com.pandaclient.mod.util.Party.connected() + " friends=" + com.pandaclient.mod.util.Party.friends().size()
                     + " messages=" + com.pandaclient.mod.util.Party.messages().size() + " invites=" + com.pandaclient.mod.util.Party.invites().size());
                 log("shot lobby-party");
             }
-            case 104 -> { mc.setScreen(new MenuScreen(mc.screen)); log("shot menu"); }
-            case 140 -> { mc.setScreen(MenuScreen.openAt(null, Modules.KEYSTROKES)); log("shot settings"); }
+            case 128 -> { mc.setScreen(new MenuScreen(mc.screen)); log("shot menu"); }
+            case 160 -> { mc.setScreen(MenuScreen.openAt(null, Modules.KEYSTROKES)); log("shot settings"); }
             case 240 -> { mc.setScreen(new HudEditorScreen(null)); log("shot hud"); }
             case 300 -> {
                 // One settings menu: every mod's own settings screen, found through Mod Menu's entry point.
