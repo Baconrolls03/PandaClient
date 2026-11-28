@@ -158,6 +158,8 @@ public final class PandaTitleScreen extends Screen {
             if (st != null) {
                 yaw = (shot % 2 == 0 ? 1 : -1) * 16f * (ease - 0.5f) + (mouseX - 0.5f) * 6f;
                 pitch = com.pandaclient.mod.util.LobbyPanorama.pitchFor(st, 0.78f) + (mouseY - 0.5f) * 3f;
+                // CI: turned well to one side, so a wrong turning direction would show as a big miss
+                if (com.pandaclient.mod.util.CiCheck.ON) { yaw = -15f; pitch = com.pandaclient.mod.util.LobbyPanorama.pitchFor(st, 0.78f); }
             }
             stage = st; stageYaw = yaw; stagePitch = pitch;
             boolean own = scene < scenes.length
