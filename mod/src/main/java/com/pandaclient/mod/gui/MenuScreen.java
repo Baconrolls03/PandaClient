@@ -72,13 +72,18 @@ public final class MenuScreen extends Screen {
 
     // ------------------------------------------------------------------ layout helpers
 
+    /** The whole menu is drawn at this scale so it takes about two thirds of the screen. */
+    private float z = 1f;
+
     private void layout() {
-        pw = Math.min(400, width - 24);
-        ph = Math.min(240, height - 24);
-        px = (width - pw) / 2;
+        z = Math.max(0.55f, Math.min(1f, Math.min(width * 0.68f / 400f, height * 0.74f / 240f)));
+        int w = Math.round(width / z), h = Math.round(height / z);
+        pw = Math.min(400, w - 24);
+        ph = Math.min(240, h - 24);
+        px = (w - pw) / 2;
         float t = Math.min(1f, (System.currentTimeMillis() - openedAt) / 160f);
         float ease = 1 - (1 - t) * (1 - t);
-        py = (height - ph) / 2 + Math.round((1 - ease) * 10);
+        py = (h - ph) / 2 + Math.round((1 - ease) * 10);
     }
 
     private float anim(Object key, boolean target) {
@@ -129,7 +134,12 @@ public final class MenuScreen extends Screen {
         super.render(g, mx, my, delta);
         layout();
         scroll += (scrollTarget - scroll) * 0.4;
+        g.pose().pushMatrix();
+        g.pose().scale(z, z);
+        mx = Math.round(mx / z);
+        my = Math.round(my / z);
         Draw d = new Draw(g);
+        d.zoom = z;
         // panel
         d.round(px - 1, py - 1, px + pw + 1, py + ph + 1, Theme.BORDER);
         d.round(px, py, px + pw, py + ph, Theme.BG);
@@ -145,6 +155,7 @@ public final class MenuScreen extends Screen {
             int barY = contentY() + 4 + (int) ((viewH - barH) * (scroll / Math.max(1, contentHeight - viewH)));
             d.round(px + pw - 4, barY, px + pw - 2, barY + barH, Theme.BORDER);
         }
+        g.pose().popMatrix();
     }
 
     private static final net.minecraft.resources.Identifier PANDA_LOGO = net.minecraft.resources.Identifier.fromNamespaceAndPath("pandaclient", "textures/gui/panda_logo.png");
@@ -458,7 +469,8 @@ public final class MenuScreen extends Screen {
 
     @Override
     public boolean mouseClicked(MouseButtonEvent e, boolean doubleClick) {
-        double mx = e.x(), my = e.y();
+        layout();
+        double mx = e.x() / z, my = e.y() / z;
         int button = e.button();
         layout();
         waitingKey = null;
@@ -591,8 +603,8 @@ public final class MenuScreen extends Screen {
 
     @Override
     public boolean mouseDragged(MouseButtonEvent e, double dx, double dy) {
-        if (draggingNum != null) { setNum(e.x()); return true; }
-        if (draggingColorBar >= 0 && editingColor != null) { setColorBar(editingColor, e.x()); return true; }
+        if (draggingNum != null) { setNum(e.x() / z); return true; }
+        if (draggingColorBar >= 0 && editingColor != null) { setColorBar(editingColor, e.x() / z); return true; }
         return super.mouseDragged(e, dx, dy);
     }
 

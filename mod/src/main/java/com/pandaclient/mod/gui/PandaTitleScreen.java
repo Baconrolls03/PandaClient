@@ -433,9 +433,10 @@ public final class PandaTitleScreen extends Screen {
             float box = b.height * 1.7f;
             int x0 = Math.round((b.cx() - box / 2) * k), y0 = Math.round((b.cy() - b.height * 1.25f) * k);
             int x1 = Math.round((b.cx() + box / 2) * k), y1 = Math.round((b.cy() + b.height * 0.53f) * k);
-            float look = Math.max(-0.6f, Math.min(0.6f, (mouseX / k - b.cx()) / vw * 1.8f));
+            // turn the head (and a little of the body) towards the cursor
+            float look = Math.max(-0.6f, Math.min(0.6f, -(mouseX / k - b.cx()) / vw * 1.8f));
             float pitch = Math.max(-0.45f, Math.min(0.5f, (mouseY / k - (b.cy() - b.height * 0.4f)) / vh * 1.4f));
-            float yaw = b.face - 12 + (mouseX / k / vw - 0.5f) * 16;
+            float yaw = b.face - 12 - (mouseX / k / vw - 0.5f) * 16;
             LobbyPlayer.draw(minecraft, g, b.key, b.id, b.name, x0, y0, x1, y1, b.height * k, yaw,
                 new LobbyPlayer.Pose(b.ang, b.held, b.walk, time + b.key.hashCode() % 7, b.held > 0.5f ? 0 : look, b.held > 0.5f ? 0.25f : pitch));
         }
