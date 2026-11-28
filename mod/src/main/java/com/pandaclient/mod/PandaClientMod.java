@@ -21,7 +21,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 
 public final class PandaClientMod implements ClientModInitializer {
-    public static final String VERSION = "0.11.2";
+    public static final String VERSION = "0.11.3";
     private static CameraType cameraBeforeFreelook;
     private static boolean hitboxesApplied, menuWasDown, sprintWasDown, sneakWasDown, freelookWasDown;
     private static int prevSelfHurt;
