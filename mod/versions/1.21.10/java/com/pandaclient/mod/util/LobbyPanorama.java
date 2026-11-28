@@ -13,6 +13,7 @@ public final class LobbyPanorama {
     public static java.nio.file.Path previewFace() { return null; }
     public static final int SLOTS = 0;
     public static int[] scenes() { return new int[0]; }
+    public static int[] builtins(Minecraft mc) { return new int[0]; }
     public static boolean render(Minecraft mc, int slot, float pitch, float yaw) { return false; }
     public static boolean renderVanilla(Minecraft mc, float pitch, float yaw) { return false; }
     public record Stage(float dist, float drop) {}

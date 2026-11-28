@@ -116,10 +116,15 @@ public final class PandaTitleScreen extends Screen {
         if (card()) {
             // A real 3D world behind you: the place you last paused in (six pictures all around, like Minecraft's
             // own title panorama), slowly turning and following the mouse; Minecraft's panorama until then.
-            // Cinematic: a series of slow camera moves, cutting between places (where you've played, newest
-            // first, and Minecraft's own panorama) and angles, with a dip to black between shots.
-            int[] scenes = Modules.TITLE_SCREEN.lobbyFromWorld.on() ? com.pandaclient.mod.util.LobbyPanorama.scenes() : new int[0];
-            int count = scenes.length + 1;
+            // Cinematic: a series of slow camera moves, cutting between places and angles, with a dip to black
+            // between shots. The places: ones you've played (newest first), then PandaClient's built-in places; Minecraft's own panorama
+            // only when there are none of either
+            int[] own = Modules.TITLE_SCREEN.lobbyFromWorld.on() ? com.pandaclient.mod.util.LobbyPanorama.scenes() : new int[0];
+            int[] builtin = com.pandaclient.mod.util.LobbyPanorama.builtins(minecraft);
+            int[] scenes = new int[own.length + builtin.length];
+            System.arraycopy(own, 0, scenes, 0, own.length);
+            System.arraycopy(builtin, 0, scenes, own.length, builtin.length);
+            int count = scenes.length == 0 ? 1 : scenes.length;
             int shot = (int) (t / SHOT);
             float local = t - shot * SHOT, p = local / SHOT, ease = p * p * (3 - 2 * p);
             int scene = shot % count;

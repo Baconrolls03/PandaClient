@@ -60,7 +60,19 @@ public final class LobbyPanorama {
 
     /** The standing spot of captured place {@code slot}, or null (older captures, or you were flying or swimming). */
     public static Stage stage(int slot) {
-        if (slot < 0 || slot >= SLOTS) return null;
+        if (slot >= SLOTS) {
+            Minecraft mc = Minecraft.getInstance();
+            String[] n = builtinNames(mc);
+            int b = slot - SLOTS;
+            if (b >= n.length) return null;
+            return BUILTIN_STAGES.computeIfAbsent(b, k -> {
+                try (var in = builtinFile(mc, n[k] + ".stage")) {
+                    String[] v = new String(in.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8).trim().split("\\s+");
+                    return new Stage(Float.parseFloat(v[0]), Float.parseFloat(v[1]));
+                } catch (Exception e) { return null; }
+            });
+        }
+        if (slot < 0) return null;
         long st = stamp(slot);
         if (STAGE_STAMPS[slot] != st) {
             STAGE_STAMPS[slot] = st;
@@ -232,6 +244,48 @@ public final class LobbyPanorama {
 
     public static boolean available() { return scenes().length > 0; }
 
+    // ---- built-in places (rendered by PandaClient's CI in a generated world, shipped in the mod)
+    private static String[] builtinNames;
+    private static final java.util.Map<Integer, CubeMap> BUILTIN_CUBES = new java.util.HashMap<>();
+    private static final java.util.Map<Integer, Stage> BUILTIN_STAGES = new java.util.HashMap<>();
+
+    private static String[] builtinNames(Minecraft mc) {
+        if (builtinNames == null) {
+            builtinNames = new String[0];
+            try {
+                var res = mc.getResourceManager().getResource(Identifier.fromNamespaceAndPath("pandaclient", "lobby/index.txt"));
+                if (res.isPresent()) try (var in = res.get().open()) {
+                    builtinNames = new String(in.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8).lines().map(String::trim).filter(x -> !x.isEmpty()).toArray(String[]::new);
+                }
+            } catch (Exception e) {
+                System.err.println("[PandaClient] Built-in lobby places unavailable: " + e);
+            }
+        }
+        return builtinNames;
+    }
+
+    /** Built-in places, as scene numbers for {@link #render} and {@link #stage} (from {@link #SLOTS} up). */
+    public static int[] builtins(Minecraft mc) {
+        String[] n = builtinNames(mc);
+        int[] out = new int[n.length];
+        for (int i = 0; i < n.length; i++) out[i] = SLOTS + i;
+        return out;
+    }
+
+    private static java.io.InputStream builtinFile(Minecraft mc, String file) throws IOException {
+        var res = mc.getResourceManager().getResource(Identifier.fromNamespaceAndPath("pandaclient", "lobby/" + file));
+        if (res.isEmpty()) throw new IOException("missing " + file);
+        return res.get().open();
+    }
+
+    private static NativeImage readJpg(java.io.InputStream in) throws IOException {
+        java.awt.image.BufferedImage b = javax.imageio.ImageIO.read(in);
+        if (b == null) throw new IOException("not a picture");
+        NativeImage img = new NativeImage(b.getWidth(), b.getHeight(), false);
+        for (int y = 0; y < b.getHeight(); y++) for (int x = 0; x < b.getWidth(); x++) img.setPixel(x, y, 0xFF000000 | b.getRGB(x, y));
+        return img;
+    }
+
     /** The straight-ahead picture of the newest place you played (for the HUD editor), or null. */
     public static Path previewFace() {
         int[] sc = scenes();
@@ -247,7 +301,8 @@ public final class LobbyPanorama {
 
     /** Draws captured place {@code slot} (pitch and yaw in degrees); false if it can't. */
     public static boolean render(Minecraft mc, int slot, float pitch, float yaw) {
-        if (failed || slot < 0 || slot >= SLOTS) return false;
+        if (slot >= SLOTS) return renderBuiltin(mc, slot - SLOTS, pitch, yaw);
+        if (failed || slot < 0) return false;
         try {
             long st = stamp(slot);
             if (st < 0) return false;
@@ -269,6 +324,34 @@ public final class LobbyPanorama {
         }
     }
 
+    private static boolean builtinFailed;
+
+    private static boolean renderBuiltin(Minecraft mc, int b, float pitch, float yaw) {
+        String[] n = builtinNames(mc);
+        if (builtinFailed || b < 0 || b >= n.length) return false;
+        try {
+            CubeMap cube = BUILTIN_CUBES.get(b);
+            if (cube == null) {
+                Identifier id = Identifier.fromNamespaceAndPath("pandaclient", "lobby_place_" + b);
+                String name = n[b];
+                LobbyCubeTexture tex = new LobbyCubeTexture(id, i -> {
+                    try (var in = builtinFile(mc, name + "_" + i + ".jpg")) { return readJpg(in); }
+                });
+                tex.apply(tex.loadContents(mc.getResourceManager()));
+                mc.getTextureManager().register(id, tex);
+                cube = new CubeMap(id);
+                BUILTIN_CUBES.put(b, cube);
+            }
+            clearDepth(mc);
+            cube.render(mc, pitch, yaw);
+            return true;
+        } catch (Throwable t) {
+            builtinFailed = true;
+            System.err.println("[PandaClient] Built-in lobby place unavailable: " + t);
+            return false;
+        }
+    }
+
     /** Minecraft's own title panorama at a chosen angle. */
     public static boolean renderVanilla(Minecraft mc, float pitch, float yaw) {
         if (vanillaFailed) return false;
@@ -284,17 +367,23 @@ public final class LobbyPanorama {
         }
     }
 
-    /** A cube map read from the captured pictures instead of a resource pack. */
+    /** Reads picture i (0..5) of a place. */
+    private interface Faces { NativeImage read(int i) throws IOException; }
+
+    /** A cube map read from the captured (or built-in) pictures instead of a resource pack. */
     private static final class LobbyCubeTexture extends CubeMapTexture {
-        private final int slot;
-        LobbyCubeTexture(Identifier id, int slot) { super(id); this.slot = slot; }
+        private final Faces faces;
+        LobbyCubeTexture(Identifier id, int slot) {
+            this(id, i -> { try (InputStream in = Files.newInputStream(face(slot, i))) { return NativeImage.read(in); } });
+        }
+        LobbyCubeTexture(Identifier id, Faces faces) { super(id); this.faces = faces; }
 
         @Override
         public TextureContents loadContents(ResourceManager rm) throws IOException {
             NativeImage out = null;
             int w = 0, h = 0;
             for (int layer = 0; layer < 6; layer++) {
-                try (InputStream in = Files.newInputStream(face(slot, ORDER[layer])); NativeImage img = NativeImage.read(in)) {
+                try (NativeImage img = faces.read(ORDER[layer])) {
                     if (out == null) { w = img.getWidth(); h = img.getHeight(); out = new NativeImage(w, h * 6, false); }
                     img.copyRect(out, 0, 0, 0, layer * h, w, h, false, true);
                 }
