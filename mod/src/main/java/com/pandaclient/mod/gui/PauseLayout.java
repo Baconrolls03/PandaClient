@@ -29,7 +29,7 @@ public final class PauseLayout {
     public static float k = 1f;
     private static float colX, colW;
 
-    private static final float HEAD_TOP = 175, MODEL = 270;
+    private static final float HEAD_TOP = 190, MODEL = 330;
     /** Canvas y of the top of the button column (the header sits above it). */
     private static float listTop = 262;
 
@@ -37,6 +37,8 @@ public final class PauseLayout {
     private static AbstractWidget back, leave, moreButton;
     private static final List<AbstractWidget> main = new ArrayList<>(), extra = new ArrayList<>(), icons = new ArrayList<>();
     private static boolean expanded;
+    /** Essential buttons drawn on wooden tiles. */
+    private static final List<AbstractWidget> iconTiles = new ArrayList<>();
     private static int screenW, screenH;
 
     /** Buttons people use; the rest go behind "More...". */
@@ -62,9 +64,22 @@ public final class PauseLayout {
         java.util.Comparator<AbstractWidget> order = Comparator.comparingInt(AbstractWidget::getY).thenComparingInt(AbstractWidget::getX);
         list.sort(order);
         icons.sort(order);
-        back = list.get(0);
-        leave = list.size() > 1 ? list.get(list.size() - 1) : null;
-        for (int i = 1; i < list.size() - 1; i++) (isMain(list.get(i)) ? main : extra).add(list.get(i));
+        // find Back to Game and Disconnect by name (other mods can add buttons above or below them)
+        back = find(list, "menu.returnToGame");
+        leave = find(list, "menu.disconnect");
+        if (leave == null) leave = find(list, "menu.returnToMenu");
+        if (back == null) back = list.get(0);
+        if (leave == null && list.size() > 1) leave = list.get(list.size() - 1);
+        if (leave == back) leave = null;
+        for (AbstractWidget b : list) if (b != back && b != leave) (isMain(b) ? main : extra).add(b);
+        // Essential's small buttons: only Invite, Social and Pictures under Disconnect; the rest behind More...
+        List<AbstractWidget> keep = new ArrayList<>();
+        for (AbstractWidget b : icons) if (wanted(b)) keep.add(b);
+        if (!keep.isEmpty()) {
+            for (AbstractWidget b : icons) if (!keep.contains(b)) extra.add(b);
+            icons.clear();
+            icons.addAll(keep);
+        }
         // order: Options, PandaClient Mods, Advancements, Statistics, Edit HUD
         main.sort(Comparator.comparingInt(b -> { String s = b.getMessage().getString().toLowerCase(Locale.ROOT); return s.contains("option") ? 0 : s.contains("advancement") ? 2 : 3; }));
         if (!ours.isEmpty()) main.add(Math.min(1, main.size()), ours.get(0));
@@ -73,6 +88,33 @@ public final class PauseLayout {
         expanded = false;
         screenW = w; screenH = h;
         layout();
+    }
+
+    private static AbstractWidget find(List<AbstractWidget> list, String key) {
+        String label = net.minecraft.network.chat.Component.translatable(key).getString();
+        for (AbstractWidget b : list) if (b.getMessage().getString().equals(label)) return b;
+        return null;
+    }
+
+    /** Text of a small button: its label, or its tooltip/narration when it only shows an icon. */
+    private static String words(AbstractWidget b) {
+        StringBuilder t = new StringBuilder(b.getMessage().getString());
+        try {
+            var n = new net.minecraft.client.gui.narration.NarrationElementOutput() {
+                public void add(net.minecraft.client.gui.narration.NarratedElementType type, net.minecraft.client.gui.narration.NarrationThunk<?> thunk) {
+                    t.append(' ').append(thunk.getText());
+                }
+                public net.minecraft.client.gui.narration.NarrationElementOutput nest() { return this; }
+            };
+            b.updateNarration(n);
+        } catch (Throwable ignored) {}
+        return t.toString().toLowerCase(Locale.ROOT);
+    }
+
+    private static boolean wanted(AbstractWidget b) {
+        String s = words(b);
+        return s.contains("invite") || s.contains("social") || s.contains("friend") || s.contains("picture")
+            || s.contains("screenshot") || s.contains("gallery");
     }
 
     /** Show or hide the less-used buttons. */
@@ -90,7 +132,7 @@ public final class PauseLayout {
             moreButton.setMessage(net.minecraft.network.chat.Component.literal(expanded ? "Less" : "More..."));
             half.add(moreButton);
         } else if (moreButton != null) moreButton.visible = false;
-        if (expanded) half.addAll(extra);
+        if (expanded) for (AbstractWidget b : extra) if (!(b.getWidth() < 90 && b.getHeight() <= 24)) half.add(b);
         for (AbstractWidget b : extra) b.visible = expanded;
         for (AbstractWidget b : icons) b.visible = true; // Essential's and servers' icon buttons: always shown
 
@@ -122,12 +164,23 @@ public final class PauseLayout {
         }
         if (leave != null) { place(leave, x, y, cw, row); y += row + gap; }
         {
-            int ix = x;
-            y += 2;
+            // small square wooden buttons, centred under Disconnect
+            int size = Math.max(16, Math.min(20, row)), step = size + 6;
+            int ix = x + (cw - (icons.size() * step - 6)) / 2;
+            y += 4;
+            iconTiles.clear();
             for (AbstractWidget b : icons) {
-                b.setX(ix); b.setY(y);
-                ix += b.getWidth() + 4;
-                if (ix > x + cw) { ix = x; y += b.getHeight() + 4; }
+                place(b, ix, y, size, size);
+                iconTiles.add(b);
+                ix += step;
+            }
+            // Essential's other small buttons (shown with More...) go in a row under those
+            y += size + 6;
+            int ex = x;
+            for (AbstractWidget b : extra) if (b.getWidth() < 90 && b.getHeight() <= 24) {
+                b.setX(ex); b.setY(y);
+                ex += b.getWidth() + 4;
+                if (ex > x + cw) { ex = x; y += b.getHeight() + 4; }
             }
         }
         primary = back;
@@ -165,6 +218,12 @@ public final class PauseLayout {
         for (int i = 0; i < 12; i++) c.d.rect(Math.round(sx + i * 7.5f), 0, Math.round(sx + i * 7.5f + 7.5f), 720, Draw.alpha(0xFF05070B, i * 10));
         c.d.rect(Math.round(sx + 90), 0, Math.round(vw) + 1, 720, 0x7805070B);
         c.end();
+        // wooden tiles under Essential's icon buttons, so they match the other buttons
+        for (AbstractWidget b : iconTiles) {
+            if (!b.visible) continue;
+            int bx = b.getX() - 2, by = b.getY() - 2;
+            ButtonStyle.woodTile(g, bx, by, b.getWidth() + 4, b.getHeight() + 4, b.isHovered());
+        }
     }
 
     public static void render(GuiGraphics g, int w, int h, int mx, int my) {
@@ -173,15 +232,28 @@ public final class PauseLayout {
         float vw = c.vw;
 
 
-        // Your character, large, following the mouse.
+        // Your character (your skin only, like the lobby: no held items), looking towards the mouse.
         float mx1 = vw * 0.12f, mx2 = Math.min(vw * 0.56f, colX - 30);
-        float centre = HEAD_TOP + 0.9f * MODEL;
+        float cx0 = (mx1 + mx2) / 2, H = MODEL, cy = HEAD_TOP + H / 2;
+        boolean drawn = false;
         if (mc.player != null) {
-            try {
-                InventoryScreen.renderEntityInInventoryFollowsMouse(g, Math.round(mx1 * k), Math.round(60 * k), Math.round(mx2 * k),
-                    Math.round((2 * centre - 60) * k), Math.round(MODEL * k), 0.0625f, mx, my, mc.player);
-            } catch (Throwable ignored) {
-                // another mod changed player rendering: just skip the model
+            float mcx = mx / k, mcy = my / k;
+            float look = Math.max(-0.6f, Math.min(0.6f, -(mcx - cx0) / vw * 1.8f));
+            float pitch = Math.max(-0.45f, Math.min(0.5f, (mcy - (cy - H * 0.4f)) / 720f * 1.4f));
+            float yaw = -12 - (mcx / vw - 0.5f) * 16;
+            float box = H * 1.7f;
+            drawn = LobbyPlayer.draw(mc, g, "pause", null, mc.player.getName().getString(),
+                Math.round((cx0 - box / 2) * k), Math.round((cy - H * 1.25f) * k), Math.round((cx0 + box / 2) * k), Math.round((cy + H * 0.53f) * k),
+                H * k, yaw, new LobbyPlayer.Pose(0, 0, 0, System.currentTimeMillis() / 1000f, look, pitch));
+            if (!drawn) {
+                try {
+                    int size = Math.round(H * 0.42f * k);
+                    int top = Math.round(HEAD_TOP * k), bot = Math.round((HEAD_TOP + H) * k);
+                    InventoryScreen.renderEntityInInventoryFollowsMouse(g, Math.round(mx1 * k), top, Math.round(mx2 * k), bot,
+                        size, 0.0625f, mx, my, mc.player);
+                } catch (Throwable ignored) {
+                    // another mod changed player rendering: just skip the model
+                }
             }
         }
 

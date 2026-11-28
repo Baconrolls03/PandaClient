@@ -31,6 +31,11 @@ public final class ButtonStyle {
 
     private static final net.minecraft.resources.Identifier PLANKS = net.minecraft.resources.Identifier.withDefaultNamespace("textures/block/oak_planks.png");
 
+    /** An empty wooden tile (behind other mods' small icon buttons in the pause menu). */
+    public static void woodTile(net.minecraft.client.gui.GuiGraphics g, int x, int y, int w, int h, boolean hover) {
+        wood(new Draw(g), x, y, w, h, "", true, hover, 3);
+    }
+
     /** A normal Minecraft-style button made of oak planks (the pause menu). kind 5 = Back to Game, 4 = leave. */
     static void wood(Draw d, int x, int y, int w, int h, String label, boolean active, boolean hover, int kind) {
         var g = d.g;

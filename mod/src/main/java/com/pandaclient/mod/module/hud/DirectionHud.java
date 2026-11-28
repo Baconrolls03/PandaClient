@@ -8,7 +8,7 @@ import com.pandaclient.mod.util.Game;
 public final class DirectionHud extends HudModule {
     public final Setting.Color color = add(new Setting.Color("color", "Colour", 0xFFFFFFFF));
     public final Setting.Color accent = add(new Setting.Color("accent", "Marker colour", 0xFF6EE08F));
-    public final Setting.Bool background = add(new Setting.Bool("background", "Background", true));
+    public final Setting.Bool background = add(new Setting.Bool("bg", "Background", false));
     public final Setting.Color backgroundColor = add(new Setting.Color("backgroundColor", "Background colour", 0x8C0F141C));
 
     public DirectionHud() { super("direction", "Direction", "A compass that shows which way you are facing.", false, 0.5, 0.0); }

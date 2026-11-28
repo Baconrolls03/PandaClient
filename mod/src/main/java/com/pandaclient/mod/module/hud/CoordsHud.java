@@ -9,7 +9,7 @@ public final class CoordsHud extends HudModule {
     public final Setting.Num decimals = add(new Setting.Num("decimals", "Decimals", 0, 0, 2, 1));
     public final Setting.Color textColor = add(new Setting.Color("textColor", "Text colour", 0xFFFFFFFF));
     public final Setting.Color labelColor = add(new Setting.Color("labelColor", "Label colour", 0xFF6EE08F));
-    public final Setting.Bool background = add(new Setting.Bool("background", "Background", true));
+    public final Setting.Bool background = add(new Setting.Bool("bg", "Background", false));
     public final Setting.Color backgroundColor = add(new Setting.Color("backgroundColor", "Background colour", 0x8C0F141C));
     public final Setting.Bool shadow = add(new Setting.Bool("shadow", "Text shadow", true));
 

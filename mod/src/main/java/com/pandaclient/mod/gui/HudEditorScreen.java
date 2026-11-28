@@ -113,12 +113,12 @@ public final class HudEditorScreen extends Screen {
         String[] tools = {"Reset all", "Copy layout", "Paste layout"};
         int tx = width / 2 - 123;
         for (int i = 0; i < tools.length; i++) Widgets.button(d, tx + i * 84, 4, 78, 16, tools[i], Widgets.in(mx, my, tx + i * 84, 4, 78, 16), false);
-        if (System.currentTimeMillis() - noteAt < 2500) d.centered(note, width / 2, 24, Theme.accent(), true);
+        if (System.currentTimeMillis() - noteAt < 2500) d.centered(note, width / 2, 46, Theme.accent(), true);
 
         // help bar
         String help = "Drag to move  •  Drag the corner to resize  •  Right-click: settings  •  Middle-click: reset  •  Esc: back";
         int hw = Draw.textWidth(help) + 16;
-        int hx = (width - hw) / 2, hy = height - 22;
+        int hx = (width - hw) / 2, hy = 26;
         if (hw > width - 8) { help = "Drag • Scroll to resize • Right-click: settings"; hw = Draw.textWidth(help) + 16; hx = (width - hw) / 2; }
         d.round(hx, hy, hx + hw, hy + 16, 0xE00F141C);
         d.text(help, hx + 8, hy + 4, Theme.MUTED, false);
