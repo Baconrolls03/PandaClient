@@ -124,9 +124,9 @@ public final class LobbyPanorama {
     /** Lets the next pause capture straight away (CI). */
     public static void allowNow() { lastCapture = 0; }
 
-    /** Takes the six pictures around you. Called when the pause menu opens. */
-    public static void capture(Minecraft mc) {
-        if (mc.player == null || mc.level == null || System.currentTimeMillis() - lastCapture < 45_000) return;
+    /** Takes the six pictures around you (called when the pause menu opens); the slot used, or -1. */
+    public static int capture(Minecraft mc) {
+        if (mc.player == null || mc.level == null || System.currentTimeMillis() - lastCapture < 45_000) return -1;
         lastCapture = System.currentTimeMillis();
         int slot = nextSlot();
         scenesCheckedAt = 0;
@@ -207,7 +207,12 @@ public final class LobbyPanorama {
             target.resize(ow, oh);
             mc.gameRenderer.setPanoramicScreenshotParameters(null);
         }
+        return slot;
     }
+
+    /** The picture files of a captured place (6 faces) and its standing spot file. */
+    public static Path facePath(int slot, int i) { return face(slot, i); }
+    public static Path stagePath(int slot) { return stageFile(slot); }
 
     /** Captured places (slot numbers), newest first. */
     public static int[] scenes() {

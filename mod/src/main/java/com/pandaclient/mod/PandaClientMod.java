@@ -112,6 +112,7 @@ public final class PandaClientMod implements ClientModInitializer {
 
     private static void tick(Minecraft mc) {
         com.pandaclient.mod.util.CiCheck.tick(mc);
+        com.pandaclient.mod.util.CiScenes.tick(mc);
         Config.tick();
         Combat.tick();
         if (mc.level == null) Config.writePresence(null);

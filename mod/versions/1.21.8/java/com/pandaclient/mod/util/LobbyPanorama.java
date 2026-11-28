@@ -5,7 +5,9 @@ import net.minecraft.client.Minecraft;
 /** On this Minecraft version the lobby uses Minecraft's own 3D panorama. */
 public final class LobbyPanorama {
     private LobbyPanorama() {}
-    public static void capture(Minecraft mc) {}
+    public static int capture(Minecraft mc) { return -1; }
+    public static java.nio.file.Path facePath(int slot, int i) { return null; }
+    public static java.nio.file.Path stagePath(int slot) { return null; }
     public static void allowNow() {}
     public static boolean available() { return false; }
     public static java.nio.file.Path previewFace() { return null; }
