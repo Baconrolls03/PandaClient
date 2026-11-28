@@ -26,6 +26,14 @@ final class Widgets {
         return s + "…";
     }
 
+    /** Shorten to fit in Minecraft's own font. */
+    static String ellipsizeMc(String s, int maxW) {
+        var font = net.minecraft.client.Minecraft.getInstance().font;
+        if (font.width(s) <= maxW) return s;
+        while (!s.isEmpty() && font.width(s + "...") > maxW) s = s.substring(0, s.length() - 1);
+        return s + "...";
+    }
+
     /** Word-wrap into at most {@code lines} lines. */
     static java.util.List<String> wrap(String s, int maxW, int lines) {
         java.util.List<String> out = new java.util.ArrayList<>();

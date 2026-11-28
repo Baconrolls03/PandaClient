@@ -29,33 +29,54 @@ public final class PauseLayout {
     public static float k = 1f;
     private static float colX, colW;
 
-    private static final float HEAD_TOP = 150, MODEL = 430;
+    private static final float HEAD_TOP = 175, MODEL = 270;
+    /** Canvas y of the top of the button column (the header sits above it). */
+    private static float listTop = 262;
 
-    public static void apply(List<AbstractWidget> buttons, AbstractWidget pandaButton, int w, int h) {
-        List<AbstractWidget> list = new ArrayList<>();
+    /**
+     * Lays the menu out as a column of normal-sized buttons on the right. Small icon buttons other mods or
+     * the server add keep their size and sit in a row under the column.
+     */
+    public static void apply(List<AbstractWidget> buttons, List<AbstractWidget> ours, int w, int h) {
+        List<AbstractWidget> list = new ArrayList<>(), icons = new ArrayList<>();
         for (AbstractWidget b : buttons) {
-            if (b == pandaButton || !b.visible) continue;
-            if (b instanceof net.minecraft.client.gui.components.AbstractButton) list.add(b);
+            if (ours.contains(b) || !b.visible) continue;
+            if (b instanceof net.minecraft.client.gui.components.AbstractButton) (b.getWidth() < 90 ? icons : list).add(b);
             else if (b instanceof net.minecraft.client.gui.components.StringWidget) b.visible = false; // the "Game Menu" title: our header replaces it
         }
         if (list.isEmpty()) return;
-        list.sort(Comparator.comparingInt(AbstractWidget::getY).thenComparingInt(AbstractWidget::getX));
-        if (pandaButton != null) list.add(list.size() > 1 ? list.size() - 1 : list.size(), pandaButton);
+        java.util.Comparator<AbstractWidget> order = Comparator.comparingInt(AbstractWidget::getY).thenComparingInt(AbstractWidget::getX);
+        list.sort(order);
+        icons.sort(order);
+        // PandaClient's buttons go just above Disconnect
+        list.addAll(list.size() > 1 ? list.size() - 1 : list.size(), ours);
         k = Canvas.scaleFor(h);
-        float vw = w / k;
-        colW = Math.min(315, vw * 0.27f);
-        colX = vw - colW - vw * 0.06f;
-        float y = 262, step = Math.min(33, (690 - 322) / (float) Math.max(1, list.size() - 1));
+        int cw = Math.min(204, Math.max(150, w / 3)), x = w - cw - Math.max(16, Math.round(w * 0.06f));
+        int row = 20, gap = 4, first = 24;
+        int total = first + 6 + (list.size() - 1) * (row + gap) + (icons.isEmpty() ? 0 : 6 + 20);
+        int y = Math.max(Math.round(110 * k), (h - total) / 2 + Math.round(30 * k));
+        listTop = y / k;
+        colX = x / k;
+        colW = cw / k;
         rows.clear();
         for (int i = 0; i < list.size(); i++) {
             AbstractWidget b = list.get(i);
-            float bh = i == 0 ? 44 : Math.min(30, step - 2);
-            b.setX(Math.round(colX * k));
-            b.setWidth(Math.round(colW * k));
-            b.setY(Math.round(y * k));
-            b.setHeight(Math.max(8, Math.round(bh * k)));
+            int bh = i == 0 ? first : row;
+            b.setX(x);
+            b.setWidth(cw);
+            b.setY(y);
+            b.setHeight(bh);
             if (i > 0) rows.add(b);
-            y = i == 0 ? 322 : y + step;
+            y += bh + (i == 0 ? 6 : gap);
+        }
+        // icon buttons (other mods, server links): a row under the column, at their own size
+        int ix = x;
+        y += 2;
+        for (AbstractWidget b : icons) {
+            b.setX(ix);
+            b.setY(y);
+            ix += b.getWidth() + 4;
+            if (ix > x + cw) { ix = x; y += b.getHeight() + 4; }
         }
         primary = list.get(0);
         danger = list.get(list.size() - 1);
@@ -125,8 +146,9 @@ public final class PauseLayout {
         boolean single = mc.getSingleplayerServer() != null;
         String place = single ? mc.getSingleplayerServer().getWorldData().getLevelName()
                 : mc.getCurrentServer() != null ? mc.getCurrentServer().name : "Multiplayer";
-        c.spaced(single ? "SINGLEPLAYER" : "MULTIPLAYER", colX, 180, 9, 1.2f, Canvas.MUTED, true);
-        c.txt(Widgets.ellipsize(place, Math.round(colW * 8 / 18f)), colX, 203, 18, 0xFFFFFFFF, true);
+        float hy = listTop - 82;
+        c.spaced(single ? "SINGLEPLAYER" : "MULTIPLAYER", colX, hy, 9, 1.2f, Canvas.MUTED, true);
+        c.txt(Widgets.ellipsize(place, Math.round(colW * 8 / 18f)), colX, hy + 23, 18, 0xFFFFFFFF, true);
         String sub;
         if (single) {
             String mode = mc.gameMode != null ? cap(mc.gameMode.getPlayerMode().getName()) : "";
@@ -136,8 +158,8 @@ public final class PauseLayout {
             int players = mc.getConnection() != null ? mc.getConnection().getOnlinePlayers().size() : 0;
             sub = (mc.getCurrentServer() != null ? mc.getCurrentServer().ip + "  ·  " : "") + players + (players == 1 ? " player" : " players");
         }
-        c.txt(Widgets.ellipsize(sub, Math.round(colW * 8 / 11f)), colX, 225, 11, Canvas.MUTED, false);
-        if (single) c.txt("Game paused", colX, 243, 10, Canvas.DIM, false);
+        c.txt(Widgets.ellipsize(sub, Math.round(colW * 8 / 11f)), colX, hy + 45, 11, Canvas.MUTED, false);
+        if (single) c.txt("Game paused", colX, hy + 63, 10, Canvas.DIM, false);
 
         // Bottom left: how to open PandaClient, and performance.
         float x1 = 22, x2 = 292;
