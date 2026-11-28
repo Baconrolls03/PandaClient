@@ -12,4 +12,9 @@ public final class LobbyPanorama {
     public static int[] scenes() { return new int[0]; }
     public static boolean render(Minecraft mc, int slot, float pitch, float yaw) { return false; }
     public static boolean renderVanilla(Minecraft mc, float pitch, float yaw) { return false; }
+    public record Stage(float dist, float drop) {}
+    public static Stage stage(int slot) { return null; }
+    public static float yawSign = 1f, pitchSign = 1f;
+    public static float[] project(float right, float up, float forward, float pitch, float yaw, float aspect) { return null; }
+    public static float pitchFor(Stage s, float screenY) { return 0; }
 }

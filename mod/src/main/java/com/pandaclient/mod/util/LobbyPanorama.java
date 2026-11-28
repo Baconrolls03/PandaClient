@@ -48,6 +48,60 @@ public final class LobbyPanorama {
 
     private static Path dir() { return FabricLoader.getInstance().getGameDir().resolve("pandaclient"); }
     private static Path face(int slot, int i) { return dir().resolve("lobby_scene_" + slot + "_" + i + ".png"); }
+    private static Path stageFile(int slot) { return dir().resolve("lobby_scene_" + slot + ".stage"); }
+
+    /**
+     * Where you were standing in a captured place, seen from its camera: {@code dist} blocks straight ahead and
+     * {@code drop} blocks below the camera. The lobby puts the characters there, on the blocks.
+     */
+    public record Stage(float dist, float drop) {}
+    private static final Stage[] STAGES = new Stage[SLOTS];
+    private static final long[] STAGE_STAMPS = new long[SLOTS];
+
+    /** The standing spot of captured place {@code slot}, or null (older captures, or you were flying or swimming). */
+    public static Stage stage(int slot) {
+        if (slot < 0 || slot >= SLOTS) return null;
+        long st = stamp(slot);
+        if (STAGE_STAMPS[slot] != st) {
+            STAGE_STAMPS[slot] = st;
+            STAGES[slot] = null;
+            try {
+                String[] v = Files.readString(stageFile(slot)).trim().split("\\s+");
+                STAGES[slot] = new Stage(Float.parseFloat(v[0]), Float.parseFloat(v[1]));
+            } catch (Exception ignored) {}
+        }
+        return STAGES[slot];
+    }
+
+    /** Vertical field of view of Minecraft's panorama (degrees). */
+    private static final double FOV = 85;
+    /** Which way the panorama turns for positive yaw and pitch (checked in CI with a marker block). */
+    public static float yawSign = 1f, pitchSign = 1f;
+
+    /**
+     * Where a point {@code right}, {@code up} and {@code forward} blocks from a place's camera shows on screen
+     * when the place is drawn at {@code pitch}/{@code yaw}: x and y from -1 to 1 (y down), or null if behind you.
+     */
+    public static float[] project(float right, float up, float forward, float pitch, float yaw, float aspect) {
+        double ps = Math.toRadians(yaw * yawSign), th = Math.toRadians(pitch * pitchSign);
+        double x1 = right * Math.cos(ps) - forward * Math.sin(ps);
+        double z1 = right * Math.sin(ps) + forward * Math.cos(ps);
+        double y2 = up * Math.cos(th) + z1 * Math.sin(th);
+        double z2 = -up * Math.sin(th) + z1 * Math.cos(th);
+        if (z2 < 0.05) return null;
+        double t = Math.tan(Math.toRadians(FOV / 2));
+        return new float[]{(float) (x1 / (z2 * t * aspect)), (float) (-y2 / (z2 * t))};
+    }
+
+    /** The pitch that puts the standing spot {@code screenY} (-1..1, down) on screen. */
+    public static float pitchFor(Stage s, float screenY) {
+        double feet = Math.atan2(s.drop(), s.dist());
+        double want = Math.atan(screenY * Math.tan(Math.toRadians(FOV / 2)));
+        return (float) Math.toDegrees(feet - want) * pitchSign;
+    }
+
+    /** How far behind you (blocks) the camera goes when it captures a place, when there's room. */
+    private static final double BACK = 2.3, UP = 0.1;
 
     private static long stamp(int slot) {
         long st = 0;
@@ -78,8 +132,29 @@ public final class LobbyPanorama {
         RenderTarget target = mc.getMainRenderTarget();
         int ow = win.getWidth(), oh = win.getHeight();
         float xr = p.getXRot(), yr = p.getYRot(), xro = p.xRotO, yro = p.yRotO;
+        double px = p.getX(), py = p.getY(), pz = p.getZ(), pxo = p.xo, pyo = p.yo, pzo = p.zo, pxOld = p.xOld, pyOld = p.yOld, pzOld = p.zOld;
+        boolean moved = false;
         try {
             Files.createDirectories(dir());
+            // Step the camera back (and a touch up) so the place where you stand is in front of it, on the
+            // ground; stop short of walls. The lobby then puts your character on that spot.
+            Files.deleteIfExists(stageFile(slot));
+            if (p.onGround() && !p.isInWater() && !p.isPassenger()) {
+                double fx = -Math.sin(Math.toRadians(yr)), fz = Math.cos(Math.toRadians(yr));
+                net.minecraft.world.phys.Vec3 eye = p.getEyePosition();
+                net.minecraft.world.phys.Vec3 to = eye.add(-fx * (BACK + 0.6), UP, -fz * (BACK + 0.6));
+                var hit = mc.level.clip(new net.minecraft.world.level.ClipContext(eye, to,
+                    net.minecraft.world.level.ClipContext.Block.VISUAL, net.minecraft.world.level.ClipContext.Fluid.NONE, p));
+                double room = hit.getType() == net.minecraft.world.phys.HitResult.Type.MISS ? BACK + 0.6 : hit.getLocation().distanceTo(eye);
+                double back = Math.min(BACK, room - 0.6);
+                if (back >= 1.2) {
+                    double up = UP * back / BACK;
+                    p.setPos(px - fx * back, py + up, pz - fz * back);
+                    p.xo = p.xOld = p.getX(); p.yo = p.yOld = p.getY(); p.zo = p.zOld = p.getZ();
+                    moved = true;
+                    Files.writeString(stageFile(slot), String.format(java.util.Locale.ROOT, "%.3f %.3f", back, p.getEyeHeight() + up));
+                }
+            }
             mc.gameRenderer.setRenderBlockOutline(false);
             mc.gameRenderer.setPanoramicScreenshotParameters(new PanoramicScreenshotParameters(new Vector3f(mc.gameRenderer.getMainCamera().forwardVector())));
             win.setWidth(SIZE);
@@ -112,6 +187,11 @@ public final class LobbyPanorama {
         } catch (Throwable t) {
             System.err.println("[PandaClient] Lobby panorama capture failed: " + t);
         } finally {
+            if (moved) {
+                p.setPos(px, py, pz);
+                p.xo = pxo; p.yo = pyo; p.zo = pzo;
+                p.xOld = pxOld; p.yOld = pyOld; p.zOld = pzOld;
+            }
             p.setXRot(xr);
             p.setYRot(yr);
             p.xRotO = xro;

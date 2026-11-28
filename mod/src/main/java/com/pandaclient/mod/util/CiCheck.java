@@ -126,6 +126,12 @@ public final class CiCheck {
             case 285 -> log("shot freelook");
             case 340 -> { forceFreelook = false; Modules.TOGGLE_SPRINT.sprinting = false; mc.setScreen(MenuScreen.openAt(null, Modules.CROSSHAIR)); log("shot crosshair-settings"); }
             case 420 -> { mc.setScreen(new HudEditorScreen(null)); log("shot hud-world"); }
+            case 450 -> {
+                // a gold pillar 2 blocks to your right, in daylight: the lobby's red cross should land on it
+                cmd.sendCommand("time set noon");
+                cmd.sendCommand("execute rotated ~ 0 run fill ^-2 ^ ^ ^-2 ^2 ^ minecraft:gold_block");
+                log("stage test: onGround=" + mc.player.onGround() + " yaw=" + mc.player.getYRot());
+            }
             case 470 -> { mc.setScreen(new net.minecraft.client.gui.screens.PauseScreen(true)); log("shot pause"); }
             case 480 -> {
                 StringBuilder b = new StringBuilder();

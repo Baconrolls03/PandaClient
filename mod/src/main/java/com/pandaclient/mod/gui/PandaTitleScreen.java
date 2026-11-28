@@ -85,6 +85,14 @@ public final class PandaTitleScreen extends Screen {
             float startYaw = (shot * 137.5f + 20) % 360, sweep = (shot % 2 == 0 ? 1 : -1) * 32;
             float yaw = startYaw + sweep * ease + (mouseX - 0.5f) * 12f;
             float pitch = 8f + 5f * (float) Math.sin(shot * 1.7f) + (ease - 0.5f) * 5f + (mouseY - 0.5f) * 6f;
+            // A place where you were standing on the ground: look at that spot, so everyone stands on its blocks,
+            // with a slow sideways drift (the characters move with the ground).
+            var st = scene < scenes.length ? com.pandaclient.mod.util.LobbyPanorama.stage(scenes[scene]) : null;
+            if (st != null) {
+                yaw = (shot % 2 == 0 ? 1 : -1) * 16f * (ease - 0.5f) + (mouseX - 0.5f) * 6f;
+                pitch = com.pandaclient.mod.util.LobbyPanorama.pitchFor(st, 0.78f) + (mouseY - 0.5f) * 3f;
+            }
+            stage = st; stageYaw = yaw; stagePitch = pitch;
             boolean own = scene < scenes.length
                 ? com.pandaclient.mod.util.LobbyPanorama.render(minecraft, scenes[scene], pitch, yaw)
                 : com.pandaclient.mod.util.LobbyPanorama.renderVanilla(minecraft, pitch, yaw);
@@ -210,7 +218,7 @@ public final class PandaTitleScreen extends Screen {
         }
 
         }
-        if (card()) { drawBodies(g, mx, my); lobby(g, mx, my, ease); return; }
+        if (card()) { drawBodies(g, mx, my); ciMarkers(g); lobby(g, mx, my, ease); return; }
         // footer
         int mods = FabricLoader.getInstance().getAllMods().size();
         int fa = (int) (170 * ease);
@@ -291,6 +299,27 @@ public final class PandaTitleScreen extends Screen {
         return others.size() > MATE_DX.length ? others.subList(0, MATE_DX.length) : others;
     }
 
+    /** The place on screen now, when the characters stand on its blocks (null: they stand in front of it). */
+    private com.pandaclient.mod.util.LobbyPanorama.Stage stage;
+    private float stageYaw, stagePitch;
+    /** Where you and party members stand on the blocks: blocks to the right of and behind your spot. */
+    private static final float[][] STAND = {{0, 0}, {-1.25f, 0.45f}, {1.25f, 0.45f}, {-2.3f, 1.2f}, {2.3f, 1.2f}};
+
+    /** Canvas point of a spot {@code right}/{@code back} blocks from where you stood, {@code up} blocks above the ground. */
+    private float[] onStage(float right, float back, float up) {
+        var q = com.pandaclient.mod.util.LobbyPanorama.project(right, up - stage.drop(), stage.dist() + back, stagePitch, stageYaw, vw / vh);
+        return q == null ? null : new float[]{vw / 2 + q[0] * vw / 2, vh / 2 + q[1] * vh / 2};
+    }
+
+    /** Home x, feet y and height of character i (0 = you) standing on the blocks, or null. */
+    private float[] standing(int i) {
+        if (stage == null || i >= STAND.length) return null;
+        float[] f = onStage(STAND[i][0], STAND[i][1], 0), h = onStage(STAND[i][0], STAND[i][1], 1.8f);
+        if (f == null || h == null || f[1] - h[1] < 40) return null;
+        float height = Math.min(560, (f[1] - h[1]) / 0.913f);
+        return new float[]{f[0], f[1] + 0.0435f * height, height};
+    }
+
     private float[] mateBox(int i) {
         float[] b = playerBox();
         float h = b[3] * MATE_SCALE[i], w = h * 0.55f;
@@ -330,6 +359,8 @@ public final class PandaTitleScreen extends Screen {
         float[] b = playerBox();
         Body you = bodies.computeIfAbsent("you", k -> new Body("you", null, name(), true, true));
         you.homeX = b[0] + b[2] / 2; you.feet = b[1] + b[3]; you.height = b[3];
+        float[] on = standing(0);
+        if (on != null) { you.homeX = on[0]; you.feet = on[1]; you.height = on[2]; }
         out.add(you);
         var list = mateList();
         for (int i = 0; i < list.size(); i++) {
@@ -337,6 +368,8 @@ public final class PandaTitleScreen extends Screen {
             float[] mb = mateBox(i);
             Body body = bodies.computeIfAbsent(m.uuid().toString(), k -> new Body(k, m.uuid(), m.name(), m.leader(), m.online()));
             body.homeX = mb[0] + mb[2] / 2; body.feet = mb[1] + mb[3]; body.height = mb[3];
+            float[] mon = standing(i + 1);
+            if (mon != null) { body.homeX = mon[0]; body.feet = mon[1]; body.height = mon[2]; }
             out.add(body);
         }
         return out;
@@ -459,6 +492,20 @@ public final class PandaTitleScreen extends Screen {
             float yaw = b.face - 12 - (mouseX / k / vw - 0.5f) * 16;
             LobbyPlayer.draw(minecraft, g, b.key, b.id, b.name, x0, y0, x1, y1, b.height * k, yaw,
                 new LobbyPlayer.Pose(b.ang, b.held, b.walk, time + b.key.hashCode() % 7, b.held > 0.5f ? 0 : look, b.held > 0.5f ? 0.25f : pitch));
+        }
+    }
+
+    /** CI: crosses where the test world's gold pillar (2 blocks to your right) and your spot should show. */
+    private void ciMarkers(GuiGraphics g) {
+        if (!com.pandaclient.mod.util.CiCheck.ON || stage == null) return;
+        Draw md = new Draw(g);
+        float[][] pts = {onStage(-2f, 0, 1.5f), onStage(2f, 0, 1.5f), onStage(0, 0, 0)};
+        int[] cols = {0xFF00FFFF, 0xFFFF0000, 0xFF00FF00};
+        for (int i = 0; i < pts.length; i++) {
+            if (pts[i] == null) continue;
+            int x = Math.round(pts[i][0] * k), y = Math.round(pts[i][1] * k);
+            md.rect(x - 8, y - 1, x + 8, y + 1, cols[i]);
+            md.rect(x - 1, y - 8, x + 1, y + 8, cols[i]);
         }
     }
 
