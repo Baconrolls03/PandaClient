@@ -112,8 +112,34 @@ public final class LobbyPanorama {
         return (float) Math.toDegrees(feet - want) * pitchSign;
     }
 
-    /** How far behind you (blocks) the camera goes when it captures a place, when there's room. */
-    private static final double BACK = 2.3, UP = 0.1;
+    /** How far in front of you (blocks) the lobby tries to stand everyone, best first. */
+    private static final double[] AHEAD = {2.6, 3.2, 2.2, 3.8, 4.5};
+
+    /** Solid ground {@link #AHEAD} of you with room to stand and nothing between your eyes and it, or null. */
+    private static Stage findStage(Minecraft mc, LocalPlayer p, float yaw) {
+        var level = mc.level;
+        double fx = -Math.sin(Math.toRadians(yaw)), fz = Math.cos(Math.toRadians(yaw));
+        net.minecraft.world.phys.Vec3 eye = p.getEyePosition();
+        int feet = net.minecraft.util.Mth.floor(p.getY());
+        for (double d : AHEAD) {
+            double sx = p.getX() + fx * d, sz = p.getZ() + fz * d;
+            for (int y = feet + 2; y >= feet - 3; y--) {
+                var b = net.minecraft.core.BlockPos.containing(sx, y, sz);
+                var shape = level.getBlockState(b).getCollisionShape(level, b);
+                if (shape.isEmpty()) continue;
+                var up1 = b.above(); var up2 = b.above(2);
+                if (!level.getBlockState(up1).getCollisionShape(level, up1).isEmpty() || !level.getBlockState(up2).getCollisionShape(level, up2).isEmpty()
+                        || !level.getFluidState(up1).isEmpty()) break;
+                double ground = b.getY() + shape.max(net.minecraft.core.Direction.Axis.Y);
+                var target = new net.minecraft.world.phys.Vec3(sx, ground + 0.9, sz);
+                var hit = level.clip(new net.minecraft.world.level.ClipContext(eye, target,
+                    net.minecraft.world.level.ClipContext.Block.VISUAL, net.minecraft.world.level.ClipContext.Fluid.NONE, p));
+                if (hit.getType() != net.minecraft.world.phys.HitResult.Type.MISS) break;
+                return new Stage((float) d, (float) (eye.y - ground));
+            }
+        }
+        return null;
+    }
 
     private static long stamp(int slot) {
         long st = 0;
@@ -147,28 +173,13 @@ public final class LobbyPanorama {
         RenderTarget target = mc.getMainRenderTarget();
         int ow = win.getWidth(), oh = win.getHeight();
         float xr = p.getXRot(), yr = p.getYRot(), xro = p.xRotO, yro = p.yRotO;
-        double px = p.getX(), py = p.getY(), pz = p.getZ(), pxo = p.xo, pyo = p.yo, pzo = p.zo, pxOld = p.xOld, pyOld = p.yOld, pzOld = p.zOld;
-        boolean moved = false;
         try {
             Files.createDirectories(dir());
-            // Step the camera back (and a touch up) so the place where you stand is in front of it, on the
-            // ground; stop short of walls. The lobby then puts your character on that spot.
+            // Find real ground a couple of blocks in front of you, in plain view: the lobby stands everyone there.
             Files.deleteIfExists(stageFile(slot));
             if (p.onGround() && !p.isInWater() && !p.isPassenger()) {
-                double fx = -Math.sin(Math.toRadians(yr)), fz = Math.cos(Math.toRadians(yr));
-                net.minecraft.world.phys.Vec3 eye = p.getEyePosition();
-                net.minecraft.world.phys.Vec3 to = eye.add(-fx * (BACK + 0.6), UP, -fz * (BACK + 0.6));
-                var hit = mc.level.clip(new net.minecraft.world.level.ClipContext(eye, to,
-                    net.minecraft.world.level.ClipContext.Block.VISUAL, net.minecraft.world.level.ClipContext.Fluid.NONE, p));
-                double room = hit.getType() == net.minecraft.world.phys.HitResult.Type.MISS ? BACK + 0.6 : hit.getLocation().distanceTo(eye);
-                double back = Math.min(BACK, room - 0.6);
-                if (back >= 1.2) {
-                    double up = UP * back / BACK;
-                    p.setPos(px - fx * back, py + up, pz - fz * back);
-                    p.xo = p.xOld = p.getX(); p.yo = p.yOld = p.getY(); p.zo = p.zOld = p.getZ();
-                    moved = true;
-                    Files.writeString(stageFile(slot), String.format(java.util.Locale.ROOT, "%.3f %.3f", back, p.getEyeHeight() + up));
-                }
+                Stage st = findStage(mc, p, yr);
+                if (st != null) Files.writeString(stageFile(slot), String.format(java.util.Locale.ROOT, "%.3f %.3f", st.dist(), st.drop()));
             }
             mc.gameRenderer.setRenderBlockOutline(false);
             mc.gameRenderer.setPanoramicScreenshotParameters(new PanoramicScreenshotParameters(new Vector3f(mc.gameRenderer.getMainCamera().forwardVector())));
@@ -187,8 +198,6 @@ public final class LobbyPanorama {
                 p.yRotO = p.getYRot();
                 p.xRotO = p.getXRot();
                 mc.gameRenderer.updateCamera(DeltaTracker.ONE);
-                if (i == 0 && CiCheck.ON) System.out.println("[PandaClient CI] capture: player " + p.position() + " was " + px + "," + py + "," + pz
-                    + " camera " + mc.gameRenderer.getMainCamera().position() + " yaw " + yr + " moved " + moved);
                 mc.gameRenderer.renderLevel(DeltaTracker.ONE);
                 Path out = face(slot, i);
                 Screenshot.takeScreenshot(target, img -> {
@@ -204,11 +213,6 @@ public final class LobbyPanorama {
         } catch (Throwable t) {
             System.err.println("[PandaClient] Lobby panorama capture failed: " + t);
         } finally {
-            if (moved) {
-                p.setPos(px, py, pz);
-                p.xo = pxo; p.yo = pyo; p.zo = pzo;
-                p.xOld = pxOld; p.yOld = pyOld; p.zOld = pzOld;
-            }
             p.setXRot(xr);
             p.setYRot(yr);
             p.xRotO = xro;

@@ -563,12 +563,12 @@ public final class PandaTitleScreen extends Screen {
         }
     }
 
-    /** CI: crosses where the test world's gold pillar (2 blocks to your right) and your spot should show. */
+    /** CI: crosses where the test world's gold pillar (3 ahead, 2 right of where you stood) and the standing spot should show. */
     private void ciMarkers(GuiGraphics g) {
         if (!com.pandaclient.mod.util.CiCheck.ON || stage == null) return;
         Draw md = new Draw(g);
-        float[][] pts = {onStage(-2f, 0, 1.5f), onStage(2f, 0, 1.5f), onStage(0, 0, 0)};
-        int[] cols = {0xFF00FFFF, 0xFFFF0000, 0xFF00FF00};
+        float[][] pts = {onStage(2f, 3f - stage.dist(), 1.5f), onStage(0, 0, 0)};
+        int[] cols = {0xFFFF0000, 0xFF00FF00};
         for (int i = 0; i < pts.length; i++) {
             if (pts[i] == null) continue;
             int x = Math.round(pts[i][0] * k), y = Math.round(pts[i][1] * k);

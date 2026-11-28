@@ -127,9 +127,9 @@ public final class CiCheck {
             case 340 -> { forceFreelook = false; Modules.TOGGLE_SPRINT.sprinting = false; mc.setScreen(MenuScreen.openAt(null, Modules.CROSSHAIR)); log("shot crosshair-settings"); }
             case 420 -> { mc.setScreen(new HudEditorScreen(null)); log("shot hud-world"); }
             case 450 -> {
-                // a gold pillar 2 blocks to your right, in daylight: the lobby's red cross should land on it
+                // a gold pillar 3 blocks ahead and 2 to your right, in daylight: the lobby's red cross should land on it
                 cmd.sendCommand("time set noon");
-                cmd.sendCommand("execute rotated ~ 0 run fill ^-2 ^ ^ ^-2 ^2 ^ minecraft:gold_block");
+                cmd.sendCommand("execute rotated ~ 0 run fill ^-2 ^ ^3 ^-2 ^2 ^3 minecraft:gold_block");
                 com.pandaclient.mod.util.LobbyPanorama.allowNow();
                 log("stage test: onGround=" + mc.player.onGround() + " yaw=" + mc.player.getYRot());
             }
