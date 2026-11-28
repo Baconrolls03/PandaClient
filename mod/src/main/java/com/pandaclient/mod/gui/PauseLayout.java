@@ -85,18 +85,18 @@ public final class PauseLayout {
         int w = screenW, h = screenH;
         k = Canvas.scaleFor(h);
         List<AbstractWidget> half = new ArrayList<>(main);
-        if (moreButton != null && (!extra.isEmpty() || !icons.isEmpty())) {
+        if (moreButton != null && !extra.isEmpty()) {
             moreButton.visible = true;
             moreButton.setMessage(net.minecraft.network.chat.Component.literal(expanded ? "Less" : "More..."));
             half.add(moreButton);
         } else if (moreButton != null) moreButton.visible = false;
         if (expanded) half.addAll(extra);
         for (AbstractWidget b : extra) b.visible = expanded;
-        for (AbstractWidget b : icons) b.visible = expanded;
+        for (AbstractWidget b : icons) b.visible = true; // Essential's and servers' icon buttons: always shown
 
         int cw = Math.min(204, Math.max(150, w / 3)), x = w - cw - Math.max(16, Math.round(w * 0.06f));
         int pairs = (half.size() + 1) / 2;
-        int row = 20, gap = 4, first = 24, iconsH = expanded && !icons.isEmpty() ? 26 : 0;
+        int row = 20, gap = 4, first = 24, iconsH = !icons.isEmpty() ? 26 : 0;
         int top = Math.max(Math.round(110 * k), 36), bottom = h - Math.max(10, Math.round(40 * k));
         int rows = pairs + (leave != null ? 1 : 0);
         while (first + 6 + rows * (row + gap) + iconsH > bottom - top && (row > 14 || gap > 2)) {
@@ -121,7 +121,7 @@ public final class PauseLayout {
             if (i % 2 == 1 || alone) y += row + gap;
         }
         if (leave != null) { place(leave, x, y, cw, row); y += row + gap; }
-        if (expanded) {
+        {
             int ix = x;
             y += 2;
             for (AbstractWidget b : icons) {

@@ -49,8 +49,9 @@ public final class PandaClientMod implements ClientModInitializer {
             for (var b : buttons) if (b.getWidth() >= 150 && (top == null || b.getY() < top.getY())) top = b;
             int bx = top != null ? top.getX() - 78 : 4, by = top != null ? top.getY() : 4;
             if (bx < 2) { bx = 4; by = 4; }
-            var panda = net.minecraft.client.gui.components.Button.builder(net.minecraft.network.chat.Component.literal("PandaClient"),
-                b -> client.setScreen(new MenuScreen(screen))).bounds(bx, by, 74, 20).build();
+            boolean backToLobby = title && screen == com.pandaclient.mod.gui.PandaTitleScreen.vanillaTitle;
+            var panda = net.minecraft.client.gui.components.Button.builder(net.minecraft.network.chat.Component.literal(backToLobby ? "Lobby" : "PandaClient"),
+                b -> client.setScreen(backToLobby ? new com.pandaclient.mod.gui.PandaTitleScreen() : new MenuScreen(screen))).bounds(bx, by, 74, 20).build();
             buttons.add(panda);
             // PandaClient pause menu: player on the left, the menu as a list on the right.
             if (screen instanceof net.minecraft.client.gui.screens.PauseScreen ps && ps.showsPauseMenu()
@@ -123,7 +124,8 @@ public final class PandaClientMod implements ClientModInitializer {
             if (mc.debugEntries.isCurrentlyEnabled(id) != hitboxesApplied) mc.debugEntries.toggleStatus(id);
         }
         // PandaClient title screen instead of the vanilla one.
-        if (Modules.TITLE_SCREEN.enabled() && mc.screen != null && mc.screen.getClass() == net.minecraft.client.gui.screens.TitleScreen.class)
+        if (Modules.TITLE_SCREEN.enabled() && mc.screen != null && mc.screen.getClass() == net.minecraft.client.gui.screens.TitleScreen.class
+                && mc.screen != com.pandaclient.mod.gui.PandaTitleScreen.vanillaTitle)
             mc.setScreen(com.pandaclient.mod.gui.WelcomeScreen.done() || com.pandaclient.mod.util.CiCheck.ON
                 ? new com.pandaclient.mod.gui.PandaTitleScreen()
                 : new com.pandaclient.mod.gui.WelcomeScreen(new com.pandaclient.mod.gui.PandaTitleScreen()));

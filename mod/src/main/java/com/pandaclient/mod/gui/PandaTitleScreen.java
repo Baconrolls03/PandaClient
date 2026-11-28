@@ -28,6 +28,26 @@ public final class PandaTitleScreen extends Screen {
 
     public PandaTitleScreen() { super(Component.literal("PandaClient")); }
 
+    /** Minecraft's own title screen, opened on purpose from the lobby (so Essential's buttons are there). */
+    public static Screen vanillaTitle;
+    private static Boolean essential;
+    /** Whether Essential (social, invites, wardrobe) is installed. */
+    static boolean essential() {
+        if (essential == null) {
+            boolean found = FabricLoader.getInstance().isModLoaded("essential") || FabricLoader.getInstance().isModLoaded("essential-container");
+            if (!found) try { Class.forName("gg.essential.api.EssentialAPI", false, PandaTitleScreen.class.getClassLoader()); found = true; } catch (Throwable ignored) {}
+            essential = found;
+        }
+        return essential;
+    }
+
+    /** Canvas box of the Essential button in the top bar: x1, y1, x2, y2 (null when Essential isn't installed). */
+    private float[] essentialBox() {
+        if (!essential()) return null;
+        float right = vw - 130 - tw(name(), 13, true) - 16, w = tw("Essential", 12, true) + 34;
+        return new float[]{right - w, 12, right, 38};
+    }
+
     @Override public boolean shouldCloseOnEsc() { return false; }
 
     @Override protected void init() {}
@@ -515,6 +535,13 @@ public final class PandaTitleScreen extends Screen {
         d.icon(Draw.I_CLOSE, cx, 25, 14, col(in(mx, my, cx - 14, 11, cx + 14, 39) ? 0xFFFF7A7A : 0xFFE6E9EE));
         cx = vw - 69;
         d.icon(Draw.I_EXPAND, cx, 25, 14, col(in(mx, my, cx - 14, 11, cx + 14, 39) ? 0xFFFFFFFF : 0xFFE6E9EE));
+        float[] eb = essentialBox();
+        if (eb != null) {
+            boolean hov = in(mx, my, eb[0], eb[1], eb[2], eb[3]);
+            d.rounded(eb[0], eb[1], eb[2], eb[3], 13, col(hov ? 0x40FFFFFF : 0x24FFFFFF), col(0x33FFFFFF));
+            d.icon(Draw.I_PEOPLE, eb[0] + 15, 25, 13, col(0xFFFFFFFF));
+            txt("Essential", eb[0] + 26, 25, 12, 0xFFFFFFFF, true);
+        }
         float hx = vw - 120;
         d.rounded(hx - 1, 9, hx + 31, 41, 7, col(0x33FFFFFF));
         boolean face = false;
@@ -537,6 +564,13 @@ public final class PandaTitleScreen extends Screen {
         }
         if (in(mx, my, vw - 50, 11, vw - 22, 39)) { minecraft.stop(); return true; }
         if (in(mx, my, vw - 83, 11, vw - 55, 39)) { minecraft.getWindow().toggleFullScreen(); return true; }
+        float[] eb = essentialBox();
+        if (eb != null && in(mx, my, eb[0], eb[1], eb[2], eb[3])) {
+            // Essential's social menu, invites and wardrobe live on Minecraft's own title screen
+            vanillaTitle = new net.minecraft.client.gui.screens.TitleScreen();
+            minecraft.setScreen(vanillaTitle);
+            return true;
+        }
         return false;
     }
 
