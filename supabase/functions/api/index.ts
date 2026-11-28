@@ -32,6 +32,14 @@ async function onlineCount(): Promise<number> {
   return (data as number) ?? 0
 }
 
+/** Mark a player online on a server; server_at only moves when the server changes (the party follows real joins). */
+async function setServer(uuid: string, server: string | null) {
+  const now = new Date().toISOString()
+  const { data: p } = await db.from('players').select('server').eq('uuid', uuid).maybeSingle()
+  const changed = (p?.server ?? null) !== server
+  await db.from('players').update(changed ? { last_seen: now, server, server_at: now } : { last_seen: now }).eq('uuid', uuid)
+}
+
 /** Leave your party; the next player becomes leader, and a party of one is closed. */
 async function leaveParty(uuid: string) {
   const { data: mine } = await db.from('party_members').select('party_id').eq('uuid', uuid).maybeSingle()
@@ -119,7 +127,7 @@ Deno.serve(async (req) => {
     if (req.method === 'POST' && path === '/heartbeat') {
       const body = await req.json().catch(() => ({}))
       const server = typeof body.server === 'string' && body.server.length <= 100 ? body.server : null
-      await db.from('players').update({ last_seen: new Date().toISOString(), server, server_at: new Date().toISOString() }).eq('uuid', me.uuid)
+      await setServer(me.uuid, server)
       return json({ online: await onlineCount() })
     }
 
@@ -254,8 +262,7 @@ Deno.serve(async (req) => {
     // Where I am right now (the game reports it as soon as you join or leave a server), so the party can follow.
     if (req.method === 'POST' && path === '/party/presence') {
       const { server } = await req.json()
-      const s = typeof server === 'string' && server.length <= 100 ? server : null
-      await db.from('players').update({ last_seen: new Date().toISOString(), server: s, server_at: new Date().toISOString() }).eq('uuid', me.uuid)
+      await setServer(me.uuid, typeof server === 'string' && server.length <= 100 ? server : null)
       return json({ ok: true })
     }
 
