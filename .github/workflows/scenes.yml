@@ -3,6 +3,7 @@ name: Lobby scenes
 # Renders the lobby's built-in places in a real generated world and commits them to the branch.
 on:
   push:
+    branches-ignore: [main]
     paths: ['mod/tools/scenes.sh', '.github/workflows/scenes.yml']
   workflow_dispatch:
 
