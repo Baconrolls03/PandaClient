@@ -140,6 +140,18 @@ public final class CiCheck {
                 for (var w : net.fabricmc.fabric.api.client.screen.v1.Screens.getButtons(mc.screen)) b.append('[').append(w.getMessage().getString()).append(" @").append(w.getX()).append(',').append(w.getY()).append("] ");
                 log("pause menu (" + mc.screen.getClass().getSimpleName() + ") buttons: " + b + " primary=" + (com.pandaclient.mod.gui.PauseLayout.primary != null ? com.pandaclient.mod.gui.PauseLayout.primary.getMessage().getString() : "none"));
             }
+            case 540 -> {
+                // the raw lobby pictures (front, right) so the test shows what was captured
+                int[] sc = com.pandaclient.mod.util.LobbyPanorama.scenes();
+                java.nio.file.Path dir = net.fabricmc.loader.api.FabricLoader.getInstance().getGameDir().resolve("ci-shots");
+                for (int i = 0; i < 2 && sc.length > 0; i++) {
+                    try {
+                        java.nio.file.Files.createDirectories(dir);
+                        java.nio.file.Files.copy(com.pandaclient.mod.util.LobbyPanorama.facePath(sc[0], i), dir.resolve("face" + i + ".png"), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                    } catch (Exception e) { System.out.println("[PandaClient CI] face copy failed: " + e); }
+                    System.out.println("[PandaClient CI] shot face" + i);
+                }
+            }
             case 545 -> { mc.setScreen(null); log("freelook restored camera=" + mc.options.getCameraType()); }
             case 565 -> {
                 // leave the world like a player would: the lobby should show where you were

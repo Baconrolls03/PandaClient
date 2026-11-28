@@ -45,6 +45,6 @@ for i in $(seq 1 300); do grep -q "Done (" server.log && break; grep -q "^exit "
 grep -E "Done \(|ERROR|Exception" server.log | head -5
 export PANDACLIENT_CI_WORLD=1
 ( gradle -p mod runClient --no-daemon --args="--username PandaTester --quickPlayMultiplayer localhost:25565" > world.log 2>&1; echo "exit $?" >> world.log ) &
-shoot world.log ingame zoom freelook crosshair-settings hud-world pause lobby-world
+shoot world.log ingame zoom freelook crosshair-settings hud-world pause face0 face1 lobby-world
 wait_exit world.log
 pkill -f "net.fabricmc.devlaunchinjector" 2>/dev/null; pkill -f runServer 2>/dev/null; true

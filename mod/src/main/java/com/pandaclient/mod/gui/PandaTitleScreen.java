@@ -80,23 +80,44 @@ public final class PandaTitleScreen extends Screen {
             g.pose().popMatrix();
         }
         g.pose().popMatrix();
-        // sun glow (bloom)
-        for (int i = 0; i < 9; i++) {
-            float r = h * (0.05f + i * 0.055f);
-            d.rounded(sx - r, sy - r, sx + r, sy + r, r, Draw.alpha(0xFFFFD69A, 26 - i * 2));
+        // sun glow (bloom) and vignette: smooth gradient pictures, stretched
+        float r = h * 0.55f;
+        blitSoft(g, glow(), sx - r, sy - r, 2 * r, 2 * r, 0x66FFD69A);
+        blitSoft(g, vignette(), 0, 0, w, h, 0xFF000000);
+    }
+
+    private static net.minecraft.resources.Identifier glowTex, vignetteTex;
+
+    /** A white picture whose alpha falls off with distance from the centre (r = 0 centre, 1 edge, ~1.41 corners). */
+    private static net.minecraft.resources.Identifier soft(String name, int w, int h, java.util.function.DoubleUnaryOperator alpha) {
+        var ni = new com.mojang.blaze3d.platform.NativeImage(w, h, false);
+        for (int y = 0; y < h; y++) for (int x = 0; x < w; x++) {
+            double dx = (x + 0.5) / (w / 2.0) - 1, dy = (y + 0.5) / (h / 2.0) - 1;
+            int a = (int) Math.round(255 * Math.max(0, Math.min(1, alpha.applyAsDouble(Math.sqrt(dx * dx + dy * dy)))));
+            ni.setPixel(x, y, (a << 24) | 0xFFFFFF);
         }
-        // vignette
-        int steps = 14;
-        float band = Math.min(w, h) * 0.018f;
-        for (int i = 0; i < steps; i++) {
-            int a = Math.round(64f * (1 - i / (float) steps) * (1 - i / (float) steps));
-            int o = Math.round(i * band), o2 = Math.round((i + 1) * band);
-            int c = Draw.alpha(0xFF000000, a);
-            d.rect(0, o, w, o2, c);
-            d.rect(0, h - o2, w, h - o, c);
-            d.rect(o, o2, o2, h - o2, c);
-            d.rect(w - o2, o2, w - o, h - o2, c);
-        }
+        var id = net.minecraft.resources.Identifier.fromNamespaceAndPath("pandaclient", "fx/" + name);
+        net.minecraft.client.Minecraft.getInstance().getTextureManager().register(id, new net.minecraft.client.renderer.texture.DynamicTexture(() -> "PandaClient " + name, ni));
+        return id;
+    }
+
+    private static net.minecraft.resources.Identifier glow() {
+        if (glowTex == null) glowTex = soft("glow", 256, 256, r -> r >= 1 ? 0 : Math.pow(1 - r, 2.4));
+        return glowTex;
+    }
+
+    private static net.minecraft.resources.Identifier vignette() {
+        if (vignetteTex == null) vignetteTex = soft("vignette", 256, 144, r -> 0.62 * Math.pow(Math.max(0, (r - 0.6) / 0.81), 1.5));
+        return vignetteTex;
+    }
+
+    private static void blitSoft(GuiGraphics g, net.minecraft.resources.Identifier tex, float x, float y, float w, float h, int argb) {
+        int tw = tex == vignetteTex ? 256 : 256, th = tex == vignetteTex ? 144 : 256;
+        g.pose().pushMatrix();
+        g.pose().translate(x, y);
+        g.pose().scale(w / tw, h / th);
+        g.blit(RenderPipelines.GUI_TEXTURED, tex, 0, 0, 0f, 0f, tw, th, tw, th, argb);
+        g.pose().popMatrix();
     }
 
     private static float hash(int a, int b) {
