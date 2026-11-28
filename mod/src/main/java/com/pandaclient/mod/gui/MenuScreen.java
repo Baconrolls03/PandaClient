@@ -126,7 +126,9 @@ public final class MenuScreen extends Screen {
                 // fall back to the plain dark background
             }
         }
-        g.fill(0, 0, width, height, 0x99000000);
+        // in game: blur the world behind the menu, then dim it a little
+        try { renderBlurredBackground(g); } catch (Throwable ignored) {}
+        g.fill(0, 0, width, height, 0x66000000);
     }
 
     @Override
@@ -141,8 +143,8 @@ public final class MenuScreen extends Screen {
         Draw d = new Draw(g);
         d.zoom = z;
         // panel
-        d.round(px - 1, py - 1, px + pw + 1, py + ph + 1, Theme.BORDER);
-        d.round(px, py, px + pw, py + ph, Theme.BG);
+        // frosted glass panel: the game or the lobby shows through
+        d.rounded(px, py, px + pw, py + ph, 8, 0xD90C1017, 0x30FFFFFF);
         drawHeader(d, mx, my);
         drawSidebar(d, mx, my);
         d.enableScissor(contentX(), contentY(), px + pw, py + ph);
@@ -193,7 +195,9 @@ public final class MenuScreen extends Screen {
             int count = 0;
             if (c.equals("Mods")) count = com.pandaclient.mod.util.BundledMods.list().size();
             else for (Module m : Modules.all()) if (m != Modules.COSMETICS && (c.equals("All") || m.category.label.equals(c))) count++;
-            d.text(label, x + 13, by + 4, sel ? Theme.TEXT : Theme.MUTED, false);
+            int icon = switch (c) { case "All" -> Draw.I_GRID; case "HUD" -> Draw.I_LAYOUT; case "PvP" -> Draw.I_CROWN; case "Visual" -> Draw.I_IMAGE; case "Utility" -> Draw.I_GEAR; default -> Draw.I_DOTS; };
+            d.icon(icon, x + 17, by + 8, 8, sel ? Theme.TEXT : Theme.MUTED);
+            d.text(label, x + 25, by + 4, sel ? Theme.TEXT : Theme.MUTED, false);
             String n = String.valueOf(count);
             d.text(n, x + SIDEBAR - 12 - Draw.textWidth(n), by + 4, Theme.MUTED, false);
             by += 18;
@@ -226,7 +230,7 @@ public final class MenuScreen extends Screen {
             if (y > py + ph || y + TILE_H < contentY()) continue;
             boolean hover = inContent && Widgets.in(mx, my, x, y, cw, TILE_H);
             float on = anim(m, m.enabled());
-            d.round(x, y, x + cw, y + TILE_H, hover ? Theme.RAISED : Theme.SURFACE);
+            d.rounded(x, y, x + cw, y + TILE_H, 6, hover ? 0x26FFFFFF : 0x12FFFFFF, hover ? 0x40FFFFFF : 0x1AFFFFFF);
             // picture
             d.push();
             d.translate(x + cw / 2f - 12, y + 9);
@@ -235,7 +239,7 @@ public final class MenuScreen extends Screen {
             d.pop();
             // name bar
             int by = y + TILE_H - 16;
-            int barCol = Draw.lerpColor(hover ? 0xFF2A3447 : 0xFF222B3A, Theme.accent(), on);
+            int barCol = Draw.lerpColor(hover ? 0x40FFFFFF : 0x24FFFFFF, Theme.accent(), on);
             d.round(x + 4, by, x + cw - 4, by + 12, barCol);
             d.centered(Widgets.ellipsize(m.name, cw - 12), x + cw / 2, by + 2, on > 0.5f ? 0xFFFFFFFF : Theme.MUTED, false);
             if (!m.settings.isEmpty()) {

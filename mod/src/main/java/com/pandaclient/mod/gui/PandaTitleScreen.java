@@ -657,10 +657,16 @@ public final class PandaTitleScreen extends Screen {
     private Object[] entry(int i) {
         if (multiplayerTab) {
             var sd = servers().get(i);
-            byte[] bytes = sd.getIconBytes();
+            var st = com.pandaclient.mod.util.ServerPing.get(sd.ip);
+            byte[] saved = sd.getIconBytes();
+            byte[] bytes = saved != null ? saved : st != null ? st.icon() : null;
             com.pandaclient.mod.util.IconCache.Icon icon = bytes == null ? null
                 : com.pandaclient.mod.util.IconCache.get("s:" + sd.ip + ":" + java.util.Arrays.hashCode(bytes), () -> new java.io.ByteArrayInputStream(bytes));
-            return new Object[]{sd.name, sd.ip, icon};
+            // "21,037 online · 11 ms" like OneClient, or why it isn't answering
+            String sub = st == null ? "Checking..." : st.failed() ? "Can't reach the server"
+                : (st.online() >= 0 ? String.format(java.util.Locale.ROOT, "%,d online", st.online()) : "Online") + "  ·  " + st.ms() + " ms";
+            int dot = st == null ? 0xFF8C97A6 : st.failed() ? 0xFFF26D6D : 0xFF41D17D;
+            return new Object[]{sd.name, sub, icon, dot};
         }
         var w = worlds().get(i);
         var path = w.getIcon();
@@ -709,7 +715,7 @@ public final class PandaTitleScreen extends Screen {
             Object[] e = entry(picked);
             picture(e, x1 + 8, iy, 77, 12);
             txt(Widgets.ellipsize((String) e[0], (int) ((x2 - x1 - 115) * 8 / 17f)), x1 + 98, iy + 28, 17, 0xFFFFFFFF, true);
-            if (multiplayerTab) d.rounded(x1 + 98, iy + 49.5f, x1 + 104, iy + 55.5f, 3, col(0xFF41D17D));
+            if (multiplayerTab) d.rounded(x1 + 98, iy + 49.5f, x1 + 104, iy + 55.5f, 3, col(e.length > 3 ? (int) e[3] : 0xFF41D17D));
             txt(Widgets.ellipsize((String) e[1], (int) ((x2 - x1 - 125) * 8 / 10f)), x1 + (multiplayerTab ? 109 : 98), iy + 52.5f, 10, MUTED, false);
         } else {
             picture(new Object[]{multiplayerTab ? "+" : "+", "", null}, x1 + 8, iy, 77, 12);
