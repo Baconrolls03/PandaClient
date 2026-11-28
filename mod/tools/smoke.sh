@@ -32,7 +32,7 @@ done
 echo "=== 1. title screen"
 MC_ARG=${SMOKE_MC:+-Pmc=$SMOKE_MC}
 ( gradle -p mod runClient $MC_ARG --no-daemon > game.log 2>&1; echo "exit $?" >> game.log ) &
-shoot game.log lobby lobby-throw menu settings hud welcome
+shoot game.log lobby lobby-throw lobby-party menu settings hud welcome
 wait_exit game.log
 
 [ -n "${SMOKE_TITLE_ONLY:-}" ] && exit 0

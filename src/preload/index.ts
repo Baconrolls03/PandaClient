@@ -140,7 +140,9 @@ const api: PandaApi = {
     accept: (id) => invoke('party:accept', id),
     decline: (id) => invoke('party:decline', id),
     leave: () => invoke('party:leave'),
-    kick: (u) => invoke('party:kick', u)
+    kick: (u) => invoke('party:kick', u),
+    promote: (u) => invoke('party:promote', u),
+    chat: (t) => invoke('party:chat', t)
   },
   servers: {
     ping: (a) => invoke('servers:ping', a)

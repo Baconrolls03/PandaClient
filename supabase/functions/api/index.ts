@@ -222,14 +222,53 @@ Deno.serve(async (req) => {
       const { data: inv } = await db.from('party_invites').select('id, created_at, players!party_invites_from_uuid_fkey(username)').eq('to_uuid', me.uuid).eq('dismissed', false).gte('created_at', since).order('created_at', { ascending: false }).limit(5)
       const invites = (inv ?? []).map((r) => ({ id: r.id, createdAt: r.created_at, from: (r.players as { username: string } | null)?.username ?? 'A friend' }))
       const { data: mine } = await db.from('party_members').select('party_id').eq('uuid', me.uuid).maybeSingle()
-      if (!mine) return json({ party: null, invites })
+      if (!mine) return json({ me: me.uuid, party: null, invites, messages: [] })
       const { data: party } = await db.from('parties').select('id, leader').eq('id', mine.party_id).maybeSingle()
-      const { data: rows } = await db.from('party_members').select('uuid, joined_at, players(username, last_seen, server)').eq('party_id', mine.party_id).order('joined_at')
+      const { data: rows } = await db.from('party_members').select('uuid, joined_at, players(username, last_seen, server, server_at)').eq('party_id', mine.party_id).order('joined_at')
       const members = (rows ?? []).map((r) => {
-        const p = r.players as { username: string; last_seen: string; server: string | null } | null
-        return { uuid: r.uuid, username: p?.username ?? '?', leader: r.uuid === party?.leader, online: !!p && Date.now() - new Date(p.last_seen).getTime() < 3 * 60_000, server: p?.server ?? null }
+        const p = r.players as { username: string; last_seen: string; server: string | null; server_at: string | null } | null
+        return { uuid: r.uuid, username: p?.username ?? '?', leader: r.uuid === party?.leader, online: !!p && Date.now() - new Date(p.last_seen).getTime() < 3 * 60_000, server: p?.server ?? null, serverAt: p?.server_at ?? null }
       })
-      return json({ party: { id: mine.party_id, leader: party?.leader ?? null, members }, invites })
+      // party chat: the last half hour (or only what's new after ?after=<id>)
+      const after = Number(new URL(req.url).searchParams.get('after') ?? '0') || 0
+      const chatSince = new Date(Date.now() - 30 * 60_000).toISOString()
+      const { data: msgs } = await db.from('party_messages').select('id, from_uuid, text, created_at').eq('party_id', mine.party_id).gt('id', after).gte('created_at', chatSince).order('id', { ascending: false }).limit(40)
+      const names = new Map(members.map((m) => [m.uuid, m.username]))
+      const messages = (msgs ?? []).reverse().map((m) => ({ id: m.id, from: names.get(m.from_uuid) ?? 'Someone', fromUuid: m.from_uuid, text: m.text, at: m.created_at }))
+      return json({ me: me.uuid, party: { id: mine.party_id, leader: party?.leader ?? null, members }, invites, messages })
+    }
+
+    // Party chat.
+    if (req.method === 'POST' && path === '/party/chat') {
+      const { text } = await req.json()
+      const clean = typeof text === 'string' ? text.replace(/[\u0000-\u001f\u007f]/g, '').trim().slice(0, 200) : ''
+      if (!clean) return fail(400, 'Type a message first')
+      const { data: mine } = await db.from('party_members').select('party_id').eq('uuid', me.uuid).maybeSingle()
+      if (!mine) return fail(400, "You're not in a party")
+      const { count } = await db.from('party_messages').select('id', { count: 'exact', head: true }).eq('from_uuid', me.uuid).gte('created_at', new Date(Date.now() - 10_000).toISOString())
+      if ((count ?? 0) >= 5) return fail(429, 'Slow down a little')
+      await db.from('party_messages').insert({ party_id: mine.party_id, from_uuid: me.uuid, text: clean })
+      return json({ ok: true })
+    }
+
+    // Where I am right now (the game reports it as soon as you join or leave a server), so the party can follow.
+    if (req.method === 'POST' && path === '/party/presence') {
+      const { server } = await req.json()
+      const s = typeof server === 'string' && server.length <= 100 ? server : null
+      await db.from('players').update({ last_seen: new Date().toISOString(), server: s, server_at: new Date().toISOString() }).eq('uuid', me.uuid)
+      return json({ ok: true })
+    }
+
+    // The leader hands the crown to someone else in the party.
+    if (req.method === 'POST' && path === '/party/promote') {
+      const { uuid } = await req.json()
+      if (typeof uuid !== 'string' || !UUID.test(uuid)) return fail(400, 'Bad request')
+      const { data: party } = await db.from('parties').select('id').eq('leader', me.uuid).maybeSingle()
+      if (!party) return fail(403, 'Only the party leader can do that')
+      const { data: member } = await db.from('party_members').select('uuid').eq('uuid', uuid).eq('party_id', party.id).maybeSingle()
+      if (!member) return fail(404, "They're not in your party")
+      await db.from('parties').update({ leader: uuid }).eq('id', party.id)
+      return json({ ok: true })
     }
 
     if (req.method === 'POST' && path === '/party/invite') {

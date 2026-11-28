@@ -32,6 +32,7 @@ public final class PandaClientMod implements ClientModInitializer {
         Config.load();
         HudElementRegistry.addLast(Identifier.fromNamespaceAndPath("pandaclient", "hud"), PandaClientMod::renderHud);
         ClientTickEvents.END_CLIENT_TICK.register(PandaClientMod::tick);
+        registerPartyCommand();
         // Hats, glasses, wings... on every player model.
         net.fabricmc.fabric.api.client.rendering.v1.LivingEntityFeatureRendererRegistrationCallback.EVENT.register((type, renderer, helper, ctx) -> {
             if (renderer instanceof net.minecraft.client.renderer.entity.player.AvatarRenderer<?> avatar)
@@ -85,6 +86,46 @@ public final class PandaClientMod implements ClientModInitializer {
         return (net.minecraft.client.renderer.entity.RenderLayerParent) r;
     }
 
+    /** /pp <message> (party chat), /pp join (go where the leader is), /pp invite <friend>, /pp leave. */
+    private static void registerPartyCommand() {
+        net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback.EVENT.register((dispatcher, registry) -> dispatcher.register(
+            net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.literal("pp")
+                .executes(ctx -> {
+                    ctx.getSource().sendFeedback(net.minecraft.network.chat.Component.literal("Party: /pp <message>, /pp join, /pp invite <friend>, /pp leave"));
+                    return 1;
+                })
+                .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.literal("join").executes(ctx -> {
+                    String err = com.pandaclient.mod.util.PartyLive.joinLeader(Minecraft.getInstance());
+                    if (err != null) ctx.getSource().sendError(net.minecraft.network.chat.Component.literal(err));
+                    return 1;
+                }))
+                .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.literal("leave").executes(ctx -> {
+                    if (com.pandaclient.mod.util.Party.members().isEmpty()) ctx.getSource().sendError(net.minecraft.network.chat.Component.literal("You're not in a party"));
+                    else com.pandaclient.mod.util.Party.leave();
+                    return 1;
+                }))
+                .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.literal("invite")
+                    .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.argument("friend", com.mojang.brigadier.arguments.StringArgumentType.word()).executes(ctx -> {
+                        String who = com.mojang.brigadier.arguments.StringArgumentType.getString(ctx, "friend");
+                        for (var f : com.pandaclient.mod.util.Party.friends()) if (f.name().equalsIgnoreCase(who)) {
+                            com.pandaclient.mod.util.Party.invite(f.uuid());
+                            ctx.getSource().sendFeedback(net.minecraft.network.chat.Component.literal("Invited " + f.name() + " to your party"));
+                            return 1;
+                        }
+                        ctx.getSource().sendError(net.minecraft.network.chat.Component.literal(who + " isn't on your PandaClient friends list"));
+                        return 1;
+                    })))
+                .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.argument("message", com.mojang.brigadier.arguments.StringArgumentType.greedyString()).executes(ctx -> {
+                    Minecraft mc = Minecraft.getInstance();
+                    if (!com.pandaclient.mod.util.Party.connected()) { ctx.getSource().sendError(net.minecraft.network.chat.Component.literal("Start the game from the PandaClient launcher to use party chat")); return 1; }
+                    if (com.pandaclient.mod.util.Party.members().isEmpty()) { ctx.getSource().sendError(net.minecraft.network.chat.Component.literal("You're not in a party. Invite friends from the lobby or the launcher")); return 1; }
+                    String msg = com.mojang.brigadier.arguments.StringArgumentType.getString(ctx, "message");
+                    com.pandaclient.mod.util.Party.chat(mc.getUser().getName(), msg);
+                    com.pandaclient.mod.util.PartyLive.show(mc, mc.getUser().getName(), msg.strip(), true);
+                    return 1;
+                }))));
+    }
+
     private static void renderHud(GuiGraphics g, net.minecraft.client.DeltaTracker dt) {
         Minecraft mc = Minecraft.getInstance();
         if (mc.options.hideGui || mc.screen instanceof HudEditorScreen) return;
@@ -113,10 +154,11 @@ public final class PandaClientMod implements ClientModInitializer {
     private static void tick(Minecraft mc) {
         com.pandaclient.mod.util.CiCheck.tick(mc);
         com.pandaclient.mod.util.CiScenes.tick(mc);
+        com.pandaclient.mod.util.PartyLive.tick(mc);
         Config.tick();
         Combat.tick();
         if (mc.level == null) Config.writePresence(null);
-        else if (mc.level.getGameTime() % 100 == 0) Config.writePresence(mc.getCurrentServer() != null ? mc.getCurrentServer().ip : "Singleplayer");
+        else Config.writePresence(mc.getCurrentServer() != null ? mc.getCurrentServer().ip : "Singleplayer");
         com.pandaclient.mod.util.HitColorTexture.tick();
         // Hitboxes: follow the switch (F3+B still works on its own).
         if (mc.debugEntries != null && Modules.HITBOXES.enabled() != hitboxesApplied) {

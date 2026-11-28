@@ -225,6 +225,8 @@ export function registerIpc(win: BrowserWindow): void {
   ipcMain.handle('party:decline', (_e, id: string) => panda.partyDecline(String(id)))
   ipcMain.handle('party:leave', () => panda.partyLeave())
   ipcMain.handle('party:kick', (_e, u: string) => panda.partyKick(String(u)))
+  ipcMain.handle('party:promote', (_e, u: string) => panda.partyPromote(String(u)))
+  ipcMain.handle('party:chat', (_e, t: string) => panda.partyChat(String(t)))
   ipcMain.handle('servers:ping', (_e, a: string) => pingServer(String(a).slice(0, 100)))
   ipcMain.handle('share:players', (_e, q: string) => panda.searchPlayers(String(q).slice(0, 16)))
   ipcMain.handle('share:send', (_e, id: string, to: string[]) => panda.shareInstance(id, Array.isArray(to) ? to.slice(0, 20).map(String) : []))

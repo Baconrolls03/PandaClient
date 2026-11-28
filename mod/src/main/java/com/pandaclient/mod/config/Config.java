@@ -70,10 +70,14 @@ public final class Config {
 
     private static String presence = "";
     /** Tell the launcher which server you're on (friends can see it and join). */
+    private static long presenceAt;
+
+    /** Where you're playing, for the launcher (friends and your party see it). Written when it changes and every minute. */
     public static void writePresence(String server) {
         String s = server == null ? "" : server;
-        if (s.equals(presence)) return;
+        if (s.equals(presence) && System.currentTimeMillis() - presenceAt < 60_000) return;
         presence = s;
+        presenceAt = System.currentTimeMillis();
         JsonObject o = new JsonObject();
         o.addProperty("server", s);
         o.addProperty("updated", System.currentTimeMillis());

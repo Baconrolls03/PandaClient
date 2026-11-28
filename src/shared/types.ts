@@ -694,6 +694,8 @@ export interface PandaApi {
     decline(id: string): Promise<void>
     leave(): Promise<void>
     kick(uuid: string): Promise<void>
+    promote(uuid: string): Promise<void>
+    chat(text: string): Promise<void>
   }
   servers: {
     ping(address: string): Promise<ServerStatus>
@@ -773,12 +775,26 @@ export interface PartyMember {
   leader: boolean
   online: boolean
   server: string | null
+  /** When `server` last changed (ISO). */
+  serverAt?: string | null
+}
+
+export interface PartyMessage {
+  id: number
+  from: string
+  fromUuid: string
+  text: string
+  at: string
 }
 
 /** Your lobby party: friends whose characters stand beside yours in the in-game lobby. */
 export interface PartyState {
+  /** Your own uuid. */
+  me?: string
   party: { id: string; leader: string | null; members: PartyMember[] } | null
   invites: { id: string; from: string; createdAt: string }[]
+  /** Party chat, oldest first (the last half hour). */
+  messages?: PartyMessage[]
 }
 
 export interface Invite {

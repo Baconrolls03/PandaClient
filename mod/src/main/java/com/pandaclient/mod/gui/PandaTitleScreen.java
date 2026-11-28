@@ -7,6 +7,8 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.multiplayer.JoinMultiplayerScreen;
 import net.minecraft.client.gui.screens.options.OptionsScreen;
 import net.minecraft.client.gui.screens.worldselection.SelectWorldScreen;
+import net.minecraft.client.input.CharacterEvent;
+import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.Component;
@@ -349,6 +351,8 @@ public final class PandaTitleScreen extends Screen {
         drawLeft(mx, my);
         drawServerCard(mx, my);
         drawFooter();
+        drawInviteMenu(mx, my);
+        drawBanner();
         d.pop();
     }
 
@@ -535,6 +539,9 @@ public final class PandaTitleScreen extends Screen {
         return super.mouseReleased(e);
     }
 
+    /** CI: the party card with the invite list open and a message being typed. */
+    public void ciParty() { inviteOpen = true; chatFocused = true; chatDraft = "on my way!"; }
+
     /** CI: freeze you in mid-air, swinging, so the screenshot shows the held pose. */
     public void ciPose() {
         zoom();
@@ -713,45 +720,8 @@ public final class PandaTitleScreen extends Screen {
         d.icon(Draw.I_SOUND, 235, by + bh / 2, 15, col(0xFFFFFFFF));
         d.icon(Draw.I_GEAR, 273, by + bh / 2, 15, col(0xFFFFFFFF));
 
-        // party
-        float py2 = by - 9, py1 = py2 - 186;
-        card(x1, py1, x2, py2, 10);
-        float pw = tw("Party", 12, false) + 20;
-        d.rounded(x1 + 10, py1 + 9, x1 + 10 + pw, py1 + 32, 6, col(Theme.accent()));
-        txt("Party", x1 + 20, py1 + 20.5f, 12, 0xFFFFFFFF, false);
-        var party = com.pandaclient.mod.util.Party.members();
-        txtR((party.isEmpty() ? 1 : party.size()) + " / 8", x2 - 12, py1 + 20.5f, 11, DIM, false);
-        if (party.isEmpty()) {
-            // just you, the party leader
-            float ry = py1 + 48;
-            d.rounded(x1 + 10, ry, x1 + 34, ry + 24, 5, col(0x33FFFFFF));
-            boolean face = a > 0.98f && LobbyPlayer.face(minecraft, d.g, Math.round(x1 + 12), Math.round(ry + 2), 20);
-            if (!face) txtC(name().substring(0, 1).toUpperCase(java.util.Locale.ROOT), x1 + 22, ry + 12, 12, 0xFFFFFFFF, true);
-            txt(name(), x1 + 44, ry + 12, 12, 0xFFFFFFFF, true);
-            d.icon(Draw.I_CROWN, x1 + 52 + tw(name(), 12, true), ry + 12, 11, col(0xFFF5C451));
-            txtR("Online", x2 - 12, ry + 12, 10, 0xFF6EE08F, false);
-        } else {
-            float ry = py1 + 42;
-            for (int i = 0; i < Math.min(4, party.size()); i++, ry += 25) {
-                var m = party.get(i);
-                boolean me = m.name().equalsIgnoreCase(name());
-                d.rounded(x1 + 10, ry, x1 + 30, ry + 20, 4, col(0x33FFFFFF));
-                boolean face = a > 0.98f && (me ? LobbyPlayer.face(minecraft, d.g, Math.round(x1 + 12), Math.round(ry + 2), 16)
-                    : LobbyPlayer.faceOf(minecraft, d.g, m.uuid(), m.name(), Math.round(x1 + 12), Math.round(ry + 2), 16));
-                if (!face) txtC(m.name().substring(0, 1).toUpperCase(java.util.Locale.ROOT), x1 + 20, ry + 10, 10, 0xFFFFFFFF, true);
-                txt(m.name(), x1 + 38, ry + 10, 11.5f, 0xFFFFFFFF, true);
-                if (m.leader()) d.icon(Draw.I_CROWN, x1 + 46 + tw(m.name(), 11.5f, true), ry + 10, 10, col(0xFFF5C451));
-                txtR(me ? "You" : m.online() ? "Online" : "Offline", x2 - 12, ry + 10, 10, me ? Theme.accent() : m.online() ? 0xFF6EE08F : DIM, false);
-            }
-            if (party.size() > 4) txt("+" + (party.size() - 4) + " more", x1 + 12, ry + 4, 10, DIM, false);
-        }
-        // invite row, shaped like OneClient's message box
-        float iy = py2 - 38;
-        d.rounded(x1 + 10, iy, x2 - 40, iy + 28, 7, col(0x40000000), col(0x1FFFFFFF));
-        txt("Invite friends from the launcher", x1 + 20, iy + 14, 11, DIM, false);
-        d.rounded(x2 - 34, iy, x2 - 10, iy + 28, 7, col(0x40000000), col(0x1FFFFFFF));
-        d.icon(Draw.I_INVITE, x2 - 22, iy + 14, 13, col(0xFFDDE2EA));
-        if (party.isEmpty()) txt("Party up with friends in the launcher", x1 + 12, iy - 14, 10, DIM, false);
+        // party (invites, members, chat)
+        float py1 = drawParty(x1, x2, by - 9, mx, my);
 
         // performance
         float fy2 = py1 - 9, fy1 = fy2 - 38;
@@ -760,6 +730,285 @@ public final class PandaTitleScreen extends Screen {
         int fps = minecraft.getFps();
         txt(fps + " FPS", 58, (fy1 + fy2) / 2, 11, 0xFFFFFFFF, true);
         txtR(String.format(java.util.Locale.ROOT, "%.1f ms", 1000f / Math.max(1, fps)), x2 - 12, (fy1 + fy2) / 2, 11, MUTED, false);
+    }
+
+    // ---------------------------------------------------------------- party
+
+    /** Things you can click on the party card this frame: x1, y1, x2, y2, what happens. */
+    private final java.util.List<Object[]> partyHits = new java.util.ArrayList<>();
+    private static String chatDraft = "";
+    private static boolean chatFocused, inviteOpen;
+    private static final java.util.Map<java.util.UUID, Long> invitedAt = new java.util.HashMap<>();
+    private float inviteBtnX, inviteBtnY;
+
+    private void hit(float x1, float y1, float x2, float y2, Runnable r) { partyHits.add(new Object[]{x1, y1, x2, y2, r}); }
+
+    private static String clip(String s, float max, float size, boolean bold, PandaTitleScreen t) {
+        if (t.tw(s, size, bold) <= max) return s;
+        String e = s;
+        while (e.length() > 1 && t.tw(e + "...", size, bold) > max) e = e.substring(0, e.length() - 1);
+        return e + "...";
+    }
+
+    private void face(java.util.UUID id, String name, boolean me, float x, float y, int size) {
+        boolean ok = a > 0.98f && (me ? LobbyPlayer.face(minecraft, d.g, Math.round(x), Math.round(y), size)
+            : LobbyPlayer.faceOf(minecraft, d.g, id, name, Math.round(x), Math.round(y), size));
+        if (!ok) txtC(name.isEmpty() ? "?" : name.substring(0, 1).toUpperCase(java.util.Locale.ROOT), x + size / 2f, y + size / 2f, size * 0.6f, 0xFFFFFFFF, true);
+    }
+
+    /** Draws the party card with its bottom at py2; returns its top. */
+    private float drawParty(float x1, float x2, float py2, double mx, double my) {
+        partyHits.clear();
+        boolean live = com.pandaclient.mod.util.Party.connected();
+        var party = com.pandaclient.mod.util.Party.members();
+        var invites = com.pandaclient.mod.util.Party.invites();
+        var leader = com.pandaclient.mod.util.Party.leader();
+        boolean iLead = party.isEmpty() || com.pandaclient.mod.util.Party.iLead(name());
+        boolean showJoin = leader != null && !iLead && leader.server() != null && !leader.server().isBlank()
+            && !leader.server().equalsIgnoreCase("Singleplayer");
+        int rows = party.isEmpty() ? 1 : Math.min(4, party.size());
+        float h = 42 + (invites.isEmpty() ? 0 : 34) + rows * 25 + (party.size() > 4 ? 12 : 0) + (showJoin ? 32 : 0) + 56 + 38;
+        float py1 = py2 - h;
+        card(x1, py1, x2, py2, 10);
+
+        // header: Party pill, Leave, count
+        float pw = tw("Party", 12, false) + 20;
+        d.rounded(x1 + 10, py1 + 9, x1 + 10 + pw, py1 + 32, 6, col(Theme.accent()));
+        txt("Party", x1 + 20, py1 + 20.5f, 12, 0xFFFFFFFF, false);
+        String count = (party.isEmpty() ? 1 : party.size()) + " / 8";
+        txtR(count, x2 - 12, py1 + 20.5f, 11, DIM, false);
+        if (!party.isEmpty() && live) {
+            float lx2 = x2 - 22 - tw(count, 11, false), lx1 = lx2 - tw("Leave", 10, false) - 14;
+            boolean hl = in(mx, my, lx1, py1 + 11, lx2, py1 + 30);
+            d.rounded(lx1, py1 + 11, lx2, py1 + 30, 5, col(hl ? 0x40FF6B6B : 0x18FFFFFF));
+            txtC("Leave", (lx1 + lx2) / 2, py1 + 20.5f, 10, hl ? 0xFFFF9A9A : MUTED, false);
+            hit(lx1, py1 + 11, lx2, py1 + 30, () -> { com.pandaclient.mod.util.Party.leave(); com.pandaclient.mod.util.PartyLive.banner = "Leaving the party..."; com.pandaclient.mod.util.PartyLive.bannerAt = System.currentTimeMillis(); });
+        }
+        float y = py1 + 42;
+
+        // an invite for you
+        if (!invites.isEmpty()) {
+            var inv = invites.get(0);
+            d.rounded(x1 + 10, y, x2 - 10, y + 28, 7, col(Draw.alpha(Theme.accent(), 60)), col(Draw.alpha(Theme.accent(), 140)));
+            txt(clip(inv.from() + " invited you", 120, 11, true, this), x1 + 18, y + 14, 11, 0xFFFFFFFF, true);
+            float ax2 = x2 - 44, ax1 = ax2 - tw("Join", 10.5f, true) - 18;
+            boolean ha = in(mx, my, ax1, y + 4, ax2, y + 24), hd = in(mx, my, x2 - 38, y + 4, x2 - 16, y + 24);
+            d.rounded(ax1, y + 4, ax2, y + 24, 5, col(ha ? Draw.lerpColor(Theme.accent(), 0xFFFFFFFF, 0.2f) : Theme.accent()));
+            txtC("Join", (ax1 + ax2) / 2, y + 14, 10.5f, 0xFFFFFFFF, true);
+            d.rounded(x2 - 38, y + 4, x2 - 16, y + 24, 5, col(hd ? 0x40FFFFFF : 0x22FFFFFF));
+            d.icon(Draw.I_CLOSE, x2 - 27, y + 14, 9, col(0xFFDDE2EA));
+            String id = inv.id();
+            hit(ax1, y + 4, ax2, y + 24, () -> com.pandaclient.mod.util.Party.accept(id));
+            hit(x2 - 38, y + 4, x2 - 16, y + 24, () -> com.pandaclient.mod.util.Party.decline(id));
+            y += 34;
+        }
+
+        // members
+        if (party.isEmpty()) {
+            d.rounded(x1 + 10, y, x1 + 34, y + 24, 5, col(0x33FFFFFF));
+            face(null, name(), true, x1 + 12, y + 2, 20);
+            txt(name(), x1 + 44, y + 12, 12, 0xFFFFFFFF, true);
+            d.icon(Draw.I_CROWN, x1 + 52 + tw(name(), 12, true), y + 12, 11, col(0xFFF5C451));
+            txtR("Online", x2 - 12, y + 12, 10, 0xFF6EE08F, false);
+            y += 25;
+        } else {
+            for (int i = 0; i < rows; i++, y += 25) {
+                var m = party.get(i);
+                boolean me = com.pandaclient.mod.util.Party.isMe(m, name());
+                boolean hov = in(mx, my, x1 + 8, y - 2, x2 - 8, y + 22);
+                if (hov) d.rounded(x1 + 6, y - 2, x2 - 6, y + 22, 5, col(0x10FFFFFF));
+                d.rounded(x1 + 10, y, x1 + 30, y + 20, 4, col(0x33FFFFFF));
+                face(m.uuid(), m.name(), me, x1 + 12, y + 2, 16);
+                txt(m.name(), x1 + 38, y + 10, 11.5f, 0xFFFFFFFF, true);
+                if (m.leader()) d.icon(Draw.I_CROWN, x1 + 46 + tw(m.name(), 11.5f, true), y + 10, 10, col(0xFFF5C451));
+                if (hov && iLead && !me && live) {
+                    // leader tools: make leader, remove
+                    boolean hc = in(mx, my, x2 - 56, y, x2 - 34, y + 20), hk = in(mx, my, x2 - 32, y, x2 - 10, y + 20);
+                    d.rounded(x2 - 56, y, x2 - 34, y + 20, 4, col(hc ? 0x40F5C451 : 0x22FFFFFF));
+                    d.icon(Draw.I_CROWN, x2 - 45, y + 10, 10, col(0xFFF5C451));
+                    d.rounded(x2 - 32, y, x2 - 10, y + 20, 4, col(hk ? 0x40FF6B6B : 0x22FFFFFF));
+                    d.icon(Draw.I_CLOSE, x2 - 21, y + 10, 8, col(0xFFFF9A9A));
+                    var id = m.uuid();
+                    hit(x2 - 56, y, x2 - 34, y + 20, () -> com.pandaclient.mod.util.Party.promote(id));
+                    hit(x2 - 32, y, x2 - 10, y + 20, () -> com.pandaclient.mod.util.Party.kick(id));
+                } else {
+                    String st = me ? "You" : !m.online() ? "Offline" : m.server() != null && !m.server().isBlank() ? m.server() : "Lobby";
+                    int sc = me ? Theme.accent() : m.online() ? 0xFF6EE08F : DIM;
+                    float room = x2 - 12 - (x1 + 60 + tw(m.name(), 11.5f, true));
+                    txtR(clip(st, Math.max(30, room), 10, false, this), x2 - 12, y + 10, 10, sc, false);
+                }
+            }
+            if (party.size() > 4) { txt("+" + (party.size() - 4) + " more", x1 + 12, y + 2, 10, DIM, false); y += 12; }
+        }
+
+        // the leader is on a server: join them
+        if (showJoin) {
+            String sv = leader.server();
+            d.rounded(x1 + 10, y + 2, x2 - 10, y + 28, 7, col(0x2A6EE08F), col(0x606EE08F));
+            txt(clip(leader.name() + " is on " + sv, 170, 10.5f, false, this), x1 + 18, y + 15, 10.5f, 0xFFFFFFFF, false);
+            float jx1 = x2 - 16 - tw("Join", 10.5f, true) - 18;
+            boolean hj = in(mx, my, jx1, y + 6, x2 - 16, y + 24);
+            d.rounded(jx1, y + 6, x2 - 16, y + 24, 5, col(hj ? 0xFF8BEBA6 : 0xFF6EE08F));
+            txtC("Join", (jx1 + x2 - 16) / 2, y + 15, 10.5f, 0xFF0B0F16, true);
+            hit(jx1, y + 6, x2 - 16, y + 24, () -> com.pandaclient.mod.util.PartyLive.join(minecraft, sv));
+            y += 32;
+        }
+
+        // chat: the last three lines
+        float cy = py2 - 38 - 54;
+        var msgs = com.pandaclient.mod.util.Party.messages();
+        if (msgs.isEmpty()) {
+            txt(!live ? "Open the game from the PandaClient launcher" : party.isEmpty() ? "Invite friends to party up and chat" : "Say hi to your party!", x1 + 12, cy + 30, 10, DIM, false);
+            if (!live) txt("to party up, chat and follow your leader", x1 + 12, cy + 44, 10, DIM, false);
+        } else {
+            int n = Math.min(3, msgs.size());
+            for (int i = 0; i < n; i++) {
+                var m = msgs.get(msgs.size() - n + i);
+                float ly = cy + 16 + i * 15;
+                String who = m.from() + ": ";
+                boolean mine = com.pandaclient.mod.util.Party.me() != null && com.pandaclient.mod.util.Party.me().equals(m.fromUuid()) || m.pending();
+                txt(who, x1 + 12, ly, 10, mine ? 0xFF6EE08F : 0xFF7FD3FF, true);
+                txt(clip(m.text(), x2 - x1 - 26 - tw(who, 10, true), 10, false, this), x1 + 12 + tw(who, 10, true), ly, 10, m.pending() ? MUTED : 0xFFE3E9F1, false);
+            }
+        }
+
+        // message box + invite button
+        float iy = py2 - 38;
+        boolean canChat = live && !party.isEmpty();
+        d.rounded(x1 + 10, iy, x2 - 40, iy + 28, 7, col(chatFocused ? 0x66000000 : 0x40000000), col(chatFocused ? Draw.alpha(Theme.accent(), 200) : 0x1FFFFFFF));
+        if (chatFocused || !chatDraft.isEmpty()) {
+            String shown = chatDraft;
+            while (shown.length() > 0 && tw(shown, 11, false) > x2 - x1 - 70) shown = shown.substring(1);
+            txt(shown, x1 + 20, iy + 14, 11, 0xFFFFFFFF, false);
+            if (chatFocused && (System.currentTimeMillis() / 500) % 2 == 0) {
+                float cx = x1 + 21 + tw(shown, 11, false);
+                d.rect(Math.round(cx), Math.round(iy + 7), Math.round(cx + 1), Math.round(iy + 21), col(0xFFFFFFFF));
+            }
+        } else txt(!live ? "Start from the launcher to chat" : canChat ? "Message your party (T)" : "Invite friends to chat", x1 + 20, iy + 14, 11, DIM, false);
+        hit(x1 + 10, iy, x2 - 40, iy + 28, () -> {
+            if (canChat) chatFocused = true;
+            else note(live ? "Invite friends first: press the button on the right" : "Start Minecraft from the PandaClient launcher to party up");
+        });
+        boolean hi = in(mx, my, x2 - 34, iy, x2 - 10, iy + 28);
+        d.rounded(x2 - 34, iy, x2 - 10, iy + 28, 7, col(inviteOpen ? Draw.alpha(Theme.accent(), 160) : hi ? 0x60000000 : 0x40000000), col(0x1FFFFFFF));
+        d.icon(Draw.I_INVITE, x2 - 22, iy + 14, 13, col(0xFFDDE2EA));
+        inviteBtnX = x2 - 34; inviteBtnY = iy;
+        hit(x2 - 34, iy, x2 - 10, iy + 28, () -> {
+            if (!live) { note("Start Minecraft from the PandaClient launcher to invite friends"); return; }
+            inviteOpen = !inviteOpen;
+            chatFocused = false;
+        });
+        return py1;
+    }
+
+    private void note(String text) {
+        com.pandaclient.mod.util.PartyLive.banner = text;
+        com.pandaclient.mod.util.PartyLive.bannerAt = System.currentTimeMillis();
+    }
+
+    /** Friends you can invite, in a panel beside the party card. */
+    private void drawInviteMenu(double mx, double my) {
+        if (!inviteOpen) return;
+        var friends = com.pandaclient.mod.util.Party.friends();
+        int n = Math.min(8, friends.size());
+        float w = 250, x1 = inviteBtnX + 44, x2 = x1 + w;
+        float h = 42 + (n == 0 ? 40 : n * 28) + 8, y2 = inviteBtnY + 28, y1 = y2 - h;
+        d.rounded(x1, y1, x2, y2, 10, col(0xF00E1117), col(0x33FFFFFF));
+        txt("Invite friends", x1 + 14, y1 + 20, 12, 0xFFFFFFFF, true);
+        boolean hx = in(mx, my, x2 - 30, y1 + 8, x2 - 8, y1 + 32);
+        d.icon(Draw.I_CLOSE, x2 - 19, y1 + 20, 9, col(hx ? 0xFFFFFFFF : MUTED));
+        hit(x2 - 30, y1 + 8, x2 - 8, y1 + 32, () -> inviteOpen = false);
+        if (n == 0) {
+            txt("No PandaClient friends yet.", x1 + 14, y1 + 50, 10.5f, MUTED, false);
+            txt("Add friends in the launcher's Friends tab.", x1 + 14, y1 + 66, 10.5f, DIM, false);
+        }
+        float y = y1 + 40;
+        for (int i = 0; i < n; i++, y += 28) {
+            var f = friends.get(i);
+            face(f.uuid(), f.name(), false, x1 + 14, y + 4, 18);
+            txt(f.name(), x1 + 40, y + 9, 11, 0xFFFFFFFF, true);
+            String st = !f.online() ? "Offline" : f.server() != null && !f.server().isBlank() ? f.server() : "Online";
+            txt(clip(st, 100, 9, false, this), x1 + 40, y + 21, 9, f.online() ? 0xFF6EE08F : DIM, false);
+            Long at = invitedAt.get(f.uuid());
+            boolean sent = at != null && System.currentTimeMillis() - at < 60_000;
+            String label = f.inParty() ? "In party" : sent ? "Invited" : "Invite";
+            float bx2 = x2 - 12, bx1 = bx2 - tw(label, 10, true) - 18;
+            boolean hb = !f.inParty() && !sent && in(mx, my, bx1, y + 4, bx2, y + 24);
+            d.rounded(bx1, y + 4, bx2, y + 24, 5, col(f.inParty() || sent ? 0x22FFFFFF : hb ? Draw.lerpColor(Theme.accent(), 0xFFFFFFFF, 0.2f) : Theme.accent()));
+            txtC(label, (bx1 + bx2) / 2, y + 14, 10, f.inParty() || sent ? MUTED : 0xFFFFFFFF, true);
+            if (!f.inParty() && !sent) {
+                var id = f.uuid();
+                String nm = f.name();
+                hit(bx1, y + 4, bx2, y + 24, () -> { com.pandaclient.mod.util.Party.invite(id); invitedAt.put(id, System.currentTimeMillis()); note("Invited " + nm + " to your party"); });
+            }
+        }
+        if (friends.size() > n) txt("+" + (friends.size() - n) + " more in the launcher", x1 + 14, y + 4, 9.5f, DIM, false);
+        // clicks inside the panel don't close it
+        hit(x1, y1, x2, y2, () -> {});
+    }
+
+    /** A short party message across the top (who joined, invites sent...). */
+    private void drawBanner() {
+        String b = com.pandaclient.mod.util.PartyLive.banner;
+        long age = System.currentTimeMillis() - com.pandaclient.mod.util.PartyLive.bannerAt;
+        if (b == null || age > 4500) return;
+        float fade = Math.min(1f, Math.min(age / 200f, (4500 - age) / 400f));
+        float w = tw(b, 11.5f, true) + 36, cx = vw / 2, y = 62;
+        int al = Math.round(255 * fade * a);
+        d.rounded(cx - w / 2, y, cx + w / 2, y + 28, 14, Draw.alpha(0xFF0E1117, Math.round(al * 0.9f)), Draw.alpha(Theme.accent(), Math.round(al * 0.7f)));
+        txtC(b, cx, y + 14, 11.5f, Draw.alpha(0xFFFFFFFF, al), true);
+    }
+
+    private boolean clickParty(double mx, double my) {
+        // the invite panel sits on top, so check the newest hit boxes first
+        for (int i = partyHits.size() - 1; i >= 0; i--) {
+            Object[] h = partyHits.get(i);
+            if (in(mx, my, (float) h[0], (float) h[1], (float) h[2], (float) h[3])) { ((Runnable) h[4]).run(); return true; }
+        }
+        chatFocused = false;
+        inviteOpen = false;
+        return false;
+    }
+
+    private void sendChat() {
+        String text = chatDraft.strip();
+        if (text.isEmpty()) { chatFocused = false; return; }
+        if (com.pandaclient.mod.util.Party.members().isEmpty()) { note("Invite friends to your party first"); return; }
+        com.pandaclient.mod.util.Party.chat(name(), text);
+        chatDraft = "";
+    }
+
+    @Override
+    public boolean keyPressed(KeyEvent e) {
+        int key = e.key();
+        if (chatFocused) {
+            if (key == org.lwjgl.glfw.GLFW.GLFW_KEY_ESCAPE) { chatFocused = false; return true; }
+            if (key == org.lwjgl.glfw.GLFW.GLFW_KEY_ENTER || key == org.lwjgl.glfw.GLFW.GLFW_KEY_KP_ENTER) { sendChat(); return true; }
+            if (key == org.lwjgl.glfw.GLFW.GLFW_KEY_BACKSPACE) { if (!chatDraft.isEmpty()) chatDraft = chatDraft.substring(0, chatDraft.length() - 1); return true; }
+            return true;
+        }
+        if (inviteOpen && key == org.lwjgl.glfw.GLFW.GLFW_KEY_ESCAPE) { inviteOpen = false; return true; }
+        if (card() && (key == org.lwjgl.glfw.GLFW.GLFW_KEY_T || key == org.lwjgl.glfw.GLFW.GLFW_KEY_ENTER)
+                && com.pandaclient.mod.util.Party.connected() && !com.pandaclient.mod.util.Party.members().isEmpty()) {
+            chatFocused = true;
+            ignoreChar = key == org.lwjgl.glfw.GLFW.GLFW_KEY_T;
+            return true;
+        }
+        return super.keyPressed(e);
+    }
+
+    /** The T that opened the chat box also arrives as a typed letter: skip it. */
+    private boolean ignoreChar;
+
+    @Override
+    public boolean charTyped(CharacterEvent e) {
+        if (chatFocused) {
+            if (ignoreChar) { ignoreChar = false; return true; }
+            String c = e.codepointAsString();
+            if (chatDraft.length() < 200 && !c.isEmpty() && c.codePointAt(0) >= 32) chatDraft += c;
+            return true;
+        }
+        return super.charTyped(e);
     }
 
     private boolean clickLeft(double mx, double my) {
@@ -955,7 +1204,7 @@ public final class PandaTitleScreen extends Screen {
         if (e.button() == 0 && t() >= 0.6f && card()) {
             zoom();
             double mx = e.x() / k, my = e.y() / k;
-            if (clickTopBar(mx, my) || clickCard(mx, my) || clickLeft(mx, my)) return true;
+            if (clickParty(mx, my) || clickTopBar(mx, my) || clickCard(mx, my) || clickLeft(mx, my)) return true;
         }
         if (card()) {
             if (e.button() == 0) {

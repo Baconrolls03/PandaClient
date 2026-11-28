@@ -41,10 +41,7 @@ public final class CiCheck {
                 // A test party, as the launcher would write it.
                 try {
                     String me = mc.getUser().getName();
-                    java.nio.file.Files.writeString(com.pandaclient.mod.config.Config.sibling("pandaclient-party.json"),
-                        "{\"members\":[{\"uuid\":\"" + mc.getUser().getProfileId() + "\",\"name\":\"" + me + "\",\"leader\":true,\"online\":true},"
-                        + "{\"uuid\":\"069a79f4-44e9-4726-a5be-fca90e38aaf5\",\"name\":\"Notch\",\"leader\":false,\"online\":true},"
-                        + "{\"uuid\":\"853c80ef-3c37-49fd-aa49-938b674adae6\",\"name\":\"jeb_\",\"leader\":false,\"online\":false}]}");
+                    writeTestParty(mc);
                 } catch (Throwable t) { log("could not write test party: " + t); }
                 mc.setScreen(new com.pandaclient.mod.gui.PandaTitleScreen());
             }
@@ -53,6 +50,13 @@ public final class CiCheck {
             case 72 -> {
                 if (mc.screen instanceof com.pandaclient.mod.gui.PandaTitleScreen p) p.ciPose();
                 log("shot lobby-throw");
+            }
+            case 88 -> {
+                writeTestParty(mc);
+                if (mc.screen instanceof com.pandaclient.mod.gui.PandaTitleScreen p) p.ciParty();
+                log("party connected=" + com.pandaclient.mod.util.Party.connected() + " friends=" + com.pandaclient.mod.util.Party.friends().size()
+                    + " messages=" + com.pandaclient.mod.util.Party.messages().size() + " invites=" + com.pandaclient.mod.util.Party.invites().size());
+                log("shot lobby-party");
             }
             case 104 -> { mc.setScreen(new MenuScreen(mc.screen)); log("shot menu"); }
             case 140 -> { mc.setScreen(MenuScreen.openAt(null, Modules.KEYSTROKES)); log("shot settings"); }
@@ -157,6 +161,7 @@ public final class CiCheck {
                 // leave the world like a player would: the lobby should show where you were
                 log("lobby panorama captured: " + com.pandaclient.mod.util.LobbyPanorama.available());
                 leftForLobby = true;
+                writeTestParty(mc);
                 mc.disconnect(new com.pandaclient.mod.gui.PandaTitleScreen(), false);
             }
             default -> {}
@@ -171,6 +176,25 @@ public final class CiCheck {
             if (mc.level.getBlockState(p).is(net.minecraft.world.level.block.Blocks.GOLD_BLOCK)) b.append(dx).append(',').append(dy).append(',').append(dz).append(' ');
         }
         return b.length() == 0 ? "none" : b.toString();
+    }
+
+    /** A party as the launcher would write it: you lead Notch and jeb_, with some chat, friends and an invite. */
+    static void writeTestParty(Minecraft mc) {
+        try {
+            String me = mc.getUser().getName(), id = String.valueOf(mc.getUser().getProfileId());
+            long now = System.currentTimeMillis();
+            java.nio.file.Files.writeString(com.pandaclient.mod.config.Config.sibling("pandaclient-party.json"),
+                "{\"updated\":" + now + ",\"me\":\"" + id + "\",\"leader\":\"" + id + "\",\"members\":["
+                + "{\"uuid\":\"" + id + "\",\"name\":\"" + me + "\",\"leader\":true,\"online\":true},"
+                + "{\"uuid\":\"069a79f4-44e9-4726-a5be-fca90e38aaf5\",\"name\":\"Notch\",\"leader\":false,\"online\":true,\"server\":\"mc.hypixel.net\"},"
+                + "{\"uuid\":\"853c80ef-3c37-49fd-aa49-938b674adae6\",\"name\":\"jeb_\",\"leader\":false,\"online\":false}],"
+                + "\"invites\":[{\"id\":\"6c8d1f9e-5a8b-4d0e-9a51-0b6f0c3e7d21\",\"from\":\"Dinnerbone\"}],"
+                + "\"messages\":[{\"id\":1,\"from\":\"Notch\",\"fromUuid\":\"069a79f4-44e9-4726-a5be-fca90e38aaf5\",\"text\":\"bedwars?\",\"at\":" + (now - 60000) + "},"
+                + "{\"id\":2,\"from\":\"" + me + "\",\"fromUuid\":\"" + id + "\",\"text\":\"yes! joining hypixel now\",\"at\":" + (now - 30000) + "}],"
+                + "\"friends\":[{\"uuid\":\"069a79f4-44e9-4726-a5be-fca90e38aaf5\",\"name\":\"Notch\",\"online\":true,\"server\":\"mc.hypixel.net\",\"inParty\":true},"
+                + "{\"uuid\":\"61699b2e-d327-4a01-9f1e-0ea8c3f06bc6\",\"name\":\"Dinnerbone\",\"online\":true,\"server\":null,\"inParty\":false},"
+                + "{\"uuid\":\"7125ba8b-1c86-4508-b92b-b5c042ccfe2b\",\"name\":\"KrisJelbring\",\"online\":false,\"server\":null,\"inParty\":false}]}");
+        } catch (Throwable t) { log("could not write test party: " + t); }
     }
 
     private static int countOf(Game.Stack[] s) { int n = 0; for (Game.Stack x : s) n += x.count(); return n; }

@@ -59,12 +59,13 @@ public final class Modules {
     public static final HitColor HIT_COLOR = new HitColor();
     public static final ChatTimestamps CHAT_TIMESTAMPS = new ChatTimestamps();
     public static final Cosmetics COSMETICS = new Cosmetics();
+    public static final PartySettings PARTY = new PartySettings();
 
     private static final List<Module> ALL = Collections.unmodifiableList(new ArrayList<>(List.of(
         FPS, CPS, KEYSTROKES, ARMOR, POTIONS, COORDS, DIRECTION, PING, SERVER, CLOCK, MEMORY, REACH, COMBO, SPEED, ITEMS, TARGET, SATURATION, DAY, TOTEMS, ARROWS, BOW,
         TOGGLE_SPRINT, ZOOM, FREELOOK, NO_HURT_CAM, HITBOXES, HITBOX_COLOR, HIT_SOUNDS,
         FULLBRIGHT, CROSSHAIR, OLD_ANIMATIONS, NAMETAGS, SCOREBOARD, SKY_COLOR, BLOCK_OUTLINE, HIT_COLOR, PARTICLES, LOW_FIRE, TIME, WEATHER,
-        CHAT_TIMESTAMPS, AUTO_GG, BADGE, COSMETICS, TITLE_SCREEN)));
+        CHAT_TIMESTAMPS, AUTO_GG, BADGE, COSMETICS, TITLE_SCREEN, PARTY)));
 
     public static List<Module> all() { return ALL; }
 

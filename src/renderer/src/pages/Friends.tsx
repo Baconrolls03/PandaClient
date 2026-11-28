@@ -14,6 +14,7 @@ export function Friends() {
   const [error, setError] = useState('')
   const [myServer, setMyServer] = useState<string | null>(null)
   const [party, setParty] = useState<PartyState | null>(null)
+  const [chat, setChat] = useState('')
   useEffect(() => {
     api.party.get().then(setParty).catch(() => {})
     return api.party.onChanged(setParty)
@@ -55,6 +56,14 @@ export function Friends() {
   const outgoing = list?.filter((f) => f.status === 'outgoing') ?? []
   const friends = (list?.filter((f) => f.status === 'friends') ?? []).sort((a, b) => Number(b.online) - Number(a.online) || a.username.localeCompare(b.username))
   const head = (uuid: string) => `https://mc-heads.net/avatar/${uuid}/40`
+  const iLead = !!party?.party && party.party.leader === party.me
+  const leader = party?.party?.members.find((m) => m.leader)
+  const sendChat = async () => {
+    const text = chat.trim()
+    if (!text) return
+    setChat('')
+    await attempt(() => api.party.chat(text))
+  }
 
   return (
     <div className="mx-auto max-w-4xl p-8">
@@ -81,20 +90,60 @@ export function Friends() {
               <LogOut size={13} /> Leave
             </Button>
           </div>
-          <p className="mb-3 text-xs text-muted">Your party stands next to you in the PandaClient lobby in game.</p>
+          <p className="mb-3 text-xs text-muted">
+            Your party stands next to you in the PandaClient lobby in game. When the leader joins a server, everyone follows.
+          </p>
           <div className="flex flex-wrap gap-2">
             {party.party.members.map((m) => (
               <div key={m.uuid} className="group flex items-center gap-2 rounded-xl border border-border bg-surface py-2 pl-2 pr-3">
                 <img src={head(m.uuid)} className={`size-8 rounded-lg ${m.online ? '' : 'opacity-50 grayscale'}`} alt="" />
-                <span className="text-sm font-medium">{m.username}</span>
+                <div className="leading-tight">
+                  <span className="text-sm font-medium">{m.username}</span>
+                  {m.server && <span className="block text-[11px] text-muted">{m.server}</span>}
+                </div>
                 {m.leader && <Crown size={13} className="text-yellow-400" />}
-                {!m.leader && party.party!.members.some((x) => x.leader && x.uuid !== m.uuid) && (
-                  <button title="Remove from party" className="hidden text-muted hover:text-danger group-hover:block" onClick={() => attempt(() => api.party.kick(m.uuid))}>
-                    <X size={13} />
-                  </button>
+                {iLead && m.uuid !== party.me && (
+                  <span className="hidden gap-1 group-hover:flex">
+                    <button title="Make party leader" className="text-muted hover:text-yellow-400" onClick={() => attempt(() => api.party.promote(m.uuid), `${m.username} is now the party leader`)}>
+                      <Crown size={13} />
+                    </button>
+                    <button title="Remove from party" className="text-muted hover:text-danger" onClick={() => attempt(() => api.party.kick(m.uuid))}>
+                      <X size={13} />
+                    </button>
+                  </span>
                 )}
               </div>
             ))}
+          </div>
+          {leader && !iLead && leader.server && leader.server !== 'Singleplayer' && (
+            <div className="mt-3 flex items-center gap-3 rounded-xl border border-mint/30 bg-mint/10 p-3 text-sm">
+              <span className="flex-1">
+                <b>{leader.username}</b> is on <b>{leader.server}</b>
+              </span>
+              <Button size="sm" variant="primary" onClick={() => join({ uuid: leader.uuid, username: leader.username, status: 'friends', online: true, server: leader.server })}>
+                <LogIn size={14} /> Join
+              </Button>
+            </div>
+          )}
+          <div className="mt-3 rounded-xl border border-border bg-surface p-3">
+            <div className="mb-2 max-h-48 space-y-1 overflow-y-auto text-sm">
+              {(party.messages ?? []).length === 0 && <p className="text-xs text-muted">Party chat: say hi! Messages show in game too.</p>}
+              {(party.messages ?? []).map((m) => (
+                <p key={m.id}>
+                  <span className={`font-semibold ${m.fromUuid === party.me ? 'text-mint' : ''}`}>{m.from}</span>
+                  <span className="text-muted">: </span>
+                  {m.text}
+                </p>
+              ))}
+            </div>
+            <div className="flex gap-2">
+              <div className="flex-1">
+                <TextField value={chat} onChange={setChat} placeholder="Message your party" onEnter={sendChat} />
+              </div>
+              <Button variant="secondary" onClick={sendChat}>
+                <Send size={14} />
+              </Button>
+            </div>
           </div>
         </section>
       )}
