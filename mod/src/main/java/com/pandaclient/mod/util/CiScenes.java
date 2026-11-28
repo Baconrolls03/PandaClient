@@ -82,8 +82,10 @@ public final class CiScenes {
                 int chunks = mc.level.getChunkSource().getLoadedChunksCount();
                 stable = chunks == lastChunks ? stable + 1 : 0;
                 lastChunks = chunks;
-                if (stable > 60 || ++tries > 1200) {
-                    int y = mc.level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, fx, fz);
+                int y = mc.level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, fx, fz);
+                boolean loaded = mc.level.getChunkSource().hasChunk(fx >> 4, fz >> 4) && y > mc.level.getMinY() + 2;
+                if (++tries > 2400) { log(biome + ": land never loaded"); next(); return; }
+                if (loaded && stable > 60) {
                     // look out over the most open direction (lowest ground 20 to 60 blocks away), with level
                     // ground just in front to stand everyone on
                     int best = 0; double bestH = Double.MAX_VALUE;

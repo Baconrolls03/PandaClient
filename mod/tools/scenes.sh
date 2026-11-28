@@ -28,7 +28,7 @@ for f in $RUN/ci-scenes/*.png; do
   convert "$f" -quality 88 "$OUT/$n.jpg"
 done
 cp $RUN/ci-scenes/*.stage $OUT/ 2>/dev/null
-ls $OUT > $OUT/index.txt.tmp; grep '\.stage$' $OUT/index.txt.tmp | sed 's/\.stage$//' > $OUT/index.txt; rm $OUT/index.txt.tmp
+ls $OUT | grep '_0\.jpg$' | sed 's/_0\.jpg$//' > $OUT/index.txt
 echo "scenes:"; cat $OUT/index.txt
 # previews: each place's four sides in a row
 for s in $(cat $OUT/index.txt); do
