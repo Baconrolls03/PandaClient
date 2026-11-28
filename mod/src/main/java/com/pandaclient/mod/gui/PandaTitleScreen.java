@@ -58,6 +58,47 @@ public final class PandaTitleScreen extends Screen {
     /** Length of each cinematic shot and of the dip to black between shots (seconds). */
     private static final float SHOT = 11f, CUT = 0.9f;
 
+    /**
+     * A shader-like grade over the 3D background: warm golden light from above, cooler shadows below, a soft
+     * sun glow with light rays (its place changes every shot) and a vignette.
+     */
+    private void grade(GuiGraphics g, Draw d, float t, int shot) {
+        int w = width, h = height;
+        g.fillGradient(0, 0, w, h / 2, 0x2EFF9E48, 0x00FF9E48);
+        g.fillGradient(0, h / 2, w, h, 0x00081830, 0x3A061226);
+        float sx = w * (0.18f + 0.64f * hash(shot, 7)) + (mouseX - 0.5f) * w * 0.03f, sy = -h * 0.04f;
+        // light rays, slowly breathing
+        g.pose().pushMatrix();
+        g.pose().translate(sx, sy);
+        for (int i = 0; i < 7; i++) {
+            float a = 0.35f + i * 0.36f + 0.04f * (float) Math.sin(t * 0.35f + i * 1.7f);
+            int len = Math.round(h * 1.3f), wd = Math.round(h * (0.035f + 0.05f * hash(i, shot + 3)));
+            int alpha = Math.round(20 + 12 * (float) Math.sin(t * 0.5f + i * 2.1f));
+            g.pose().pushMatrix();
+            g.pose().rotate(a);
+            g.fillGradient(-wd / 2, 0, wd / 2, len, Draw.alpha(0xFFFFE4B5, Math.max(0, alpha)), 0x00FFE4B5);
+            g.pose().popMatrix();
+        }
+        g.pose().popMatrix();
+        // sun glow (bloom)
+        for (int i = 0; i < 9; i++) {
+            float r = h * (0.05f + i * 0.055f);
+            d.rounded(sx - r, sy - r, sx + r, sy + r, r, Draw.alpha(0xFFFFD69A, 26 - i * 2));
+        }
+        // vignette
+        int steps = 14;
+        float band = Math.min(w, h) * 0.018f;
+        for (int i = 0; i < steps; i++) {
+            int a = Math.round(64f * (1 - i / (float) steps) * (1 - i / (float) steps));
+            int o = Math.round(i * band), o2 = Math.round((i + 1) * band);
+            int c = Draw.alpha(0xFF000000, a);
+            d.rect(0, o, w, o2, c);
+            d.rect(0, h - o2, w, h - o, c);
+            d.rect(o, o2, o2, h - o2, c);
+            d.rect(w - o2, o2, w - o, h - o2, c);
+        }
+    }
+
     private static float hash(int a, int b) {
         int h = a * 374761393 + b * 668265263;
         h = (h ^ (h >>> 13)) * 1274126177;
@@ -98,6 +139,7 @@ public final class PandaTitleScreen extends Screen {
                 : com.pandaclient.mod.util.LobbyPanorama.renderVanilla(minecraft, pitch, yaw);
             if (!own) renderPanorama(g, delta);
             renderBlurredBackground(g);
+            if (Modules.TITLE_SCREEN.cinematic.on()) grade(g, d, t, shot);
             // dip to black between shots
             if (shot > 0 || local > SHOT - CUT) {
                 float dip = local < CUT ? 1 - local / CUT : local > SHOT - CUT ? (local - (SHOT - CUT)) / CUT : 0;
