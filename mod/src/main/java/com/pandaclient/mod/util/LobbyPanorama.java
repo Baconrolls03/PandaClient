@@ -175,6 +175,8 @@ public final class LobbyPanorama {
                 p.yRotO = p.getYRot();
                 p.xRotO = p.getXRot();
                 mc.gameRenderer.updateCamera(DeltaTracker.ONE);
+                if (i == 0 && CiCheck.ON) System.out.println("[PandaClient CI] capture: player " + p.position() + " was " + px + "," + py + "," + pz
+                    + " camera " + mc.gameRenderer.getMainCamera().position() + " yaw " + yr + " moved " + moved);
                 mc.gameRenderer.renderLevel(DeltaTracker.ONE);
                 Path out = face(slot, i);
                 Screenshot.takeScreenshot(target, img -> {

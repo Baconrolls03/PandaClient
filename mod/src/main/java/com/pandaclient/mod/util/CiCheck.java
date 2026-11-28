@@ -133,6 +133,7 @@ public final class CiCheck {
                 com.pandaclient.mod.util.LobbyPanorama.allowNow();
                 log("stage test: onGround=" + mc.player.onGround() + " yaw=" + mc.player.getYRot());
             }
+            case 465 -> log("stage test: pos " + mc.player.position() + " yaw " + mc.player.getYRot() + " gold around (dx,dy,dz): " + goldAround(mc));
             case 470 -> { mc.setScreen(new net.minecraft.client.gui.screens.PauseScreen(true)); log("shot pause"); }
             case 480 -> {
                 StringBuilder b = new StringBuilder();
@@ -148,6 +149,16 @@ public final class CiCheck {
             }
             default -> {}
         }
+    }
+
+    private static String goldAround(Minecraft mc) {
+        StringBuilder b = new StringBuilder();
+        var c = mc.player.blockPosition();
+        for (int dx = -4; dx <= 4; dx++) for (int dy = 0; dy <= 3; dy++) for (int dz = -4; dz <= 4; dz++) {
+            var p = c.offset(dx, dy, dz);
+            if (mc.level.getBlockState(p).is(net.minecraft.world.level.block.Blocks.GOLD_BLOCK)) b.append(dx).append(',').append(dy).append(',').append(dz).append(' ');
+        }
+        return b.length() == 0 ? "none" : b.toString();
     }
 
     private static int countOf(Game.Stack[] s) { int n = 0; for (Game.Stack x : s) n += x.count(); return n; }
